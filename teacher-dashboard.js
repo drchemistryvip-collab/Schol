@@ -207,14 +207,22 @@ document.addEventListener('DOMContentLoaded', function () {
         malzamaFileInput.click();
     });
 
+    const malzamaProgressBox = document.getElementById('malzama-upload-progress-box');
+    const malzamaProgressBar = document.getElementById('malzama-upload-progress-bar');
+    const malzamaPercentage = document.getElementById('malzama-upload-percentage');
+    const malzamaDetail = document.getElementById('malzama-upload-detail');
+    const malzamaStatusText = document.getElementById('malzama-upload-status-text');
+    const malzamaProgressIcon = document.getElementById('malzama-progress-icon');
+
     malzamaFileInput.addEventListener('change', function (e) {
         const file = e.target.files[0];
         if (!file) return;
 
         uploadedFileName = file.name;
-        // Format size
-        const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-        uploadedFileSize = sizeMb > 0 ? `${sizeMb} MB` : `${(file.size / 1024).toFixed(0)} KB`;
+        const totalBytes = file.size;
+        const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+        const totalFormatted = totalMb > 0.1 ? `${totalMb} MB` : `${Math.round(totalBytes / 1024)} KB`;
+        uploadedFileSize = totalFormatted;
 
         // Auto-detect format from extension
         const lowerName = file.name.toLowerCase();
@@ -239,15 +247,57 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Read file into Base64 / DataUrl for offline instant preview
+        // Initialize progress UI
+        if (malzamaProgressBox) {
+            malzamaProgressBox.style.display = 'block';
+            if (malzamaProgressBar) malzamaProgressBar.style.width = '0%';
+            if (malzamaPercentage) malzamaPercentage.textContent = '0%';
+            if (malzamaDetail) malzamaDetail.textContent = `0 MB / ${totalFormatted}`;
+            if (malzamaStatusText) malzamaStatusText.textContent = 'دەستپێکرنا بارکرنا فایلێ...';
+            if (malzamaProgressIcon) {
+                malzamaProgressIcon.className = 'fas fa-spinner fa-spin';
+                malzamaProgressIcon.style.color = 'var(--blue-accent)';
+            }
+        }
+
+        // Read file into Base64 / DataUrl for offline instant preview with real-time percentage
         const reader = new FileReader();
+
+        reader.onprogress = function (ev) {
+            if (ev.lengthComputable && ev.total > 0) {
+                const percent = Math.min(100, Math.round((ev.loaded / ev.total) * 100));
+                const loadedMb = (ev.loaded / (1024 * 1024)).toFixed(1);
+                if (malzamaProgressBar) malzamaProgressBar.style.width = `${percent}%`;
+                if (malzamaPercentage) malzamaPercentage.textContent = `${percent}%`;
+                if (malzamaDetail) malzamaDetail.textContent = `${loadedMb} MB / ${totalFormatted}`;
+                if (malzamaStatusText) malzamaStatusText.textContent = `بارکرنا فایلێ: ${percent}%`;
+            }
+        };
+
         reader.onload = function (event) {
             uploadedFileData = event.target.result;
+            if (malzamaProgressBar) malzamaProgressBar.style.width = '100%';
+            if (malzamaPercentage) malzamaPercentage.textContent = '100%';
+            if (malzamaDetail) malzamaDetail.textContent = `${totalFormatted} / ${totalFormatted}`;
+            if (malzamaStatusText) malzamaStatusText.textContent = 'فایل ب سەرکەفتوویی بار بوو: ١٠٠٪ ✅';
+            if (malzamaProgressIcon) {
+                malzamaProgressIcon.className = 'fas fa-check-circle';
+                malzamaProgressIcon.style.color = '#28a745';
+            }
             fileChosenInfo.style.display = 'block';
             chosenFileName.textContent = uploadedFileName;
             chosenFileSize.textContent = uploadedFileSize;
             dropzoneText.textContent = `فایل هەڵبژێردرا: ${uploadedFileName}`;
         };
+
+        reader.onerror = function () {
+            if (malzamaStatusText) malzamaStatusText.textContent = 'هەڵەیەک لە خوێندنەوەی فایلەکە ڕوویدا';
+            if (malzamaProgressIcon) {
+                malzamaProgressIcon.className = 'fas fa-exclamation-triangle';
+                malzamaProgressIcon.style.color = '#dc3545';
+            }
+        };
+
         reader.readAsDataURL(file);
     });
 
@@ -675,18 +725,71 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Progress UI Elements for AI File
+    const aiUploadProgressBox = document.getElementById('ai-upload-progress-box');
+    const aiUploadProgressBar = document.getElementById('ai-upload-progress-bar');
+    const aiUploadPercentage = document.getElementById('ai-upload-percentage');
+    const aiUploadDetail = document.getElementById('ai-upload-detail');
+    const aiUploadStatusText = document.getElementById('ai-upload-status-text');
+    const aiProgressIcon = document.getElementById('ai-progress-icon');
+
     function handleAiFileUpload(file) {
+        if (!file) return;
+
         aiFileName.textContent = file.name;
-        aiFileSize.textContent = (file.size / 1024 > 1024) 
-            ? (file.size / (1024 * 1024)).toFixed(1) + ' MB' 
-            : Math.round(file.size / 1024) + ' KB';
+        const totalBytes = file.size;
+        const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+        const totalFormatted = totalMb > 0.1 ? `${totalMb} MB` : `${Math.round(totalBytes / 1024)} KB`;
+        aiFileSize.textContent = totalFormatted;
         aiSelectedFileType = file.type || 'application/octet-stream';
 
+        // Display progress bar and reset
+        if (aiUploadProgressBox) {
+            aiUploadProgressBox.style.display = 'block';
+            if (aiUploadProgressBar) aiUploadProgressBar.style.width = '0%';
+            if (aiUploadPercentage) aiUploadPercentage.textContent = '0%';
+            if (aiUploadDetail) aiUploadDetail.textContent = `0 MB / ${totalFormatted}`;
+            if (aiUploadStatusText) aiUploadStatusText.textContent = 'دەستپێکرنا بارکرنا فایلێ...';
+            if (aiProgressIcon) {
+                aiProgressIcon.className = 'fas fa-spinner fa-spin';
+                aiProgressIcon.style.color = '#00b4d8';
+            }
+        }
+
         const reader = new FileReader();
+
+        reader.onprogress = (e) => {
+            if (e.lengthComputable && e.total > 0) {
+                const percent = Math.min(100, Math.round((e.loaded / e.total) * 100));
+                const loadedMb = (e.loaded / (1024 * 1024)).toFixed(1);
+                if (aiUploadProgressBar) aiUploadProgressBar.style.width = `${percent}%`;
+                if (aiUploadPercentage) aiUploadPercentage.textContent = `${percent}%`;
+                if (aiUploadDetail) aiUploadDetail.textContent = `${loadedMb} MB / ${totalFormatted}`;
+                if (aiUploadStatusText) aiUploadStatusText.textContent = `بارکرنا فایلێ: ${percent}%`;
+            }
+        };
+
         reader.onload = (e) => {
             aiSelectedFileBase64 = e.target.result;
+            if (aiUploadProgressBar) aiUploadProgressBar.style.width = '100%';
+            if (aiUploadPercentage) aiUploadPercentage.textContent = '100%';
+            if (aiUploadDetail) aiUploadDetail.textContent = `${totalFormatted} / ${totalFormatted}`;
+            if (aiUploadStatusText) aiUploadStatusText.textContent = 'فایل ب سەرکەفتوویی بار بوو: ١٠٠٪ ✅';
+            if (aiProgressIcon) {
+                aiProgressIcon.className = 'fas fa-check-circle';
+                aiProgressIcon.style.color = '#28a745';
+            }
             if (aiFileChosenInfo) aiFileChosenInfo.style.display = 'block';
         };
+
+        reader.onerror = () => {
+            if (aiUploadStatusText) aiUploadStatusText.textContent = 'هەڵەیەک لە خوێندنەوەی فایلەکە ڕوویدا';
+            if (aiProgressIcon) {
+                aiProgressIcon.className = 'fas fa-exclamation-triangle';
+                aiProgressIcon.style.color = '#dc3545';
+            }
+        };
+
         reader.readAsDataURL(file);
     }
 
@@ -696,6 +799,7 @@ document.addEventListener('DOMContentLoaded', function () {
             aiSelectedFileType = null;
             if (aiFileInput) aiFileInput.value = '';
             if (aiFileChosenInfo) aiFileChosenInfo.style.display = 'none';
+            if (aiUploadProgressBox) aiUploadProgressBox.style.display = 'none';
         });
     }
 
@@ -705,15 +809,48 @@ document.addEventListener('DOMContentLoaded', function () {
     // Gemini API Key Management in Teacher Dashboard
     const tGeminiKeyInput = document.getElementById('t-gemini-key-input');
     const btnSaveTGeminiKey = document.getElementById('btn-save-t-gemini-key');
+    const btnClearTGeminiKey = document.getElementById('btn-clear-t-gemini-key');
     const btnToggleTGeminiKey = document.getElementById('btn-toggle-t-gemini-key');
     const tGeminiKeyStatus = document.getElementById('t-gemini-key-status');
+
+    // Test & Verify Gemini API Key directly against Google Gemini API
+    async function testGeminiApiKey(key) {
+        if (!key) return { valid: false, error: 'تکایە کلیلی API داخل بکە' };
+        try {
+            const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(key)}`;
+            const response = await fetch(testUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: "سڵاو" }] }]
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json().catch(() => ({}));
+                if (data.candidates && data.candidates.length > 0) {
+                    return { valid: true };
+                }
+            }
+
+            const errData = await response.json().catch(() => ({}));
+            const msg = errData?.error?.message || `کۆدی هەڵە: ${response.status}`;
+            return { valid: false, error: msg };
+        } catch (e) {
+            return { valid: false, error: e.message || 'هەڵەی پەیوەندی کردن بە سێرڤەری Google' };
+        }
+    }
 
     function updateTGeminiKeyStatus() {
         const key = localStorage.getItem('gemini_custom_api_key') || '';
         if (tGeminiKeyInput) tGeminiKeyInput.value = key;
         if (tGeminiKeyStatus) {
             if (key) {
-                tGeminiKeyStatus.innerHTML = '<span style="color:#28a745;"><i class="fas fa-check-circle"></i> کلیل بە سەرکەوتوویی بەستراوەتەوە و ئامادەیە بۆ دروستکردن.</span>';
+                tGeminiKeyStatus.innerHTML = `
+                    <div style="color:#28a745; background:rgba(40,167,69,0.12); border:1px solid rgba(40,167,69,0.3); border-radius:8px; padding:9px 13px; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-check-circle"></i> کلیل پاشەکەوت کرایە و ئامادەیە بۆ دروستکرنا وانە و پاوەرپۆینتان.
+                    </div>
+                `;
                 tGeminiKeyStatus.style.display = 'block';
             } else {
                 tGeminiKeyStatus.style.display = 'none';
@@ -723,16 +860,74 @@ document.addEventListener('DOMContentLoaded', function () {
     updateTGeminiKeyStatus();
 
     if (btnSaveTGeminiKey && tGeminiKeyInput) {
-        btnSaveTGeminiKey.addEventListener('click', () => {
+        btnSaveTGeminiKey.addEventListener('click', async () => {
             const key = tGeminiKeyInput.value.trim();
-            if (key) {
-                localStorage.setItem('gemini_custom_api_key', key);
-                alert('کلیلی Gemini API بە سەرکەوتوویی پاشەکەوت کرا!');
-            } else {
-                localStorage.removeItem('gemini_custom_api_key');
-                alert('کلیل سڕایەوە.');
+            if (!key) {
+                alert('تکایە سەرەتا کلیلی Gemini API بنووسە.');
+                return;
             }
-            updateTGeminiKeyStatus();
+
+            // Show testing indicator
+            btnSaveTGeminiKey.disabled = true;
+            btnSaveTGeminiKey.innerHTML = '<i class="fas fa-spinner fa-spin"></i> د پشکنینێ دایە...';
+            if (tGeminiKeyStatus) {
+                tGeminiKeyStatus.innerHTML = `
+                    <div style="color:#00b4d8; background:rgba(0,180,216,0.1); border:1px solid rgba(0,180,216,0.3); border-radius:8px; padding:9px 13px; font-weight:bold; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-spinner fa-spin"></i> کلیل د پشکنینێ دایە ل کۆمپانییا Google Gemini (Gemini 3.8 Flash)... تکایە چاڤەڕێ بە...
+                    </div>
+                `;
+                tGeminiKeyStatus.style.display = 'block';
+            }
+
+            const testResult = await testGeminiApiKey(key);
+
+            btnSaveTGeminiKey.disabled = false;
+            btnSaveTGeminiKey.innerHTML = '<i class="fas fa-check-double"></i> پشکنین و پاشەکەوتکرن';
+
+            if (testResult.valid) {
+                localStorage.setItem('gemini_custom_api_key', key);
+                if (tGeminiKeyStatus) {
+                    tGeminiKeyStatus.innerHTML = `
+                        <div style="color:#28a745; background:rgba(40,167,69,0.15); border:1px solid #28a745; border-radius:8px; padding:11px 15px; font-weight:bold;">
+                            <div style="display:flex; align-items:center; gap:8px; font-size:0.95rem; margin-bottom:3px;">
+                                <i class="fas fa-check-circle" style="font-size:1.1rem;"></i> سەرکەفتی بوو! کلیلی API دروستە و چالاکە.
+                            </div>
+                            <small style="font-weight:normal; opacity:0.9;">مۆدێلی نوێی Gemini 3.8 Flash ئامادەیە بۆ دروستکرنا پاوەرپۆینت و پرسیاران.</small>
+                        </div>
+                    `;
+                    tGeminiKeyStatus.style.display = 'block';
+                }
+                alert('سەرکەفتی بوو! کلیلی API دروستە و ب سەرکەفتوویی پاشەکەوت کرا.');
+            } else {
+                if (tGeminiKeyStatus) {
+                    tGeminiKeyStatus.innerHTML = `
+                        <div style="color:#dc3545; background:rgba(220,53,69,0.15); border:1px solid #dc3545; border-radius:8px; padding:11px 15px; font-weight:bold;">
+                            <div style="display:flex; align-items:center; gap:8px; font-size:0.95rem; margin-bottom:3px;">
+                                <i class="fas fa-times-circle" style="font-size:1.1rem;"></i> خەلەتە! ئەڤ کلیلە نادروستە یان کار ناکەت.
+                            </div>
+                            <small style="font-weight:normal; opacity:0.9;">تکایە دڵنیابە کلیلەکەت ڕاست کۆپی کردووە لە Google AI Studio.<br>هەڵە: ${testResult.error || 'Invalid API Key'}</small>
+                        </div>
+                    `;
+                    tGeminiKeyStatus.style.display = 'block';
+                }
+                alert('خەلەتە! کلیلی API نادروستە یان کار ناکەت.');
+            }
+        });
+    }
+
+    if (btnClearTGeminiKey) {
+        btnClearTGeminiKey.addEventListener('click', () => {
+            localStorage.removeItem('gemini_custom_api_key');
+            if (tGeminiKeyInput) tGeminiKeyInput.value = '';
+            if (tGeminiKeyStatus) {
+                tGeminiKeyStatus.innerHTML = `
+                    <div style="color:#ffc107; background:rgba(255,193,7,0.1); border:1px solid rgba(255,193,7,0.3); border-radius:8px; padding:8px 12px; font-weight:bold;">
+                        <i class="fas fa-info-circle"></i> کلیل سڕایەوە.
+                    </div>
+                `;
+                tGeminiKeyStatus.style.display = 'block';
+            }
+            alert('کلیل سڕایەوە.');
         });
     }
 
@@ -750,7 +945,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Direct Client-Side Gemini Call (Works 100% on Netlify and Static Hosting)
     async function callGeminiDirectClient(apiKey, payload) {
-        const model = 'gemini-2.5-flash';
+        const model = 'gemini-3.8-flash';
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
         const numQ = Math.max(1, Number(payload.questionsCount) || 5);
@@ -881,10 +1076,10 @@ Return STRICT JSON complying with this structure. Do NOT enclose in markdown bac
             aiLoadingBox.scrollIntoView({ behavior: 'smooth' });
 
             const statusMessages = [
-                'شیکارکردنی فایل و دەقی وانەکە لەلایەن Gemini...',
-                'داڕشتنی پەڕەی HTML بە شێوازی پاوەرپۆینتی ئەنیمەیشنکراو...',
-                `ئامادەکردنی ${questionsCount} پرسیاری مۆدێرنی هەڵبژاردن و ڕوونکردنەوەی وەڵامەکان...`,
-                'تەواوکردنی ڕێکخستنی کۆتایی بەپێی قالبی ئەدمین...'
+                'شیکارکردنی فایل و دەقی وانەکە لەلایەن Gemini (٢٥٪)...',
+                'داڕشتنی پەڕەی HTML بە شێوازی پاوەرپۆینتی ئەنیمەیشنکراو (٥٠٪)...',
+                `ئامادەکردنی ${questionsCount} پرسیاری مۆدێرنی هەڵبژاردن و ڕوونکردنەوەی وەڵامەکان (٧٥٪)...`,
+                'تەواوکردنی ڕێکخستنی کۆتایی بەپێی قالبی ئەدمین (٩٥٪)...'
             ];
             let statusIdx = 0;
             const statusInterval = setInterval(() => {

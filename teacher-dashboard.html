@@ -402,16 +402,19 @@
                 <p style="margin:0 0 10px; font-size:0.82rem; color:var(--secondary-text); line-height:1.5;">
                     بۆ ئەوەی دروستکردنی بابەت و پاوەرپۆینت و تاقیکردنەوە لەسەر Netlify و هەموو ئامێرێک بە بێ کێشە و ڕاستەوخۆ کار بکات، دەتوانیت کلیلەکەت لێرە دابنێیت:
                 </p>
-                <div style="display:flex; gap:8px;">
-                    <input type="password" id="t-gemini-key-input" placeholder="AIzaSy..." style="flex:1; padding:9px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:monospace; direction:ltr; font-size:0.88rem;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <input type="password" id="t-gemini-key-input" placeholder="AIzaSy..." style="flex:1; min-width:220px; padding:9px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:monospace; direction:ltr; font-size:0.88rem;">
                     <button type="button" id="btn-save-t-gemini-key" class="btn-save" style="padding:8px 16px; font-size:0.85rem; background:#00b4d8; border:none; display:inline-flex; align-items:center; gap:6px;">
-                        <i class="fas fa-save"></i> پاشەکەوتکرن
+                        <i class="fas fa-check-double"></i> پشکنین و پاشەکەوتکرن
+                    </button>
+                    <button type="button" id="btn-clear-t-gemini-key" class="btn-cancel" style="padding:8px 12px; font-size:0.85rem; color:#dc3545; border-color:rgba(220,53,69,0.3);" title="سڕینەوەی کلیل">
+                        <i class="fas fa-trash-alt"></i> سڕینەوە
                     </button>
                     <button type="button" id="btn-toggle-t-gemini-key" class="btn-cancel" style="padding:0 12px;" title="شاردنەوە / نیشاندان">
                         <i class="fas fa-eye"></i>
                     </button>
                 </div>
-                <div id="t-gemini-key-status" style="margin-top:6px; font-size:0.82rem; display:none;"></div>
+                <div id="t-gemini-key-status" style="margin-top:10px; font-size:0.86rem; display:none;"></div>
             </div>
 
             <form id="ai-generator-form">
@@ -474,6 +477,24 @@
                             <i class="fab fa-google-drive"></i> یان هاوردەکردنی فایل لە Google Drive
                         </button>
                     </div>
+                    <!-- Progress Percentage Bar for AI File Upload -->
+                    <div id="ai-upload-progress-box" style="display:none; margin:10px 0; background:var(--surface-color); border:1px solid rgba(0,180,216,0.3); border-radius:10px; padding:12px 14px; text-align:right; box-shadow:0 3px 10px rgba(0,0,0,0.05);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-weight:bold; color:var(--primary-text); font-size:0.88rem; display:flex; align-items:center; gap:6px;">
+                                <i class="fas fa-spinner fa-spin" id="ai-progress-icon" style="color:#00b4d8;"></i>
+                                <span id="ai-upload-progress-label">بارکرنا فایلێ...</span>
+                            </span>
+                            <span id="ai-upload-percentage" style="font-weight:bold; color:#00b4d8; font-size:1.15rem; direction:ltr;">0%</span>
+                        </div>
+                        <div style="width:100%; height:9px; background:rgba(0,180,216,0.15); border-radius:5px; overflow:hidden;">
+                            <div id="ai-upload-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #00b4d8, #7209b7); transition:width 0.2s ease;"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px; font-size:0.8rem; color:var(--secondary-text);">
+                            <span id="ai-upload-detail">0 MB / 0 MB</span>
+                            <span id="ai-upload-status-text">تکایە چاڤەڕێ بە...</span>
+                        </div>
+                    </div>
+
                     <div id="ai-file-chosen-info" style="display:none; padding:10px 14px; background:rgba(0,180,216,0.12); border:1px solid rgba(0,180,216,0.3); border-radius:8px; color:var(--primary-text); margin-bottom:12px; font-size:0.9rem;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <span><i class="fas fa-check-circle" style="color:#00b4d8;"></i> <strong id="ai-file-name"></strong> (<span id="ai-file-size"></span>)</span>
@@ -694,6 +715,24 @@
                         <p style="margin:0; font-size:0.8rem; color:var(--secondary-text);" id="dropzone-sub">قەبارەی پەسەندکراو: تا ٢٠ مێگابایت</p>
                         <input type="file" id="malzama-file-input" accept=".pdf,.ppt,.pptx,.html,.htm,.png,.jpg,.jpeg,.webp" style="display:none;">
                     </div>
+                    <!-- Progress Percentage Bar for Malzama Upload -->
+                    <div id="malzama-upload-progress-box" style="display:none; margin:10px 0; background:var(--surface-color); border:1px solid rgba(0,123,255,0.3); border-radius:10px; padding:12px 14px; text-align:right; box-shadow:0 3px 10px rgba(0,0,0,0.05);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-weight:bold; color:var(--primary-text); font-size:0.88rem; display:flex; align-items:center; gap:6px;">
+                                <i class="fas fa-spinner fa-spin" id="malzama-progress-icon" style="color:var(--blue-accent);"></i>
+                                <span id="malzama-upload-progress-label">بارکرنا فایلێ...</span>
+                            </span>
+                            <span id="malzama-upload-percentage" style="font-weight:bold; color:var(--blue-accent); font-size:1.15rem; direction:ltr;">0%</span>
+                        </div>
+                        <div style="width:100%; height:9px; background:rgba(0,123,255,0.15); border-radius:5px; overflow:hidden;">
+                            <div id="malzama-upload-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #007bff, #28a745); transition:width 0.2s ease;"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px; font-size:0.8rem; color:var(--secondary-text);">
+                            <span id="malzama-upload-detail">0 MB / 0 MB</span>
+                            <span id="malzama-upload-status-text">تکایە چاڤەڕێ بە...</span>
+                        </div>
+                    </div>
+
                     <div id="file-chosen-info" style="display:none; padding:10px 14px; background:rgba(40,167,69,0.1); border-radius:8px; color:#28a745; margin-bottom:12px; font-size:0.9rem;">
                         <i class="fas fa-check-circle"></i> <strong id="chosen-file-name"></strong> (<span id="chosen-file-size"></span>)
                     </div>
