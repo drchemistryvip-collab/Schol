@@ -1,0 +1,191 @@
+{
+  "entities": {
+    "users": {
+      "title": "User",
+      "description": "User profile containing role, phone, and grade preferences",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "User full name",
+          "maxLength": 100
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full legal name",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User email address",
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "enum": ["student", "teacher", "super_admin"],
+          "description": "User access role"
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Admin status"
+        },
+        "isSubscribed": {
+          "type": "boolean",
+          "description": "Subscription status"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": ["email"]
+    },
+    "educational_content": {
+      "title": "EducationalContent",
+      "description": "Study materials, videos, quizzes, and malzamas",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Title of content",
+          "maxLength": 300
+        },
+        "type": {
+          "type": "string",
+          "enum": ["video", "quiz", "malzama"],
+          "description": "Type of educational item"
+        },
+        "grade": {
+          "type": "string",
+          "description": "Target grade ID",
+          "maxLength": 20
+        },
+        "subject": {
+          "type": "string",
+          "description": "Curriculum subject",
+          "maxLength": 100
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Author teacher ID",
+          "maxLength": 128
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"],
+          "description": "Approval status"
+        },
+        "driveBackup": {
+          "type": "object",
+          "description": "Google drive backup reference"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["title", "type", "grade", "teacherId"]
+    },
+    "teachers": {
+      "title": "Teacher",
+      "description": "Teacher profile in registry",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Teacher name",
+          "maxLength": 120
+        },
+        "subject": {
+          "type": "string",
+          "description": "Main subject",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 150
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "rejected"]
+        }
+      },
+      "required": ["name", "subject"]
+    },
+    "drive_backups": {
+      "title": "DriveBackup",
+      "description": "Index of Google Drive backups for restoration",
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "description": "Educational content ID",
+          "maxLength": 128
+        },
+        "driveFileId": {
+          "type": "string",
+          "description": "File ID in Google Drive",
+          "maxLength": 150
+        },
+        "itemType": {
+          "type": "string",
+          "enum": ["video", "quiz", "malzama", "post", "file"]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "backupAt": {
+          "type": "string"
+        }
+      },
+      "required": ["itemId", "driveFileId"]
+    },
+    "admins": {
+      "title": "Admin",
+      "description": "Super admin registry",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Admin email",
+          "maxLength": 150
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin"],
+          "description": "Admin role"
+        }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "users",
+      "description": "User profile collection"
+    },
+    "/educational_content/{contentId}": {
+      "schema": "educational_content",
+      "description": "Educational study materials, videos, quizzes, and malzamas"
+    },
+    "/teachers/{teacherId}": {
+      "schema": "teachers",
+      "description": "Registered teachers"
+    },
+    "/drive_backups/{backupId}": {
+      "schema": "drive_backups",
+      "description": "Google Drive backups index for easy restoration"
+    },
+    "/admins/{adminId}": {
+      "schema": "admins",
+      "description": "Platform administrators"
+    }
+  }
+}

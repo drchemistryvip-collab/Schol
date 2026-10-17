@@ -1,0 +1,107 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Pretty URL routing so both /book and /book.html work seamlessly
+[[redirects]]
+  from = "/book"
+  to = "/book.html"
+  status = 200
+
+[[redirects]]
+  from = "/posts"
+  to = "/posts.html"
+  status = 200
+
+[[redirects]]
+  from = "/videos"
+  to = "/videos.html"
+  status = 200
+
+[[redirects]]
+  from = "/quiz"
+  to = "/quiz.html"
+  status = 200
+
+[[redirects]]
+  from = "/grade"
+  to = "/grade.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin-panel.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin-panel"
+  to = "/admin-panel.html"
+  status = 200
+
+[[redirects]]
+  from = "/teacher"
+  to = "/teacher-dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/teacher-dashboard"
+  to = "/teacher-dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/calculated"
+  to = "/calculated.html"
+  status = 200
+
+[[redirects]]
+  from = "/ai-studio"
+  to = "/ai-studio.html"
+  status = 200
+
+[[redirects]]
+  from = "/board"
+  to = "/board.html"
+  status = 200
+
+[[redirects]]
+  from = "/chat"
+  to = "/chat.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/register"
+  to = "/register.html"
+  status = 200
+
+[[redirects]]
+  from = "/wena"
+  to = "/wena.html"
+  status = 200
+
+[[redirects]]
+  from = "/pol"
+  to = "/pol.html"
+  status = 200
+
+[[redirects]]
+  from = "/pola-10"
+  to = "/pola-10.html"
+  status = 200
+
+[[redirects]]
+  from = "/pola-11"
+  to = "/pola-11.html"
+  status = 200
+
+[[redirects]]
+  from = "/pola-12"
+  to = "/pola-12.html"
+  status = 200
