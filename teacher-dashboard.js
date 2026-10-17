@@ -813,31 +813,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnToggleTGeminiKey = document.getElementById('btn-toggle-t-gemini-key');
     const tGeminiKeyStatus = document.getElementById('t-gemini-key-status');
 
-    // Test & Verify Gemini API Key directly against Google Gemini API
+    // Test & Verify Gemini API Key
     async function testGeminiApiKey(key) {
         if (!key) return { valid: false, error: 'تکایە کلیلی API داخل بکە' };
         try {
-            const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(key)}`;
-            const response = await fetch(testUrl, {
+            const serverRes = await fetch('/api/gemini/validate-key', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: "سڵاو" }] }]
-                })
+                body: JSON.stringify({ apiKey: key })
             });
-
-            if (response.ok) {
-                const data = await response.json().catch(() => ({}));
-                if (data.candidates && data.candidates.length > 0) {
-                    return { valid: true };
-                }
+            const data = await serverRes.json().catch(() => ({}));
+            if (serverRes.ok && data.valid) {
+                return { valid: true, message: data.message };
             }
-
-            const errData = await response.json().catch(() => ({}));
-            const msg = errData?.error?.message || `کۆدی هەڵە: ${response.status}`;
-            return { valid: false, error: msg };
+            return { valid: false, error: data.error || 'کلیل نادروستە' };
         } catch (e) {
-            return { valid: false, error: e.message || 'هەڵەی پەیوەندی کردن بە سێرڤەری Google' };
+            return { valid: false, error: e.message || 'هەڵەی پەیوەندی کردن بە سێرڤەر' };
         }
     }
 

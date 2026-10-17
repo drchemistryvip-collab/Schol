@@ -134,6 +134,9 @@ window.checkUserStatus = checkUserStatus;
             if (user && isSuperAdmin(user)) {
                 document.body.classList.add('admin-mode');
                 localStorage.setItem('is_admin_mode_active', 'true');
+            } else {
+                document.body.classList.remove('admin-mode');
+                localStorage.removeItem('is_admin_mode_active');
             }
         });
     }

@@ -55,7 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 await checkUserStatus(user);
             }
             
-            window.location.href = 'index.html';
+            const profileSaved = localStorage.getItem('app_user_profile');
+            const hasProfile = profileSaved && JSON.parse(profileSaved).isProfileComplete;
+
+            if (!hasProfile && !isOfficialSuperAdmin) {
+                window.location.href = 'index.html?setupProfile=true';
+            } else {
+                window.location.href = 'index.html';
+            }
 
         } catch (error) {
             console.error('Login Error:', error);
@@ -77,15 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
         googleLoginBtn.addEventListener('click', async () => {
             googleLoginBtn.disabled = true;
             try {
-                let user = null;
-                if (window.GoogleDriveService) {
-                    const result = await window.GoogleDriveService.signInWithGoogle();
-                    user = result.user;
-                } else {
-                    const provider = new firebase.auth.GoogleAuthProvider();
-                    const result = await auth.signInWithPopup(provider);
-                    user = result.user;
-                }
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
 
                 if (user) {
                     const isOfficialSuperAdmin = window.isSuperAdmin && window.isSuperAdmin(user);
@@ -95,24 +97,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.removeItem('is_admin_mode_active');
                     }
 
+                    const profileSaved = localStorage.getItem('app_user_profile');
+                    const hasProfile = profileSaved && JSON.parse(profileSaved).isProfileComplete;
+
                     localStorage.setItem('app_logged_in_user', JSON.stringify({
                         uid: user.uid,
                         displayName: user.displayName || user.email,
                         email: user.email,
-                        role: isOfficialSuperAdmin ? 'super_admin' : 'student',
+                        photoURL: user.photoURL || '',
+                        role: isOfficialSuperAdmin ? 'super_admin' : (hasProfile ? JSON.parse(profileSaved).role : 'student'),
                         isAdmin: isOfficialSuperAdmin
                     }));
 
                     if (typeof checkUserStatus === 'function') {
                         await checkUserStatus(user);
                     }
-                    window.location.href = 'index.html';
+                    
+                    // If profile not yet completed, redirect to setup profile
+                    if (!hasProfile && !isOfficialSuperAdmin) {
+                        window.location.href = 'index.html?setupProfile=true';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
                 }
             } catch (err) {
                 console.error('Google Sign-In Error:', err);
                 if (loginError) {
-                    if (err.code === 'auth/unauthorized-domain') {
-                        loginError.innerHTML = 'ئاگاداری: پێویستە ناونیشانی sch001.netlify.app لە ناو Firebase Console زیاد بکرێت (Authentication -> Settings -> Authorized Domains).';
+                    if (err.code === 'auth/popup-closed-by-user') {
+                        loginError.textContent = 'پەنجەرەی گووگڵ پێش تەواوبوونی چوونەژوورەوە داخرا. تکایە دووبارە هەوڵ بدەرەوە.';
+                    } else if (err.code === 'auth/unauthorized-domain') {
+                        loginError.innerHTML = 'ئاگاداری: پێویستە ناونیشانی ئەم وێبسایتە لە ناو Firebase Console زیاد بکرێت (Authentication -> Settings -> Authorized Domains).';
                     } else {
                         loginError.textContent = 'کێشەیەک لە چوونەژوورەوە بە گووگڵ چێبوو: ' + (err.message || '');
                     }

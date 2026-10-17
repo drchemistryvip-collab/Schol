@@ -1,83 +1,111 @@
-// --- START OF FILE: register-script.js (GUHERTÎ) ---
+// --- START OF FILE: register-script.js (SECURED & STABLE) ---
 document.addEventListener('DOMContentLoaded', () => {
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+    const auth = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth() : null;
+    const db = (typeof window !== 'undefined' && window.db) ? window.db : ((typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null);
 
     const registerForm = document.getElementById('register-form');
     const registerError = document.getElementById('register-error');
 
-    registerForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fullName = document.getElementById('fullName').value.trim();
-        const phoneNumber = document.getElementById('phoneNumber').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const secretNumber = document.getElementById('confirmPassword').value.trim();
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
 
-        if (!fullName || !phoneNumber || !email || !password || !secretNumber) {
-            registerError.textContent = 'تکایە هەمی خانەیان پر بکە.';
-            registerError.style.display = 'block';
-            return;
-        }
+            if (!fullName || !phoneNumber || !email || !password || !confirmPassword) {
+                registerError.textContent = 'تکایە هەمی خانەیان پر بکە.';
+                registerError.style.display = 'block';
+                return;
+            }
 
-        const submitButton = registerForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.textContent = 'ل هیڤیێ بە...';
-        registerError.style.display = 'none';
+            if (password.length < 6) {
+                registerError.textContent = 'تێپەڕەوشە دەبێت لایەنی کەم ٦ پیت یان ژمارە بێت.';
+                registerError.style.display = 'block';
+                return;
+            }
 
-        try {
-            let user = null;
-            let usedFirebase = false;
+            if (password !== confirmPassword) {
+                registerError.textContent = 'تێپەڕەوشە و دووبارەکردنەوەی وەک یەک نین، تکایە دڵنیابە لە دروستی.';
+                registerError.style.display = 'block';
+                return;
+            }
+
+            const submitButton = registerForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.textContent = 'ل هیڤیێ بە...';
+            registerError.style.display = 'none';
+
+            // Timeout wrapper to prevent eternal hanging on network / unauthorized domain issues
+            const withTimeout = (promise, ms = 4000) => {
+                return Promise.race([
+                    promise,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+                ]);
+            };
 
             try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                user = userCredential.user;
-                usedFirebase = true;
-                
-                await db.collection('users').doc(user.uid).set({
-                    fullName: fullName,
-                    phoneNumber: phoneNumber,
-                    email: email,
-                    secretNumber: secretNumber,
-                    isSubscribed: false, 
-                    isAdmin: false, // New users NEVER have admin privileges
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch (fbError) {
-                console.warn('Firebase createUser error, attempting intelligent diagnosis/fallback:', fbError);
+                let userUid = 'user_' + Date.now();
+                let userEmail = email;
+                let registeredWithFirebase = false;
 
-                if (fbError.code === 'auth/email-already-in-use') {
-                    throw fbError;
-                } else if (fbError.code === 'auth/weak-password') {
-                    throw fbError;
-                } else if (fbError.code === 'auth/invalid-email') {
-                    throw fbError;
+                if (auth) {
+                    try {
+                        const userCredential = await withTimeout(auth.createUserWithEmailAndPassword(email, password), 4500);
+                        if (userCredential && userCredential.user) {
+                            userUid = userCredential.user.uid;
+                            registeredWithFirebase = true;
+
+                            // Sync profile to Firestore
+                            if (db) {
+                                db.collection('users').doc(userUid).set({
+                                    fullName: fullName,
+                                    phoneNumber: phoneNumber,
+                                    email: email,
+                                    role: 'student',
+                                    isAdmin: false,
+                                    createdAt: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+                                }).catch(err => console.warn('Firestore user save notice:', err));
+                            }
+                        }
+                    } catch (fbError) {
+                        console.warn('Firebase createUser warning/fallback:', fbError);
+
+                        if (fbError.code === 'auth/email-already-in-use') {
+                            throw fbError;
+                        } else if (fbError.code === 'auth/weak-password') {
+                            throw fbError;
+                        } else if (fbError.code === 'auth/invalid-email') {
+                            throw fbError;
+                        }
+                        // For domain unauthorized, timeout, or network issues: fallback to local storage
+                    }
                 }
 
-                // If unauthorized domain (e.g. Netlify) or operation not allowed in Firebase
-                // Fallback to storing user locally so the user is not locked out
+                // Save user into local storage users registry
                 const localUsers = JSON.parse(localStorage.getItem('app_registered_users') || '[]');
-                const exists = localUsers.some(u => u.email.toLowerCase() === email.toLowerCase());
-                if (exists) {
+                const exists = localUsers.some(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+                if (exists && !registeredWithFirebase) {
                     throw { code: 'auth/email-already-in-use' };
                 }
 
-                const newUser = {
-                    uid: 'user_' + Date.now(),
+                const newUserRecord = {
+                    uid: userUid,
                     fullName: fullName,
                     phoneNumber: phoneNumber,
                     email: email,
-                    secretNumber: secretNumber,
-                    isSubscribed: false,
+                    role: 'student',
                     isAdmin: false,
                     createdAt: Date.now()
                 };
-                localUsers.push(newUser);
+                localUsers.push(newUserRecord);
                 localStorage.setItem('app_registered_users', JSON.stringify(localUsers));
 
-                // Save active session as student (NEVER admin)
+                // Save active session
                 localStorage.setItem('app_logged_in_user', JSON.stringify({
-                    uid: newUser.uid,
+                    uid: userUid,
                     displayName: fullName,
                     email: email,
                     phoneNumber: phoneNumber,
@@ -86,45 +114,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 }));
                 localStorage.removeItem('is_admin_mode_active');
                 localStorage.setItem('app_learn_user_role', 'student');
+
+                // Redirect directly to Profile Setup
+                window.location.href = 'index.html?setupProfile=true';
+
+            } catch (error) {
+                console.error('Register Error:', error);
+                if (error.code === 'auth/email-already-in-use') {
+                    registerError.textContent = 'ئەڤ ئیمەیلە بەری نها هاتیە تۆمارکرن. تکایە بچۆ لاپەڕەی چوونەژوور.';
+                } else if (error.code === 'auth/weak-password') {
+                    registerError.textContent = 'تێپەڕەوشە لاوازە، دڤێت ژ 6 پیتا پتر بیت.';
+                } else if (error.code === 'auth/invalid-email') {
+                    registerError.textContent = 'ناونیشانی ئیمەیل نادروستە، تکایە ئیمەیلێکی دروست بنووسە.';
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    registerError.innerHTML = 'ئاگاداری: پێویستە ناونیشانی ئەم وێبسایتە لە ناو Firebase Console زیاد بکرێت (Authentication -> Settings -> Authorized Domains).';
+                } else {
+                    registerError.textContent = 'کێشەیەک ڕوویدا: ' + (error.message || 'تکایە دووبارە هەوڵ بدەرەوە');
+                }
+                registerError.style.display = 'block';
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'تۆمار بکە';
             }
+        });
+    }
 
-            // Normal successful navigation to pending page
-            window.location.href = 'pending.html';
-
-        } catch (error) {
-            console.error('Register Error:', error);
-            if (error.code === 'auth/email-already-in-use') {
-                registerError.textContent = 'ئەڤ ئیمەیلە بەری نها هاتیە تۆمارکرن. تکایە بچۆ لاپەڕەی چوونەژوور.';
-            } else if (error.code === 'auth/weak-password') {
-                registerError.textContent = 'تێپەڕەوشە لاوازە، دڤێت ژ 6 پیتا پتر بیت.';
-            } else if (error.code === 'auth/invalid-email') {
-                registerError.textContent = 'ناونیشانی ئیمەیل نادروستە، تکایە ئیمەیلێکی دروست بنووسە.';
-            } else if (error.code === 'auth/unauthorized-domain') {
-                registerError.innerHTML = 'دۆمەینی ماڵپەڕەکە (Netlify) لە ناو لیستی Authorized Domains لە فایەربەیس چالاک نەکراوە.<br><small>تکایە ناونیشانی sch001.netlify.app لە بەشی Firebase Auth -> Settings زیاد بکە.</small>';
-            } else {
-                registerError.textContent = 'کێشەیەک ڕوویدا: ' + (error.message || 'تکایە دووبارە هەوڵ بدەرەوە');
-            }
-            registerError.style.display = 'block';
-        } finally {
-            submitButton.disabled = false;
-            submitButton.textContent = 'تۆمار بکە';
-        }
-    });
-
+    // Google Quick Register with pure Firebase Auth
     const googleRegBtn = document.getElementById('google-register-btn');
-    if (googleRegBtn) {
+    if (googleRegBtn && auth) {
         googleRegBtn.addEventListener('click', async () => {
             googleRegBtn.disabled = true;
             try {
-                let user = null;
-                if (window.GoogleDriveService) {
-                    const res = await window.GoogleDriveService.signInWithGoogle();
-                    user = res.user;
-                } else {
-                    const provider = new firebase.auth.GoogleAuthProvider();
-                    const result = await auth.signInWithPopup(provider);
-                    user = result.user;
-                }
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({ prompt: 'select_account' });
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
 
                 if (user) {
                     const isOfficialSuperAdmin = window.isSuperAdmin && window.isSuperAdmin(user);
@@ -133,37 +157,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         localStorage.removeItem('is_admin_mode_active');
                     }
-                    
-                    // Sync profile to Firestore users collection
-                    try {
-                        await db.collection('users').doc(user.uid).set({
-                            fullName: user.displayName || 'بەکارهێنەری گووگڵ',
-                            email: user.email,
-                            phoneNumber: user.phoneNumber || '',
-                            isSubscribed: true,
-                            isAdmin: isOfficialSuperAdmin,
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    } catch (e) {
-                        console.warn('Firestore user profile sync:', e);
-                    }
 
-                    // Save local session
+                    // Save session
                     localStorage.setItem('app_logged_in_user', JSON.stringify({
                         uid: user.uid,
                         displayName: user.displayName || user.email,
                         email: user.email,
+                        photoURL: user.photoURL || '',
                         role: isOfficialSuperAdmin ? 'super_admin' : 'student',
                         isAdmin: isOfficialSuperAdmin
                     }));
 
-                    window.location.href = 'index.html';
+                    if (typeof checkUserStatus === 'function') {
+                        await checkUserStatus(user);
+                    }
+
+                    // Go to Profile Setup
+                    window.location.href = 'index.html?setupProfile=true';
                 }
             } catch (err) {
                 console.error('Google Register Error:', err);
                 if (registerError) {
-                    if (err.code === 'auth/unauthorized-domain') {
-                        registerError.innerHTML = 'ئاگاداری: پێویستە ناونیشانی sch001.netlify.app لە ناو Firebase Console زیاد بکرێت (Authentication -> Settings -> Authorized Domains).';
+                    if (err.code === 'auth/popup-closed-by-user') {
+                        registerError.textContent = 'پەنجەرەی گووگڵ پێش تەواوبوونی چوونەژوورەوە داخرا. تکایە دووبارە هەوڵ بدەرەوە.';
+                    } else if (err.code === 'auth/unauthorized-domain') {
+                        registerError.innerHTML = 'ئاگاداری: پێویستە ناونیشانی ئەم وێبسایتە لە ناو Firebase Console زیاد بکرێت (Authentication -> Settings -> Authorized Domains).';
                     } else {
                         registerError.textContent = 'کێشەیەک لە تۆمارکردن بە گووگڵ چێبوو: ' + (err.message || '');
                     }

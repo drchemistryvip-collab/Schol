@@ -77,6 +77,51 @@ async function startServer() {
   });
 
   // =========================================================================
+  // GEMINI API KEY VALIDATION ENDPOINT
+  // =========================================================================
+  app.post('/api/gemini/validate-key', async (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      const keyToTest = (apiKey && typeof apiKey === 'string' && apiKey.trim()) || process.env.GEMINI_API_KEY;
+      if (!keyToTest) {
+        return res.status(400).json({
+          success: false,
+          valid: false,
+          error: 'خەلەتە: هیچ کلیلی API نەهاتە دیتن یان دیاریکردن.'
+        });
+      }
+
+      const client = new GoogleGenAI({ apiKey: keyToTest });
+      const testRes = await client.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: 'Test connection: reply with OK'
+      });
+
+      if (testRes && testRes.text) {
+        return res.json({
+          success: true,
+          valid: true,
+          message: 'سەرکەفتی بوو! کلیلی API یا دروستە و مۆدێلا Gemini چالاکە.'
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          valid: false,
+          error: 'خەلەتە: مۆدێلێ نەشیا وەڵام بدەت.'
+        });
+      }
+    } catch (err: any) {
+      console.error('Validation of Gemini API key failed:', err);
+      const msg = err.message || '';
+      return res.status(400).json({
+        success: false,
+        valid: false,
+        error: `خەلەتە: کلیلی API نادروستە یان کار ناکەت (${msg})`
+      });
+    }
+  });
+
+  // =========================================================================
   // GEMINI TEACHER CONTENT GENERATION ENDPOINT
   // =========================================================================
   app.post('/api/gemini/generate-teacher-content', async (req, res) => {
