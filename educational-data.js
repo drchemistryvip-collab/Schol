@@ -23,7 +23,586 @@ const GRADES_CONFIG = [
     { id: '9', name: 'پۆلا ٩ (نەهێ)', shortName: 'پۆلا ٩', level: 'middle', icon: 'fa-graduation-cap', color: '#457b9d' },
     { id: '10', name: 'پۆلا ١٠ (دەهێ)', shortName: 'پۆلا ١٠', level: 'high', icon: 'fa-school', color: '#8A2BE2' },
     { id: '11', name: 'پۆلا ١١ (یازدێ)', shortName: 'پۆلا ١١', level: 'high', icon: 'fa-flask', color: '#007BFF' },
-    { id: '12', name: 'پۆلا ١٢ (دوازدێ)', shortName: 'پۆلا ١٢', level: 'high', icon: 'fa-award', color: '#28a745' }
+    { id: '12', name: 'پۆلا ١٢ (دوازدێ)', shortName: 'پۆلا ١٢', level: 'high', icon: 'fa-award', color: '#28a745' },
+    { id: 'univ', name: 'قۆناغا زانکۆیێ و پەیمانگەکان', shortName: 'زانکۆ', level: 'university', icon: 'fa-university', color: '#7209b7', customUrl: 'university.html' }
+];
+
+// =========================================================================
+// UNIVERSITY COLLEGES & DEPARTMENTS DATASET (کۆلێژ و بەشەکانی زانکۆ و معەدل)
+// =========================================================================
+const UNIVERSITY_DEPARTMENTS = [
+    // 1. کۆمەڵەی پزیشکی (Medical & Healthcare)
+    {
+        id: 'med_general',
+        nameKu: 'پزیشکیی گشتی (کۆلێژی پزیشکی)',
+        nameEn: 'General Medicine (M.B.Ch.B)',
+        category: 'medical',
+        categoryKu: 'کۆلێژێن پزیشکی',
+        branch: 'scientific',
+        minScoreGeneral: 97.4,
+        minScoreParallel: 95.8,
+        minScorePrivate: 85.0,
+        durationYears: 6,
+        icon: 'fa-user-md',
+        color: '#e63946',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی هەولێری پزیشکی', 'زانکۆی سلێمانی', 'زانکۆی سەلاحەدین'],
+        description: 'بەرزترین بەشی زانستی بۆ پێگەیاندنی پزیشکانی گشتی، نەشتەرگەری و چارەسەرکردنی نەخۆشییەکان.',
+        careerFields: 'نەخۆشخانەکانی کەرتی گشتی و تایبەت، کلینیک، سەنتەرەکانی توێژینەوەی پزیشکی'
+    },
+    {
+        id: 'med_dentistry',
+        nameKu: 'پزیشکیی ددان',
+        nameEn: 'Dentistry (B.D.S)',
+        category: 'medical',
+        categoryKu: 'کۆلێژێن پزیشکی',
+        branch: 'scientific',
+        minScoreGeneral: 95.8,
+        minScoreParallel: 94.2,
+        minScorePrivate: 82.0,
+        durationYears: 5,
+        icon: 'fa-tooth',
+        color: '#00b4d8',
+        universities: ['زانکۆی دهۆک', 'زانکۆی هەولێری پزیشکی', 'زانکۆی سلێمانی'],
+        description: 'چارەسەرکردن و جوانکاری و نەشتەرگەریی ددان و پووک و دەم و چەناگە.',
+        careerFields: 'کلینیکی تایبەت، نەخۆشخانەکان، سەنتەرەکانی چاندن و جوانکاریی ددان'
+    },
+    {
+        id: 'med_pharmacy',
+        nameKu: 'دەرمانسازی',
+        nameEn: 'Pharmacy (B.Pharm)',
+        category: 'medical',
+        categoryKu: 'کۆلێژێن پزیشکی',
+        branch: 'scientific',
+        minScoreGeneral: 94.6,
+        minScoreParallel: 93.0,
+        minScorePrivate: 80.0,
+        durationYears: 5,
+        icon: 'fa-pills',
+        color: '#2a9d8f',
+        universities: ['زانکۆی دهۆک', 'زانکۆی هەولێری پزیشکی', 'زانکۆی سلێمانی'],
+        description: 'زانستی ئامادەکردن، پشکنین و شیکاریی پێکهاتەی دەرمانەکان و ڕێنمایی چارەسەری.',
+        careerFields: 'دەرمانخانە، کۆمپانیاکانی دەرمان، کۆگاکانی دەرمان، تاقیگەی پیشەسازیی دەرمان'
+    },
+    {
+        id: 'med_anesthesia',
+        nameKu: 'بێهۆشکاری و سڕکردن (تەخدیر)',
+        nameEn: 'Anesthesia Technology',
+        category: 'medical',
+        categoryKu: 'کۆلێژێن پزیشکی و تەندروستی',
+        branch: 'scientific',
+        minScoreGeneral: 87.4,
+        minScoreParallel: 85.0,
+        minScorePrivate: 68.0,
+        durationYears: 4,
+        icon: 'fa-syringe',
+        color: '#7209b7',
+        universities: ['زانکۆی دهۆک', 'زانکۆی پۆلیتەکنیکی دهۆک', 'زانکۆی هەولێری پزیشکی', 'زانکۆی پۆلیتەکنیکی سلێمانی'],
+        description: 'بەڕێوەبردنی سڕکردنی نەخۆش لە هۆڵەکانی نەشتەرگەری و چاودێریی ورد (ICU).',
+        careerFields: 'هۆڵەکانی نەشتەرگەری، سەنتەری چاودێری چڕ، نەخۆشخانەکانی فریاکەوتن'
+    },
+    {
+        id: 'med_analysis',
+        nameKu: 'شیکاریی نەخۆشییەکان (تاقیگە)',
+        nameEn: 'Medical Laboratory Analysis',
+        category: 'medical',
+        categoryKu: 'کۆلێژێن پزیشکی و تەندروستی',
+        branch: 'scientific',
+        minScoreGeneral: 86.0,
+        minScoreParallel: 83.5,
+        minScorePrivate: 65.0,
+        durationYears: 4,
+        icon: 'fa-microscope',
+        color: '#f77f00',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی پۆلیتەکنیکی دهۆک', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'ئەنجامدانی پشکنینی کیمیایی، مۆلیکولەر، باکتریۆلۆجی و خوێن بۆ دەستنیشانکردنی نەخۆشییەکان.',
+        careerFields: 'تاقیگەکانی نەخۆشخانە، تاقیگەی تایبەت، بانکی خوێن، سەنتەری توێژینەوە'
+    },
+    {
+        id: 'med_nursing',
+        nameKu: 'پەرستاریی گشتی',
+        nameEn: 'General Nursing',
+        category: 'medical',
+        categoryKu: 'کۆلێژێن پزیشکی و تەندروستی',
+        branch: 'scientific',
+        minScoreGeneral: 85.2,
+        minScoreParallel: 82.0,
+        minScorePrivate: 65.0,
+        durationYears: 4,
+        icon: 'fa-heartbeat',
+        color: '#e63946',
+        universities: ['زانکۆی دهۆک', 'زانکۆی هەولێری پزیشکی', 'زانکۆی سلێمانی', 'زانکۆی زاخۆ'],
+        description: 'چاودێریکردنی تەندروستیی نەخۆش و دابینکردنی خزمەتگوزارییە تەندروستییە سەرەکییەکان.',
+        careerFields: 'نەخۆشخانەکان، نۆڕینگەکان، بنکە تەندروستییەکان، سەنتەرەکانی فریاکەوتن'
+    },
+    {
+        id: 'med_radiology',
+        nameKu: 'تیشک و سۆنار (تەکنەلۆژیای تیشک)',
+        nameEn: 'Radiology & Medical Imaging',
+        category: 'medical',
+        categoryKu: 'کۆلێژێن پزیشکی و تەندروستی',
+        branch: 'scientific',
+        minScoreGeneral: 84.8,
+        minScoreParallel: 82.0,
+        minScorePrivate: 66.0,
+        durationYears: 4,
+        icon: 'fa-x-ray',
+        color: '#4361ee',
+        universities: ['زانکۆی دهۆک', 'زانکۆی پۆلیتەکنیکی دهۆک', 'زانکۆی هەولێری پزیشکی', 'زانکۆی پۆلیتەکنیکی سلێمانی'],
+        description: 'وێنەگرتنی تیشکی (X-ray, MRI, CT Scan, Ultrasound) بۆ پشکنینی ناوەوەی لەش.',
+        careerFields: 'بەشەکانی تیشک لە نەخۆشخانە و سەنتەرە تایبەتەکان'
+    },
+    {
+        id: 'med_physiotherapy',
+        nameKu: 'چارەسەری سروشتی (فیزۆتێراپی)',
+        nameEn: 'Physiotherapy',
+        category: 'medical',
+        categoryKu: 'کۆلێژێن پزیشکی و تەندروستی',
+        branch: 'scientific',
+        minScoreGeneral: 83.5,
+        minScoreParallel: 80.5,
+        minScorePrivate: 65.0,
+        durationYears: 4,
+        icon: 'fa-running',
+        color: '#2ec4b6',
+        universities: ['زانکۆی دهۆک', 'زانکۆی هەولێری پزیشکی', 'زانکۆی پۆلیتەکنیکی سلێمانی'],
+        description: 'شیاندنەوە و چارەسەرکردنی نەخۆشییەکانی جومگە و دەمار و ماسولکە بەبێ دەرمان.',
+        careerFields: 'سەنتەری چارەسەری سروشتی، یانە وەرزشییەکان، نەخۆشخانەکان'
+    },
+
+    // 2. ئەندازیاری (Engineering)
+    {
+        id: 'eng_software',
+        nameKu: 'ئەندازیاری پرۆگرامسازی و کۆمپیوتەر',
+        nameEn: 'Software & Computer Engineering',
+        category: 'engineering',
+        categoryKu: 'کۆلێژێن ئەندازیاری',
+        branch: 'scientific',
+        minScoreGeneral: 88.5,
+        minScoreParallel: 85.0,
+        minScorePrivate: 68.0,
+        durationYears: 4,
+        icon: 'fa-laptop-code',
+        color: '#3a0ca3',
+        universities: ['زانکۆی دهۆک', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی', 'زانکۆی زاخۆ', 'زانکۆی پۆلیتەکنیکی دهۆک'],
+        description: 'دیزاین و پەرەپێدانی سیستمە زیرەکەکان، نەرمەواڵە، ئەپڵیکەیشن و تۆڕەکانی کۆمپیوتەر.',
+        careerFields: 'کۆمپانیاکانی تەکنەلۆژیا، بانکەکان، کۆمپانیاکانی نەوت، پەرەپێدەری سەربەخۆ'
+    },
+    {
+        id: 'eng_architecture',
+        nameKu: 'ئەندازیاریی تەلارسازی (دیزاین و تەلار)',
+        nameEn: 'Architectural Engineering',
+        category: 'engineering',
+        categoryKu: 'کۆلێژێن ئەندازیاری',
+        branch: 'scientific',
+        minScoreGeneral: 86.0,
+        minScoreParallel: 82.5,
+        minScorePrivate: 65.0,
+        durationYears: 5,
+        icon: 'fa-drafting-compass',
+        color: '#e76f51',
+        universities: ['زانکۆی دهۆک', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'دیزاینکردنی باڵەخانە، پڕۆژە نیشتەجێبوونەکان و پلانە ئەندازیارییە مۆدێرنەکان.',
+        careerFields: 'نووسینگەی ئەندازیاری، کۆمپانیاکانی بەڵێندەرایەتی و وەبەرهێنان'
+    },
+    {
+        id: 'eng_petroleum',
+        nameKu: 'ئەندازیاریی نەوت و سامانە سروشتییەکان',
+        nameEn: 'Petroleum & Natural Gas Engineering',
+        category: 'engineering',
+        categoryKu: 'کۆلێژێن ئەندازیاری',
+        branch: 'scientific',
+        minScoreGeneral: 82.5,
+        minScoreParallel: 79.0,
+        minScorePrivate: 65.0,
+        durationYears: 4,
+        icon: 'fa-oil-well',
+        color: '#264653',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی پۆلیتەکنیکی دهۆک'],
+        description: 'هەڵکەندن، دەرهێنان و بەرهەمهێنانی نەوتی خاو و گازی سروشتی بە شێوازی سەردەمیانە.',
+        careerFields: 'کۆمپانیا جیهانی و خۆماڵییەکانی نەوت، کێڵگە نەوتییەکان، پاڵاوگەکان'
+    },
+    {
+        id: 'eng_civil',
+        nameKu: 'ئەندازیاریی شارستانی (مەدەنی)',
+        nameEn: 'Civil & Structural Engineering',
+        category: 'engineering',
+        categoryKu: 'کۆلێژێن ئەندازیاری',
+        branch: 'scientific',
+        minScoreGeneral: 81.0,
+        minScoreParallel: 77.0,
+        minScorePrivate: 62.0,
+        durationYears: 4,
+        icon: 'fa-building',
+        color: '#457b9d',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'دروستکردنی پرد، ڕێگاوبان، بەنداو، باڵەخانە و سەرپەرشتیکردنی پڕۆژە بیناسازییەکان.',
+        careerFields: 'کەرتی بیناسازی، فەرمانگەکانی شارەوانی، کۆمپانیاکانی پرۆژەی گشتی'
+    },
+    {
+        id: 'eng_electrical',
+        nameKu: 'ئەندازیاریی کارەبا و ئەلیکترۆنیک',
+        nameEn: 'Electrical & Electronic Engineering',
+        category: 'engineering',
+        categoryKu: 'کۆلێژێن ئەندازیاری',
+        branch: 'scientific',
+        minScoreGeneral: 77.0,
+        minScoreParallel: 73.0,
+        minScorePrivate: 60.0,
+        durationYears: 4,
+        icon: 'fa-bolt',
+        color: '#e63946',
+        universities: ['زانکۆی دهۆک', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'سیستمەکانی بەرهەمهێنان، گواستنەوە و دابەشکردنی وزەی کارەبا و کۆنترۆڵ.',
+        careerFields: 'وێستگەکانی کارەبا، کۆمپانیاکانی پەیوەندی، فەرمانگەی وزە'
+    },
+    {
+        id: 'eng_mechanical',
+        nameKu: 'ئەندازیاریی میکانیک',
+        nameEn: 'Mechanical Engineering',
+        category: 'engineering',
+        categoryKu: 'کۆلێژێن ئەندازیاری',
+        branch: 'scientific',
+        minScoreGeneral: 75.5,
+        minScoreParallel: 71.0,
+        minScorePrivate: 60.0,
+        durationYears: 4,
+        icon: 'fa-cogs',
+        color: '#6c757d',
+        universities: ['زانکۆی دهۆک', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'دیزاین و بەرهەمهێنانی ئامێر، ماتۆڕ، سیستمەکانی ساردکەرەوە و گەرمکەرەوە.',
+        careerFields: 'کارگەکان، کارگەی ئۆتۆمبێل، فڕۆکەوانی، بەرهەمهێنانی پیشەسازی'
+    },
+
+    // 3. زانست و کۆمپیوتەر (Science & IT)
+    {
+        id: 'sci_cs',
+        nameKu: 'زانستی کۆمپیوتەر (Computer Science)',
+        nameEn: 'Computer Science (B.Sc)',
+        category: 'science',
+        categoryKu: 'کۆلێژێن زانست و کۆمپیوتەر',
+        branch: 'scientific',
+        minScoreGeneral: 76.0,
+        minScoreParallel: 72.0,
+        minScorePrivate: 60.0,
+        durationYears: 4,
+        icon: 'fa-code',
+        color: '#0077b6',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی', 'زانکۆی پۆلیتەکنیکی دهۆک'],
+        description: 'فێربوونی ئەلگۆریزم، زیرەکیی دەستکرد (AI)، داتابەیس و پەرەپێدانی سیستم و وێب.',
+        careerFields: 'پرۆگرامەر، ئەندازیاری داتا، بەرپرسی پاراستنی زانیاری (Cybersecurity)'
+    },
+    {
+        id: 'sci_chemistry',
+        nameKu: 'کیمیای گشتی و پزیشکی',
+        nameEn: 'Pure & Applied Chemistry',
+        category: 'science',
+        categoryKu: 'کۆلێژێن زانست',
+        branch: 'scientific',
+        minScoreGeneral: 72.0,
+        minScoreParallel: 68.0,
+        minScorePrivate: 58.0,
+        durationYears: 4,
+        icon: 'fa-flask',
+        color: '#00b4d8',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'لێکۆڵینەوە لە پێکهاتە، کارلێک و تایبەتمەندییە کیمیاییەکانی ماددە و تێکەڵەکان.',
+        careerFields: 'کۆمپانیاکانی نەوت، پشکنینی کۆنتڕۆڵی جۆری، تاقیگە، مامۆستایی زانکۆ و قوتابخانە'
+    },
+    {
+        id: 'sci_biology',
+        nameKu: 'زیندەوەرزانی و بایۆلۆجی',
+        nameEn: 'Biology & Biotechnology',
+        category: 'science',
+        categoryKu: 'کۆلێژێن زانست',
+        branch: 'scientific',
+        minScoreGeneral: 73.0,
+        minScoreParallel: 69.0,
+        minScorePrivate: 58.0,
+        durationYears: 4,
+        icon: 'fa-dna',
+        color: '#2a9d8f',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'لێکۆڵینەوە لە زیندەوەران، مایکڕۆب، بۆماوەزانی (Genetics) و ژینگەزانی.',
+        careerFields: 'تاقیگە، سەنتەری توێژینەوەی کشتوکاڵ، وەزارەتی تەندروستی و ژینگە'
+    },
+    {
+        id: 'sci_physics',
+        nameKu: 'فیزیا و فیزیای پزیشکی',
+        nameEn: 'Physics & Medical Physics',
+        category: 'science',
+        categoryKu: 'کۆلێژێن زانست',
+        branch: 'scientific',
+        minScoreGeneral: 68.0,
+        minScoreParallel: 65.0,
+        minScorePrivate: 55.0,
+        durationYears: 4,
+        icon: 'fa-atom',
+        color: '#7209b7',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'یاساکانی گەردوون، کارەبا، جوولە، کوانتەم و فیزیای تیشکی پزیشکی.',
+        careerFields: 'مامۆستایی، سەنتەرەکانی تیشک، دەزگاکانی پێوانەسازی و پیشەسازی'
+    },
+    {
+        id: 'sci_math',
+        nameKu: 'بیرکاری و ئامار (Data Science)',
+        nameEn: 'Mathematics & Statistics',
+        category: 'science',
+        categoryKu: 'کۆلێژێن زانست',
+        branch: 'scientific',
+        minScoreGeneral: 66.0,
+        minScoreParallel: 63.0,
+        minScorePrivate: 55.0,
+        durationYears: 4,
+        icon: 'fa-square-root-alt',
+        color: '#f77f00',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'شیکاریی ژمارەیی، ئەگەرزانی، داتا و مۆدێلسازیی بیرکارییانە.',
+        careerFields: 'شیکەرەوەی داتا، کۆمپانیاکانی بیمە، بانکەکان، مامۆستایی'
+    },
+
+    // 4. کارگێڕی، ئابووری و یاسا (Business, Economics & Law)
+    {
+        id: 'law',
+        nameKu: 'یاسا (کۆلێژی یاسا)',
+        nameEn: 'Law & Jurisprudence (LL.B)',
+        category: 'business',
+        categoryKu: 'کۆلێژێن یاسا و کارگێڕی',
+        branch: 'both',
+        minScoreGeneral: 78.0,
+        minScoreParallel: 74.0,
+        minScorePrivate: 60.0,
+        durationYears: 4,
+        icon: 'fa-balance-scale',
+        color: '#8b5cf6',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'یاسای مەدەنی، سزایی، نێودەوڵەتی، دەستوور و بەڕێوەبردنی دادپەروەری.',
+        careerFields: 'پارێزەر، دادوەر، لێکۆڵەری دادوەری، ڕاوێژکاری یاسایی لە کۆمپانیاکان'
+    },
+    {
+        id: 'bus_accounting',
+        nameKu: 'ژمێریاری (Accounting)',
+        nameEn: 'Accounting & Auditing',
+        category: 'business',
+        categoryKu: 'کۆلێژێن کارگێڕی و ئابووری',
+        branch: 'both',
+        minScoreGeneral: 68.0,
+        minScoreParallel: 64.0,
+        minScorePrivate: 55.0,
+        durationYears: 4,
+        icon: 'fa-file-invoice-dollar',
+        color: '#10b981',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی', 'زانکۆی پۆلیتەکنیکی دهۆک'],
+        description: 'بەڕێوەبردنی تۆمارە داراییەکان، باج، ووردبینی (Auditing) و شیکاریی داهات.',
+        careerFields: 'ژمێریاری بانک، کۆمپانیاکان، وەزارەتی دارایی، وردبینیکاری سەربەخۆ'
+    },
+    {
+        id: 'bus_finance',
+        nameKu: 'دارایی و بانک (Finance & Banking)',
+        nameEn: 'Finance & Banking',
+        category: 'business',
+        categoryKu: 'کۆلێژێن کارگێڕی و ئابووری',
+        branch: 'both',
+        minScoreGeneral: 68.5,
+        minScoreParallel: 65.0,
+        minScorePrivate: 55.0,
+        durationYears: 4,
+        icon: 'fa-university',
+        color: '#0ea5e9',
+        universities: ['زانکۆی دهۆک', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'بەڕێوەبردنی سەرمایە، بازاڕی دارایی (Stock Market) و کارووباری بانکی سەردەمیانە.',
+        careerFields: 'بانکە بازرگانی و ئەهلییەکان، کۆمپانیاکانی وەبەرهێنان، بۆرسە'
+    },
+    {
+        id: 'bus_admin',
+        nameKu: 'کارگێڕیی کار (Business Administration)',
+        nameEn: 'Business Administration (BBA)',
+        category: 'business',
+        categoryKu: 'کۆلێژێن کارگێڕی و ئابووری',
+        branch: 'both',
+        minScoreGeneral: 65.0,
+        minScoreParallel: 62.0,
+        minScorePrivate: 55.0,
+        durationYears: 4,
+        icon: 'fa-briefcase',
+        color: '#f59e0b',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی', 'زانکۆی پۆلیتەکنیکی دهۆک'],
+        description: 'ستراتیژی بازرگانی، سەرکردایەتی، بەبازاڕکردن (Marketing) و سەرچاوە مرۆییەکان (HR).',
+        careerFields: 'بەڕێوەبەری کۆمپانیا، بەشی سەرچاوە مرۆییەکان، کۆمپانیاکانی بەبازاڕکردن'
+    },
+    {
+        id: 'bus_international',
+        nameKu: 'پەیوەندییە نێودەوڵەتییەکان و زانستە سیاسییەکان',
+        nameEn: 'International Relations & Diplomacy',
+        category: 'business',
+        categoryKu: 'کۆلێژێن زانستی سیاسی',
+        branch: 'both',
+        minScoreGeneral: 67.0,
+        minScoreParallel: 63.0,
+        minScorePrivate: 55.0,
+        durationYears: 4,
+        icon: 'fa-globe-americas',
+        color: '#6366f1',
+        universities: ['زانکۆی دهۆک', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'دیپلۆماسی، سیاسەتی دەرەوە، پەیوەندی نێوان دەوڵەتان و ڕێکخراوە جیهانییەکان.',
+        careerFields: 'کونسوڵخانە، وەزارەتی دەرەوە، ڕێکخراوە ناحکومییەکان (NGO)، میدیا'
+    },
+
+    // 5. زمان، پەروەردە و ئاداب (Languages & Education)
+    {
+        id: 'lang_english',
+        nameKu: 'زمانی ئینگلیزی (وەرگێڕان و ئەدەب)',
+        nameEn: 'English Language & Translation',
+        category: 'arts',
+        categoryKu: 'کۆلێژێن زمان و پەروەردە',
+        branch: 'both',
+        minScoreGeneral: 75.0,
+        minScoreParallel: 71.0,
+        minScorePrivate: 58.0,
+        durationYears: 4,
+        icon: 'fa-language',
+        color: '#ec4899',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'فێربوونی پرۆفیشناڵی زمانی ئینگلیزی، ئەدەب، زمانەوانی و تەکنیکەکانی وەرگێڕانی هاوکات.',
+        careerFields: 'وەرگێڕی کۆمپانیا و ڕێکخراوەکان، مامۆستای زمانی ئینگلیزی، میدیا'
+    },
+    {
+        id: 'edu_basic',
+        nameKu: 'کۆلێژی پەروەردەی بنەڕەت',
+        nameEn: 'College of Basic Education',
+        category: 'arts',
+        categoryKu: 'کۆلێژێن پەروەردە',
+        branch: 'both',
+        minScoreGeneral: 70.0,
+        minScoreParallel: 66.0,
+        minScorePrivate: 55.0,
+        durationYears: 4,
+        icon: 'fa-chalkboard-teacher',
+        color: '#14b8a6',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'پەروەردەکردن و ئامادەکردنی مامۆستایانی پسپۆڕ بۆ فێرکردنی قۆناغەکانی بنەڕەتی.',
+        careerFields: 'مامۆستای قوتابخانە حکومی و ئەهلییەکان، بەڕێوەبەرایەتی پەروەردە'
+    },
+    {
+        id: 'lang_kurdish',
+        nameKu: 'زمان و ئەدەبی کوردی',
+        nameEn: 'Kurdish Language & Literature',
+        category: 'arts',
+        categoryKu: 'کۆلێژێن زمان و ئاداب',
+        branch: 'both',
+        minScoreGeneral: 64.0,
+        minScoreParallel: 60.0,
+        minScorePrivate: 50.0,
+        durationYears: 4,
+        icon: 'fa-feather-alt',
+        color: '#f97316',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'ڕێزمان، ئەدەب، فۆلکلۆر و زمانەوانی کوردی (کرمانجی و سۆرانی).',
+        careerFields: 'مامۆستایی، دامەزراوە ڕۆشنبیرییەکان، دەزگاکانی چاپ و بڵاوکردنەوە'
+    },
+    {
+        id: 'lang_arabic',
+        nameKu: 'زمان و ئەدەبی عەرەبی',
+        nameEn: 'Arabic Language & Literature',
+        category: 'arts',
+        categoryKu: 'کۆلێژێن زمان و ئاداب',
+        branch: 'both',
+        minScoreGeneral: 64.0,
+        minScoreParallel: 60.0,
+        minScorePrivate: 50.0,
+        durationYears: 4,
+        icon: 'fa-book-open',
+        color: '#0284c7',
+        universities: ['زانکۆی دهۆک', 'زانکۆی زاخۆ', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'زانستی بەلاغە، ڕێزمان، زمانەوانی و مێژووی ئەدەبی عەرەبی.',
+        careerFields: 'مامۆستای زمانی عەرەبی، وەرگێڕان، ناوەندە ئەکادیمییەکان'
+    },
+    {
+        id: 'arts_media',
+        nameKu: 'ڕاگەیاندن و ڕۆژنامەوانی (Media)',
+        nameEn: 'Media & Digital Journalism',
+        category: 'arts',
+        categoryKu: 'کۆلێژێن ئاداب و ڕاگەیاندن',
+        branch: 'both',
+        minScoreGeneral: 65.0,
+        minScoreParallel: 61.0,
+        minScorePrivate: 55.0,
+        durationYears: 4,
+        icon: 'fa-video',
+        color: '#d946ef',
+        universities: ['زانکۆی دهۆک', 'زانکۆی سەلاحەدین', 'زانکۆی سلێمانی'],
+        description: 'میدیای دیجیتاڵ، کاری ڕۆژنامەوانی، بەرهەمهێنانی تەلەفزیۆنی و پێوەندییە گشتییەکان.',
+        careerFields: 'کەناڵەکانی تەلەفزیۆن، دەزگاکانی هەواڵ، بەشی ڕاگەیاندنی کۆمپانیا و وەزارەتەکان'
+    },
+
+    // 6. پەیمانگە تەکنیکییەکان و پۆلیتەکنیک (Polytechnic & Technical Institutes)
+    {
+        id: 'inst_medical_tech',
+        nameKu: 'پەیمانگەی تەکنیکی - تاقیگەی پزیشکی',
+        nameEn: 'Technical Institute - Medical Lab',
+        category: 'polytechnic',
+        categoryKu: 'پەیمانگە تەکنیکییەکان',
+        branch: 'scientific',
+        minScoreGeneral: 78.0,
+        minScoreParallel: 74.0,
+        minScorePrivate: 58.0,
+        durationYears: 2,
+        icon: 'fa-vial',
+        color: '#059669',
+        universities: ['زانکۆی پۆلیتەکنیکی دهۆک', 'زانکۆی پۆلیتەکنیکی هەولێر', 'زانکۆی پۆلیتەکنیکی سلێمانی'],
+        description: 'خوێندنی کرداری بۆ فێربوونی تەکنیک و ئامێرەکانی پشکنینی تاقیگەیی لە ماوەی ٢ ساڵدا.',
+        careerFields: 'یاریدەدەری تاقیگە لە نەخۆشخانە و تاقیگە تەندروستییەکان'
+    },
+    {
+        id: 'inst_it',
+        nameKu: 'پەیمانگەی تەکنیکی - تەکنەلۆژیای زانیاری (IT)',
+        nameEn: 'Technical Institute - Information Technology',
+        category: 'polytechnic',
+        categoryKu: 'پەیمانگە تەکنیکییەکان',
+        branch: 'both',
+        minScoreGeneral: 66.0,
+        minScoreParallel: 62.0,
+        minScorePrivate: 55.0,
+        durationYears: 2,
+        icon: 'fa-desktop',
+        color: '#2563eb',
+        universities: ['زانکۆی پۆلیتەکنیکی دهۆک', 'زانکۆی پۆلیتەکنیکی هەولێر', 'زانکۆی پۆلیتەکنیکی سلێمانی'],
+        description: 'چاودێریکردنی تۆڕ، چاککردنەوەی کۆمپیوتەر و ئەپلیکەیشنە پراکتیکییەکان لە ماوەی ٢ ساڵدا.',
+        careerFields: 'پشتیوانی تەکنیکی (IT Support)، بەڕێوەبەری تۆڕ لە کۆمپانیاکان'
+    },
+    {
+        id: 'inst_petroleum',
+        nameKu: 'پەیمانگەی تەکنیکی - تەکنەلۆژیای نەوت و وزە',
+        nameEn: 'Technical Institute - Petroleum Technology',
+        category: 'polytechnic',
+        categoryKu: 'پەیمانگە تەکنیکییەکان',
+        branch: 'scientific',
+        minScoreGeneral: 67.0,
+        minScoreParallel: 63.0,
+        minScorePrivate: 55.0,
+        durationYears: 2,
+        icon: 'fa-gas-pump',
+        color: '#d97706',
+        universities: ['زانکۆی پۆلیتەکنیکی دهۆک', 'زانکۆی پۆلیتەکنیکی هەولێر', 'زانکۆی پۆلیتەکنیکی سلێمانی'],
+        description: 'تەکنیکی کرداری کێڵگە نەوتییەکان، کارپێکردنی پاڵاوگە و ئامێرە نەوتییەکان.',
+        careerFields: 'تەکنیکاری نەوت لە کێڵگە نەوتییەکان و کۆمپانیاکانی وزە'
+    },
+    {
+        id: 'inst_admin',
+        nameKu: 'پەیمانگەی تەکنیکی - ژمێریاری و کارگێڕی',
+        nameEn: 'Technical Institute - Accounting & Admin',
+        category: 'polytechnic',
+        categoryKu: 'پەیمانگە تەکنیکییەکان',
+        branch: 'both',
+        minScoreGeneral: 60.0,
+        minScoreParallel: 57.0,
+        minScorePrivate: 50.0,
+        durationYears: 2,
+        icon: 'fa-clipboard-list',
+        color: '#4b5563',
+        universities: ['زانکۆی پۆلیتەکنیکی دهۆک', 'زانکۆی پۆلیتەکنیکی هەولێر', 'زانکۆی پۆلیتەکنیکی سلێمانی'],
+        description: 'کارگێڕیی نووسینگە، ژمێریاری بازرگانی و بەڕێوەبردنی بەڵگەنامەکان.',
+        careerFields: 'کارمەندی ئیداری و ژمێریاری لە کەرتی تایبەت و حکومی'
+    }
 ];
 
 // Language configurations mapping
@@ -1419,6 +1998,7 @@ class EducationalDataStore {
                 if (!snap.empty) {
                     const firestoreTeachers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     this.mergeLocalWithRemote(this.STORAGE_KEY_TEACHERS, firestoreTeachers);
+                    window.dispatchEvent(new CustomEvent('teachersUpdated', { detail: { teachers: firestoreTeachers } }));
                 }
             }, err => console.log('Firestore teachers sync note:', err.message));
 
@@ -1615,6 +2195,55 @@ class EducationalDataStore {
         return teachers.find(t => t.id === id) || null;
     }
 
+    getPendingTeachers() {
+        return this.getAllTeachers().filter(t => t.status === 'pending');
+    }
+
+    approveTeacher(teacherId) {
+        const teachers = this.getAllTeachers();
+        const idx = teachers.findIndex(t => t.id === teacherId);
+        if (idx >= 0) {
+            teachers[idx].status = 'approved';
+            teachers[idx].approvedAt = Date.now();
+            localStorage.setItem(this.STORAGE_KEY_TEACHERS, JSON.stringify(teachers));
+            const cur = this.getCurrentTeacher();
+            if (cur && cur.id === teacherId) {
+                this.setCurrentTeacher(teachers[idx]);
+            }
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                try {
+                    const firestoreDb = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
+                    firestoreDb.collection('teachers').doc(teacherId).set({ status: 'approved', approvedAt: Date.now() }, { merge: true }).catch(() => {});
+                } catch (e) {}
+            }
+            window.dispatchEvent(new CustomEvent('teachersUpdated', { detail: { teachers } }));
+            return teachers[idx];
+        }
+        return null;
+    }
+
+    rejectTeacher(teacherId) {
+        const teachers = this.getAllTeachers();
+        const idx = teachers.findIndex(t => t.id === teacherId);
+        if (idx >= 0) {
+            teachers[idx].status = 'rejected';
+            localStorage.setItem(this.STORAGE_KEY_TEACHERS, JSON.stringify(teachers));
+            const cur = this.getCurrentTeacher();
+            if (cur && cur.id === teacherId) {
+                this.setCurrentTeacher(teachers[idx]);
+            }
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                try {
+                    const firestoreDb = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
+                    firestoreDb.collection('teachers').doc(teacherId).set({ status: 'rejected' }, { merge: true }).catch(() => {});
+                } catch (e) {}
+            }
+            window.dispatchEvent(new CustomEvent('teachersUpdated', { detail: { teachers } }));
+            return teachers[idx];
+        }
+        return null;
+    }
+
     saveTeacher(teacherData) {
         const teachers = this.getAllTeachers();
         const existingIndex = teachers.findIndex(t => t.id === teacherData.id || (teacherData.email && t.email && t.email.toLowerCase() === teacherData.email.toLowerCase()));
@@ -1635,7 +2264,7 @@ class EducationalDataStore {
                 viewsCount: teacherData.viewsCount || 10,
                 grades: teacherData.grades || ['10', '11', '12'],
                 lang: teacherData.lang || this.getActiveLanguage(),
-                status: 'approved',
+                status: teacherData.status || 'approved',
                 createdAt: Date.now()
             };
             teachers.push(savedTeacher);
@@ -1646,7 +2275,12 @@ class EducationalDataStore {
 
         if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
             try {
-                firebase.firestore().collection('teachers').doc(savedTeacher.id).set(savedTeacher, { merge: true });
+                const firestoreDb = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
+                const remoteDoc = { ...savedTeacher };
+                if (remoteDoc.avatar && remoteDoc.avatar.length > 200000) {
+                    remoteDoc.avatar = '';
+                }
+                firestoreDb.collection('teachers').doc(savedTeacher.id).set(remoteDoc, { merge: true }).catch(() => {});
             } catch (e) {}
         }
         return savedTeacher;
@@ -1662,7 +2296,8 @@ class EducationalDataStore {
 
             if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
                 try {
-                    firebase.firestore().collection('teachers').doc(teacherId).update({
+                    const firestoreDb = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
+                    firestoreDb.collection('teachers').doc(teacherId).update({
                         viewsCount: firebase.firestore.FieldValue.increment(1)
                     }).catch(() => {});
                 } catch(e) {}
@@ -1691,7 +2326,7 @@ class EducationalDataStore {
     // Sorted by most watched / views descending!
     getTeachersForGrade(gradeId, customLang = null, subjectKey = null) {
         const targetLang = customLang || this.getActiveLanguage();
-        let allTeachers = this.getAllTeachers().filter(t => (t.lang || 'ku_ba') === targetLang);
+        let allTeachers = this.getAllTeachers().filter(t => (t.lang || 'ku_ba') === targetLang && t.status !== 'pending' && t.status !== 'rejected');
         
         const videos = this.getAllVideos(true, null, false, targetLang);
         const quizzes = this.getAllQuizzes(true, null, false, targetLang);
@@ -1713,7 +2348,7 @@ class EducationalDataStore {
             if (String(item.grade) === String(gradeId)) {
                 if (!subjectKey || subjectKey === 'all' || this.matchesSubject(item.subject, subjectKey)) {
                     const teacher = this.getTeacherById(item.teacherId);
-                    if (teacher && (teacher.lang || 'ku_ba') === targetLang) {
+                    if (teacher && (teacher.lang || 'ku_ba') === targetLang && teacher.status !== 'pending' && teacher.status !== 'rejected') {
                         gradeTeachersMap.set(teacher.id, teacher);
                     }
                 }
@@ -1904,6 +2539,7 @@ class EducationalDataStore {
         const isSuperAdmin = this.isCurrentUserSuperAdmin();
         const activeLang = malzamaData.lang || this.getActiveLanguage();
 
+        const resolvedHtml = malzamaData.htmlContent || (malzamaData.fileType === 'html' ? (malzamaData.fileData || '') : '');
         const newMalzama = {
             id: malzamaData.id || 'm_' + Date.now(),
             teacherId: malzamaData.teacherId,
@@ -1916,7 +2552,8 @@ class EducationalDataStore {
             fileUrl: malzamaData.fileUrl || '',
             fileName: malzamaData.fileName || 'file',
             fileSize: malzamaData.fileSize || 'N/A',
-            htmlContent: malzamaData.htmlContent || '',
+            fileData: malzamaData.fileData || '',
+            htmlContent: resolvedHtml || '',
             description: malzamaData.description || '',
             views: malzamaData.views || 0,
             lang: activeLang,
@@ -1932,16 +2569,32 @@ class EducationalDataStore {
             malzamas.unshift(newMalzama);
         }
 
-        localStorage.setItem(this.STORAGE_KEY_MALZAMAS, JSON.stringify(malzamas));
+        try {
+            localStorage.setItem(this.STORAGE_KEY_MALZAMAS, JSON.stringify(malzamas));
+        } catch (storageErr) {
+            console.warn('localStorage quota handling for malzama:', storageErr);
+            // In case of quota error with large files, ensure essential htmlContent is kept
+            try {
+                const slimMalzamas = malzamas.map(m => {
+                    if (m.fileData && m.fileData.length > 500000 && m.fileType !== 'html') {
+                        return { ...m, fileData: '' };
+                    }
+                    return m;
+                });
+                localStorage.setItem(this.STORAGE_KEY_MALZAMAS, JSON.stringify(slimMalzamas));
+            } catch (e) {}
+        }
 
         // 1. Sync to Firebase Firestore
         if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
             try {
                 const firestoreDb = (typeof db !== 'undefined' && db) ? db : firebase.firestore();
-                firestoreDb.collection('educational_content').doc(newMalzama.id).set({
-                    ...newMalzama,
-                    type: 'malzama'
-                }, { merge: true }).catch(err => console.warn('Firestore malzama sync:', err));
+                // Omit very large base64 from Firestore doc if > 800KB to respect Firestore limits
+                const firestoreData = { ...newMalzama, type: 'malzama' };
+                if (firestoreData.fileData && firestoreData.fileData.length > 800000) {
+                    delete firestoreData.fileData;
+                }
+                firestoreDb.collection('educational_content').doc(newMalzama.id).set(firestoreData, { merge: true }).catch(err => console.warn('Firestore malzama sync:', err));
             } catch (e) {}
         }
 
@@ -1954,6 +2607,36 @@ class EducationalDataStore {
         }
 
         return newMalzama;
+    }
+
+    // Resolves and decodes HTML content from an educational item with 100% fidelity and instant speed
+    getHtmlContentFromItem(item) {
+        if (!item) return '';
+        // 1. Direct clean HTML string
+        if (item.htmlContent && typeof item.htmlContent === 'string' && item.htmlContent.trim().length > 0) {
+            if (item.htmlContent.includes('<') || item.htmlContent.includes('<!DOCTYPE') || item.htmlContent.includes('<html')) {
+                return item.htmlContent;
+            }
+        }
+        // 2. Check fileData (may be raw HTML or Base64 Data URL)
+        const source = item.fileData || item.fileUrl || '';
+        if (typeof source === 'string' && source.length > 0) {
+            if (source.startsWith('data:') && source.includes(';base64,')) {
+                try {
+                    const b64 = source.split(';base64,')[1];
+                    const binary = atob(b64);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    const decoded = new TextDecoder('utf-8').decode(bytes);
+                    if (decoded && decoded.trim().length > 0) return decoded;
+                } catch (e) {
+                    console.warn('Base64 HTML decode fallback error:', e);
+                }
+            } else if (source.includes('<html') || source.includes('<!DOCTYPE') || source.includes('<body') || source.includes('<head') || source.includes('<div')) {
+                return source;
+            }
+        }
+        return item.htmlContent || '';
     }
 
     deleteContent(id, type) {
@@ -2011,17 +2694,31 @@ class EducationalDataStore {
     // ==========================================
     // ADMIN APPROVAL WORKFLOW
     // ==========================================
+    // ==========================================
+    // ADMIN APPROVAL WORKFLOW
+    // ==========================================
     getPendingSubmissions() {
-        const videos = JSON.parse(localStorage.getItem(this.STORAGE_KEY_VIDEOS) || '[]').filter(v => v.status === 'pending');
-        const quizzes = JSON.parse(localStorage.getItem(this.STORAGE_KEY_QUIZZES) || '[]').filter(q => q.status === 'pending');
-        const malzamas = JSON.parse(localStorage.getItem(this.STORAGE_KEY_MALZAMAS) || '[]').filter(m => m.status === 'pending');
+        const videos = JSON.parse(localStorage.getItem(this.STORAGE_KEY_VIDEOS) || '[]')
+            .filter(v => v.status === 'pending')
+            .map(v => ({ ...v, type: 'video' }));
+        const quizzes = JSON.parse(localStorage.getItem(this.STORAGE_KEY_QUIZZES) || '[]')
+            .filter(q => q.status === 'pending')
+            .map(q => ({ ...q, type: 'quiz' }));
+        const malzamas = JSON.parse(localStorage.getItem(this.STORAGE_KEY_MALZAMAS) || '[]')
+            .filter(m => m.status === 'pending')
+            .map(m => ({ ...m, type: 'malzama' }));
 
-        return {
-            videos,
-            quizzes,
-            malzamas,
-            totalPending: videos.length + quizzes.length + malzamas.length
-        };
+        const allPending = [...videos, ...quizzes, ...malzamas].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        allPending.videos = videos;
+        allPending.quizzes = quizzes;
+        allPending.malzamas = malzamas;
+        allPending.totalPending = allPending.length;
+        return allPending;
+    }
+
+    getPendingSubmissionsCount() {
+        const p = this.getPendingSubmissions();
+        return p.length;
     }
 
     approveSubmission(id, type) {
@@ -2036,16 +2733,34 @@ class EducationalDataStore {
         const idx = list.findIndex(item => item.id === id);
         if (idx >= 0) {
             list[idx].status = 'approved';
+            list[idx].approvedAt = Date.now();
+            list[idx].approvedBy = SUPER_ADMIN_EMAIL;
             localStorage.setItem(storageKey, JSON.stringify(list));
 
             if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-                firebase.firestore().collection('educational_content').doc(id).update({
-                    status: 'approved'
-                }).catch(() => {});
+                try {
+                    const firestoreDb = (typeof db !== 'undefined' && db) ? db : firebase.firestore();
+                    firestoreDb.collection('educational_content').doc(id).set({
+                        status: 'approved',
+                        approvedAt: Date.now(),
+                        approvedBy: SUPER_ADMIN_EMAIL
+                    }, { merge: true }).catch(() => {});
+                } catch (e) {}
             }
+
+            try {
+                window.dispatchEvent(new CustomEvent('educational-content-changed', {
+                    detail: { id, type, status: 'approved' }
+                }));
+            } catch (e) {}
+
             return true;
         }
         return false;
+    }
+
+    approveItem(id, type) {
+        return this.approveSubmission(id, type);
     }
 
     rejectSubmission(id, type) {
@@ -2060,16 +2775,36 @@ class EducationalDataStore {
         const idx = list.findIndex(item => item.id === id);
         if (idx >= 0) {
             list[idx].status = 'rejected';
+            list[idx].rejectedAt = Date.now();
             localStorage.setItem(storageKey, JSON.stringify(list));
 
             if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-                firebase.firestore().collection('educational_content').doc(id).update({
-                    status: 'rejected'
-                }).catch(() => {});
+                try {
+                    const firestoreDb = (typeof db !== 'undefined' && db) ? db : firebase.firestore();
+                    firestoreDb.collection('educational_content').doc(id).set({
+                        status: 'rejected',
+                        rejectedAt: Date.now()
+                    }, { merge: true }).catch(() => {});
+                } catch (e) {}
             }
+
+            try {
+                window.dispatchEvent(new CustomEvent('educational-content-changed', {
+                    detail: { id, type, status: 'rejected' }
+                }));
+            } catch (e) {}
+
             return true;
         }
         return false;
+    }
+
+    rejectItem(id, type) {
+        return this.rejectSubmission(id, type);
+    }
+
+    deleteItem(id, type) {
+        return this.deleteContent(id, type);
     }
 
     submitVideo(videoData) {
@@ -2090,11 +2825,49 @@ class EducationalDataStore {
         const match = url.match(regExp);
         return (match && match[2].length === 11) ? match[2] : '';
     }
+
+    getAllUniversityDepartments() {
+        return UNIVERSITY_DEPARTMENTS;
+    }
+
+    getUniversityDepartmentById(id) {
+        return UNIVERSITY_DEPARTMENTS.find(d => d.id === id);
+    }
+
+    getDepartmentsByScore(studentScore, branch = 'all', category = 'all', university = 'all') {
+        const score = parseFloat(studentScore) || 0;
+        return UNIVERSITY_DEPARTMENTS.filter(dept => {
+            if (branch && branch !== 'all') {
+                if (dept.branch !== 'both' && dept.branch !== branch) return false;
+            }
+            if (category && category !== 'all' && dept.category !== category) return false;
+            if (university && university !== 'all' && !dept.universities.includes(university)) return false;
+            return true;
+        }).map(dept => {
+            let status = 'accepted';
+            let diff = score - dept.minScoreGeneral;
+            if (score >= dept.minScoreGeneral) {
+                status = 'accepted';
+            } else if (score >= dept.minScoreParallel) {
+                status = 'parallel';
+            } else if (diff >= -3.0) {
+                status = 'borderline';
+            } else {
+                status = 'low';
+            }
+            return {
+                ...dept,
+                status,
+                scoreDiff: diff.toFixed(1)
+            };
+        }).sort((a, b) => b.minScoreGeneral - a.minScoreGeneral);
+    }
 }
 
 // Global Singleton Export
 window.CURRICULUM_SUBJECTS = CURRICULUM_SUBJECTS;
 window.GRADES_CONFIG = GRADES_CONFIG;
+window.UNIVERSITY_DEPARTMENTS = UNIVERSITY_DEPARTMENTS;
 window.SUPPORTED_LANGS = SUPPORTED_LANGS;
 window.EducationalData = new EducationalDataStore();
 window.SUPER_ADMIN_EMAIL = SUPER_ADMIN_EMAIL;

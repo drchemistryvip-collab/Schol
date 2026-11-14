@@ -322,22 +322,22 @@
 
         <!-- Stats Grid -->
         <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card" style="cursor:pointer;" onclick="switchDashboardTab('tab-my-items')" title="بینینی هەموو بابەتەکان">
                 <i class="fas fa-eye" style="color: #007bff; font-size: 1.3rem;"></i>
                 <div class="number" id="stat-views">0</div>
                 <div class="label">تێکڕایا بینینێن قوتابیان</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" style="cursor:pointer;" onclick="switchDashboardTab('tab-add-video')" title="زیادکردنی ڤیدیۆی نوێ">
                 <i class="fas fa-video" style="color: #28a745; font-size: 1.3rem;"></i>
                 <div class="number" id="stat-videos">0</div>
                 <div class="label">ڤیدیۆیێن یوتیوبێ</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" style="cursor:pointer;" onclick="switchDashboardTab('tab-add-quiz')" title="چێکرنا پرسیارێن هەڵبژارتن">
                 <i class="fas fa-check-circle" style="color: #8a2be2; font-size: 1.3rem;"></i>
                 <div class="number" id="stat-quizzes">0</div>
                 <div class="label">پرسیارێن هەڵبژارتن</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" style="cursor:pointer;" onclick="switchDashboardTab('tab-add-malzama')" title="زیادکردنی مەلزەمە و پاوەرپۆینت و HTML">
                 <i class="fas fa-book" style="color: #fd7e14; font-size: 1.3rem;"></i>
                 <div class="number" id="stat-malzamas">0</div>
                 <div class="label">مەلزەمە و کورتە</div>
@@ -387,34 +387,8 @@
                     </p>
                 </div>
                 <span style="background:rgba(0,180,216,0.15); color:#00b4d8; font-size:0.8rem; font-weight:bold; padding:4px 12px; border-radius:20px; border:1px solid rgba(0,180,216,0.3);">
-                    <i class="fas fa-bolt"></i> مۆدێلی ژیریی دەستکرد: Gemini 3.8 Flash
+                    <i class="fas fa-bolt"></i> مۆدێلی ژیریی دەستکرد: Gemini 4 Hydrogen
                 </span>
-            <!-- Gemini API Key Setup Banner -->
-            <div style="background:rgba(0,180,216,0.06); border:1px solid rgba(0,180,216,0.3); border-radius:12px; padding:14px 18px; margin-bottom:20px; text-align:right;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-                    <strong style="color:var(--primary-text); font-size:0.95rem; display:flex; align-items:center; gap:6px;">
-                        <i class="fas fa-key" style="color:#00b4d8;"></i> بەستنەوەی کلیلی API یێ مۆدێلی Gemini (Gemini API Key)
-                    </strong>
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--blue-accent); font-size:0.83rem; text-decoration:none; display:inline-flex; align-items:center; gap:5px; background:rgba(0,123,255,0.1); padding:4px 12px; border-radius:20px; font-weight:bold; border:1px solid rgba(0,123,255,0.25);">
-                        <i class="fas fa-external-link-alt"></i> وەرگرتنی کلیل لە Google AI Studio (بە خۆڕایی)
-                    </a>
-                </div>
-                <p style="margin:0 0 10px; font-size:0.82rem; color:var(--secondary-text); line-height:1.5;">
-                    بۆ ئەوەی دروستکردنی بابەت و پاوەرپۆینت و تاقیکردنەوە لەسەر Netlify و هەموو ئامێرێک بە بێ کێشە و ڕاستەوخۆ کار بکات، دەتوانیت کلیلەکەت لێرە دابنێیت:
-                </p>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <input type="password" id="t-gemini-key-input" placeholder="AIzaSy..." style="flex:1; min-width:220px; padding:9px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:monospace; direction:ltr; font-size:0.88rem;">
-                    <button type="button" id="btn-save-t-gemini-key" class="btn-save" style="padding:8px 16px; font-size:0.85rem; background:#00b4d8; border:none; display:inline-flex; align-items:center; gap:6px;">
-                        <i class="fas fa-check-double"></i> پشکنین و پاشەکەوتکرن
-                    </button>
-                    <button type="button" id="btn-clear-t-gemini-key" class="btn-cancel" style="padding:8px 12px; font-size:0.85rem; color:#dc3545; border-color:rgba(220,53,69,0.3);" title="سڕینەوەی کلیل">
-                        <i class="fas fa-trash-alt"></i> سڕینەوە
-                    </button>
-                    <button type="button" id="btn-toggle-t-gemini-key" class="btn-cancel" style="padding:0 12px;" title="شاردنەوە / نیشاندان">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </div>
-                <div id="t-gemini-key-status" style="margin-top:10px; font-size:0.86rem; display:none;"></div>
             </div>
 
             <form id="ai-generator-form">
@@ -709,10 +683,13 @@
                 <!-- File Upload / Link Area -->
                 <div class="form-group" style="text-align:right;">
                     <label>ئەپلودکردنی فایل لە ئامێرەکەت (یان بەستەری فایل)</label>
-                    <div class="upload-dropzone" id="file-dropzone">
+                    <div class="upload-dropzone" id="file-dropzone" style="cursor:pointer;">
                         <i class="fas fa-cloud-upload-alt" style="font-size:2.5rem; color:var(--blue-accent); margin-bottom:10px;"></i>
                         <h4 style="margin:0 0 5px;" id="dropzone-text">کلیک بکە بۆ هەڵبژاردنی فایل (PDF, PPTX, HTML, وێنە)</h4>
-                        <p style="margin:0; font-size:0.8rem; color:var(--secondary-text);" id="dropzone-sub">قەبارەی پەسەندکراو: تا ٢٠ مێگابایت</p>
+                        <p style="margin:0 0 10px; font-size:0.8rem; color:var(--secondary-text);" id="dropzone-sub">قەبارەی پەسەندکراو: تا ٢٠ مێگابایت</p>
+                        <button type="button" class="btn-action-primary" style="padding:6px 16px; font-size:0.85rem; pointer-events:none;">
+                            <i class="fas fa-folder-open"></i> هەڵبژاردنی فایل لە ئامێرەکەت
+                        </button>
                         <input type="file" id="malzama-file-input" accept=".pdf,.ppt,.pptx,.html,.htm,.png,.jpg,.jpeg,.webp" style="display:none;">
                     </div>
                     <!-- Progress Percentage Bar for Malzama Upload -->
@@ -755,12 +732,58 @@
                     <textarea id="malzama-desc" rows="2" placeholder="تێبینی دەربارەی مەلزەمەیێ بنڤیسە..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;"></textarea>
                 </div>
 
+                <!-- Optional Teacher Bearer Password for Cloudflare Worker Upload -->
+                <div class="form-group" id="cf-teacher-password-group" style="text-align:right; background:rgba(37,99,235,0.05); border:1.5px solid rgba(37,99,235,0.25); border-radius:12px; padding:14px; margin-top:12px;">
+                    <label for="malzama-teacher-password" style="font-weight:bold; color:var(--primary-text); display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                        <i class="fas fa-key" style="color:var(--blue-accent);"></i> پاسوۆردێ مامۆستای (ئارەزوومەندانە ئەگەر ب هەژمارا مامۆستای دژووردا بی):
+                    </label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="password" id="malzama-teacher-password" placeholder="پاسوۆردێ مامۆستای (یان هەژمارا خۆ بکاربینە)..." autocomplete="current-password" style="flex:1; padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;">
+                        <button type="button" id="toggle-malzama-pw-btn" class="btn-action-secondary" style="padding:10px 14px;" title="نیشاندان / شاردنەوە">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <small style="display:block; margin-top:6px; color:var(--secondary-text); font-size:0.8rem;">
+                        ئەگەر ب هەژمارا مامۆستای ل Cloudflare چووبییە ژوور، ناڤێ تە ئۆتۆماتیکی لسەر وانێ دهێتە نیشاندان و پێتڤی ب نڤیسینا پاسوۆردێ زێدە نینە (ئەگەر تە بێ هەژمار بتنی Bearer بڤێت لێرە بنڤیسە).
+                    </small>
+                </div>
+
+                <!-- Inline Upload Error / 401 Warning Banner -->
+                <div id="cf-upload-error-banner" style="display:none; margin-top:12px; padding:12px 16px; border-radius:10px; background:rgba(220,38,38,0.12); border:1.5px solid #dc2626; color:#b91c1c; font-weight:700; font-size:0.92rem; text-align:right; align-items:center; gap:10px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size:1.25rem; flex-shrink:0;"></i>
+                    <span id="cf-upload-error-text"></span>
+                </div>
+
+                <!-- Admin Notice -->
+                <div style="background:rgba(40,167,69,0.06); border:1px dashed #28a745; border-radius:10px; padding:12px 14px; margin-top:15px; font-size:0.88rem; display:flex; align-items:center; gap:10px; text-align:right;">
+                    <i class="fas fa-paper-plane" style="color:#28a745; font-size:1.3rem;"></i>
+                    <div>
+                        <strong>ئاگاداری:</strong> فایلێ هەلبژارتی دێ لسەر سێرڤەرێ Cloudflare هێتە بارکرن و ڕاستەوخۆ بۆ قوتابییان دێ هێتە نیشاندان.
+                    </div>
+                </div>
+
                 <div class="form-actions" style="margin-top:20px;">
-                    <button type="submit" class="btn-save" style="width:100%; padding:12px;">
-                        <i class="fas fa-paperclip"></i> ناردن بۆ پێداچوونەوە و پەسەندکرنێ
+                    <button type="submit" id="malzama-submit-btn" class="btn-save" style="width:100%; padding:14px; font-size:1rem; font-weight:bold; background:linear-gradient(135deg, #28a745, #218838); box-shadow:0 4px 15px rgba(40,167,69,0.25);">
+                        <i class="fas fa-cloud-upload-alt"></i> بارکرنا وانێ و فایلێ (Upload)
                     </button>
                 </div>
             </form>
+
+            <!-- Live Cloudflare Uploaded Lessons List -->
+            <div style="margin-top:32px; border-top:2px solid var(--border-color); padding-top:22px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                    <div>
+                        <h4 style="margin:0 0 3px; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-server" style="color:var(--blue-accent);"></i> وانە و فایلێن بارکری لسەر سێرڤەرێ Cloudflare
+                        </h4>
+                        <span id="cf-teacher-lessons-status" style="font-size:0.82rem; color:var(--secondary-text);">بارکرنا لیستێ ژ سێرڤەری...</span>
+                    </div>
+                    <button type="button" id="cf-teacher-refresh-btn" class="btn-action-secondary" style="padding:7px 14px; font-size:0.84rem;">
+                        <i class="fas fa-sync-alt"></i> نوێکرنا لیستێ
+                    </button>
+                </div>
+                <div id="cf-teacher-lessons-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:14px;"></div>
+            </div>
         </div>
 
         <!-- TAB 2: ADD YOUTUBE VIDEO -->
@@ -814,12 +837,34 @@
                 </div>
                 <div class="form-group" style="text-align:right;">
                     <label>لینکا یوتیوبێ (YouTube Video URL)</label>
-                    <input type="url" id="video-url" placeholder="https://www.youtube.com/watch?v=..." required>
-                    <small style="color:var(--secondary-text);">دشێی لینکا ئاسایی یان لینکا کۆرت یا youtu.be بنڤیسی.</small>
+                    <input type="url" id="video-url" placeholder="https://www.youtube.com/watch?v=... یان https://youtu.be/..." required>
+                    <small style="color:var(--secondary-text);">دشێی لینکا ئاسایی، لینکا کۆرت یا youtu.be یان لینکا مۆبایل بنڤیسی.</small>
+
+                    <!-- Live YouTube Preview -->
+                    <div id="video-preview-box" style="display:none; margin-top:12px; border:1px solid var(--border-color); border-radius:12px; overflow:hidden; background:var(--surface-color); padding:12px; box-shadow:0 3px 10px rgba(0,0,0,0.06);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-weight:bold; font-size:0.88rem; color:#28a745; display:flex; align-items:center; gap:6px;">
+                                <i class="fas fa-check-circle"></i> لینکا یوتیوبێ دروستە و ڤیدیۆ هاتە دۆزینەوە
+                            </span>
+                            <span id="preview-video-id" style="font-size:0.8rem; color:var(--secondary-text); font-family:monospace; direction:ltr;"></span>
+                        </div>
+                        <div style="position:relative; width:100%; height:210px; border-radius:8px; overflow:hidden; background:#000;">
+                            <iframe id="video-preview-iframe" style="width:100%; height:100%; border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Admin Approval Guarantee Notice -->
+                <div style="background:rgba(0,123,255,0.06); border:1px dashed var(--blue-accent); border-radius:10px; padding:12px 14px; margin-top:15px; font-size:0.88rem; display:flex; align-items:center; gap:10px; text-align:right;">
+                    <i class="fas fa-paper-plane" style="color:var(--blue-accent); font-size:1.3rem;"></i>
+                    <div>
+                        <strong>ئاگاداری:</strong> دەستبەجێ ئەم وانەیە بۆ ئەدمینی گشتی (م. حسێن) دەنێردرێت بۆ پێداچوونەوە، پاش پەسەندکردن یەکسەر دەچێتە بەشی گشتی بۆ هەموو قوتابیان.
+                    </div>
+                </div>
+
                 <div class="form-actions" style="margin-top:20px;">
-                    <button type="submit" class="btn-save" style="width:100%; padding:12px;">
-                        <i class="fas fa-upload"></i> ناردن بۆ پێداچوون و پەسەندکرنێ
+                    <button type="submit" class="btn-save" style="width:100%; padding:14px; font-size:1rem; font-weight:bold; background:linear-gradient(135deg, #ff0000, #cc0000); box-shadow:0 4px 15px rgba(255,0,0,0.25);">
+                        <i class="fas fa-paper-plane"></i> ناردن بۆ ئەدمین دا پەسەند بکەتن و بگەهیتە قوتابیان
                     </button>
                 </div>
             </form>
@@ -1078,7 +1123,15 @@
                     <span id="doc-modal-format-badge" class="format-badge pdf"><i class="fas fa-file-pdf"></i> PDF</span>
                     <h4 id="doc-modal-title" style="margin:0; font-size:1.1rem;">پێشبینینی مەلزەمە</h4>
                 </div>
-                <button class="close-doc-btn" id="close-doc-btn">&times;</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button id="doc-modal-fullscreen-btn" class="btn-action-secondary" style="padding:6px 12px; font-size:0.82rem;" title="ڤەکرن ل پەڕەیەکێ نوو (شاشەیا تەواو)">
+                        <i class="fas fa-expand"></i> شاشەیا تەواو
+                    </button>
+                    <a id="doc-modal-download-btn" href="#" class="btn-action-primary" style="padding:6px 14px; font-size:0.82rem; text-decoration:none;" download>
+                        <i class="fas fa-download"></i> داگرتن
+                    </a>
+                    <button class="close-doc-btn" id="close-doc-btn">&times;</button>
+                </div>
             </div>
             <div id="doc-viewer-viewport" style="flex:1; width:100%; height:75vh; overflow:auto; display:flex; align-items:center; justify-content:center; background:#1e1e1e; padding:10px;"></div>
         </div>
@@ -1093,6 +1146,7 @@
     <script src="auth-guard.js"></script>
     <script src="google-drive-integration.js"></script>
     <script src="slide-template-engine.js"></script>
+    <script src="cloudflare-lessons.js"></script>
     <script src="teacher-dashboard.js"></script>
 </body>
 </html>

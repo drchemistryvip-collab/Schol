@@ -2,29 +2,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&display=swap');
 
 :root {
-    --background-color: #f0f2f5;
+    --background-color: #f6f8fb;
     --surface-color: #ffffff;
-    --primary-text: #1c1e21;
-    --secondary-text: #65676b;
-    --purple-accent: #8A2BE2;
-    --blue-accent: #007BFF;
-    --green-accent: #28a745;
-    --wrong-color: #dc3545;
-    --border-color: #ddd;
-    --shadow-color: rgba(0, 0, 0, 0.1);
+    --primary-text: #0f172a;
+    --secondary-text: #64748b;
+    --purple-accent: #7209b7;
+    --blue-accent: #2563eb;
+    --green-accent: #10b981;
+    --wrong-color: #ef4444;
+    --border-color: #e2e8f0;
+    --shadow-color: rgba(15, 23, 42, 0.06);
+    --card-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+    --card-hover-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
 }
 
 [data-theme="dark"] {
-    --background-color: #121212;
-    --surface-color: #1e1e1e;
-    --primary-text: #e0e0e0;
-    --secondary-text: #a0a0a0;
-    --border-color: #383838;
-    --shadow-color: rgba(0, 0, 0, 0.5);
+    --background-color: #0b0f19;
+    --surface-color: #131b2e;
+    --primary-text: #f1f5f9;
+    --secondary-text: #94a3b8;
+    --border-color: #1e293b;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --card-hover-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
 }
 
 body {
-    font-family: 'Noto Kufi Arabic', sans-serif;
+    font-family: 'Noto Kufi Arabic', system-ui, -apple-system, sans-serif;
     background-color: var(--background-color);
     color: var(--primary-text);
     display: flex;
@@ -33,7 +37,26 @@ body {
     min-height: 100vh;
     padding: 20px;
     margin: 0;
-    transition: background-color 0.3s, color 0.3s;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Custom Clean Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.7);
 }
 
 [dir="ltr"] body {

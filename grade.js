@@ -39,7 +39,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     if (gradeBannerBox) gradeBannerBox.style.borderTopColor = currentGradeConfig.color || '#007bff';
 
-    // Theme Toggle
+    // If viewing university stage, provide instant link to the Admission Calculator
+    if (pola === 'univ' && gradeBannerBox) {
+        const univAdmitBox = document.createElement('div');
+        univAdmitBox.style.cssText = 'margin-top:16px; padding:12px 16px; background:linear-gradient(135deg, rgba(114,9,183,0.1), rgba(67,97,238,0.1)); border:1px solid rgba(114,9,183,0.3); border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;';
+        univAdmitBox.innerHTML = `
+            <div style="text-align:right;">
+                <strong style="color:#7209b7; font-size:0.95rem;"><i class="fas fa-calculator"></i> ڕێبەری گشتگیری زانکۆ و کۆنمرەی وەرگرتن (معەدل)</strong>
+                <p style="margin:2px 0 0; font-size:0.8rem; color:var(--secondary-text);">سەرجەم بەشەکان، کۆنمرەی گشتی، پارالێل و ئەهلی بە شێوازی زیرەک بدۆزەوە.</p>
+            </div>
+            <a href="university.html" class="btn-action-primary" style="background:linear-gradient(135deg, #7209b7, #4361ee); text-decoration:none; padding:7px 14px; font-size:0.82rem; font-weight:700;">
+                <i class="fas fa-search"></i> پشکنینی معەدل و بەشەکان
+            </a>
+        `;
+        gradeBannerBox.appendChild(univAdmitBox);
+    }
+
+    // Theme Toggle (with Cloudflare settings sync)
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     if (themeToggleBtn) {
         const savedTheme = localStorage.getItem('userTheme') || localStorage.getItem('theme') || 'light';
@@ -50,19 +66,47 @@ document.addEventListener('DOMContentLoaded', function () {
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('userTheme', newTheme);
             localStorage.setItem('theme', newTheme);
+            if (window.CloudflareLessons) {
+                window.CloudflareLessons.saveUserSettingsToServer({ theme: newTheme });
+            }
         });
     }
 
-    // Role Indicator
-    const userRole = dataStore.getUserRole();
+    // Role & Cloudflare User Indicator
     const roleLabel = document.getElementById('current-user-role-label');
     const teacherPanelLink = document.getElementById('teacher-panel-link');
-    if (userRole === 'teacher' || dataStore.isCurrentUserSuperAdmin()) {
-        if (roleLabel) roleLabel.textContent = 'مامۆستا';
-        if (teacherPanelLink) teacherPanelLink.style.display = 'inline-flex';
-    } else {
-        if (roleLabel) roleLabel.textContent = 'قوتابی';
+    function syncGradeAuthUI() {
+        const cfUser = window.CloudflareLessons ? window.CloudflareLessons.getCurrentUser() : null;
+        const userRole = cfUser ? cfUser.role : dataStore.getUserRole();
+        if (cfUser) {
+            const roleText = cfUser.role === 'teacher' ? 'مامۆستا' : 'قوتابی';
+            if (roleLabel) roleLabel.textContent = `${cfUser.full_name} (${roleText})`;
+        } else if (userRole === 'teacher' || dataStore.isCurrentUserSuperAdmin()) {
+            if (roleLabel) roleLabel.textContent = 'مامۆستا';
+        } else {
+            if (roleLabel) roleLabel.textContent = 'قوتابی';
+        }
+        const canManage = window.CloudflareLessons ? window.CloudflareLessons.canManageOrDownload() : (dataStore.isCurrentUserSuperAdmin());
+        if (teacherPanelLink) {
+            teacherPanelLink.style.display = canManage ? 'inline-flex' : 'none';
+        }
+        const gradeComposeDetails = document.getElementById('cf-grade-compose-details');
+        if (gradeComposeDetails) {
+            gradeComposeDetails.style.display = canManage ? 'block' : 'none';
+        }
+        const authorPill = document.getElementById('cf-grade-author-pill');
+        if (authorPill) {
+            authorPill.textContent = cfUser
+                ? `${cfUser.full_name} (${cfUser.role === 'teacher' ? 'مامۆستا' : 'قوتابی'})`
+                : 'بۆ مامۆستا و ئەدمینی';
+        }
     }
+    syncGradeAuthUI();
+    window.addEventListener('parwardaAuthChanged', () => {
+        syncGradeAuthUI();
+        renderGradeCloudflareLessons();
+        if (currentSelectedTeacher) loadTeacherContent(currentSelectedTeacher);
+    });
 
     // Stepper Elements
     const stepNav1 = document.getElementById('step-nav-1');
@@ -545,6 +589,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             `;
         } else {
+            const canDownload = Boolean(window.CloudflareLessons && window.CloudflareLessons.canManageOrDownload());
             malzamaContainer.innerHTML = teacherMalzamas.map(m => {
                 const badgeClass = m.fileType || 'pdf';
                 const typeIcon = {
@@ -570,11 +615,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                         <div style="display:flex; gap:8px; margin-top:10px;">
                             <button class="btn-action-primary btn-open-doc" data-doc-id="${m.id}" style="flex:1; justify-content:center; padding:7px;">
-                                <i class="fas fa-eye"></i> پیشاندان لە پەڕەدا
+                                <i class="fas fa-eye"></i> ${canDownload ? 'پیشاندان لە پەڕەدا' : 'تەماشاکرن'}
                             </button>
-                            <a href="${m.fileUrl || '#'}" download target="_blank" class="btn-action-secondary" style="padding:7px 12px;" title="داگرتن">
-                                <i class="fas fa-download"></i>
-                            </a>
+                            ${canDownload ? `
+                                <a href="${m.fileUrl || '#'}" download target="_blank" class="btn-action-secondary" style="padding:7px 12px;" title="داگرتن">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -764,58 +811,127 @@ document.addEventListener('DOMContentLoaded', function () {
         currentViewingDocItem = item;
         currentViewingDocTeacher = teacher;
 
+        const canDownload = Boolean(window.CloudflareLessons && window.CloudflareLessons.canManageOrDownload());
+        const docModalFullscreenBtn = document.getElementById('doc-modal-fullscreen-btn');
+
         docModalTitle.textContent = item.title;
         docModalTeacher.innerHTML = `<i class="fas fa-chalkboard-teacher"></i> ${teacher.name}`;
         docModalSize.innerHTML = `<i class="fas fa-weight-hanging"></i> ${item.fileSize || '2.5 MB'}`;
-        docModalDownload.href = item.fileUrl || '#';
+        docModalDownload.href = canDownload ? (item.fileUrl || '#') : '#';
+        docModalDownload.style.display = canDownload ? 'inline-flex' : 'none';
+        if (docModalFullscreenBtn) docModalFullscreenBtn.style.display = canDownload ? 'inline-flex' : 'none';
+        if (docModalGdriveSave) docModalGdriveSave.style.display = canDownload ? 'inline-flex' : 'none';
+
         docModalBadge.className = `format-tag ${item.fileType || 'pdf'}`;
         docModalBadge.textContent = (item.fileType || 'pdf').toUpperCase();
+
+        if (!canDownload) {
+            docViewport.oncontextmenu = function () { return false; };
+            docViewport.style.userSelect = 'none';
+            docViewport.style.webkitUserSelect = 'none';
+        } else {
+            docViewport.oncontextmenu = null;
+            docViewport.style.userSelect = '';
+            docViewport.style.webkitUserSelect = '';
+        }
 
         const type = (item.fileType || 'pdf').toLowerCase();
         let contentHtml = '';
 
         if (type === 'pptx') {
-            contentHtml = `
-                <div style="text-align:center; padding:30px; color:#ffffff; max-width:550px;">
-                    <i class="fas fa-file-powerpoint" style="font-size: 4rem; color: #d83b01; margin-bottom: 16px;"></i>
-                    <h3 style="margin: 0 0 10px; font-size: 1.3rem;">سلایدێن مایکرۆسۆفت پاوەرپۆینت (PPTX)</h3>
-                    <p style="margin: 0 0 20px; font-size: 0.9rem; color: #cccccc; line-height: 1.5;">
-                        ئەڤ پەڕاوە ب شێوازێ سلاید هاتینە ئامادەکرن. دشێی ب شێوازێ تەواو دابگری یان ل Microsoft 365 ڤەکەی.
-                    </p>
-                    <div style="display:flex; justify-content:center; gap: 10px; flex-wrap:wrap;">
-                        <a href="${item.fileUrl}" target="_blank" download class="btn-action-primary" style="padding: 10px 22px; font-size: 0.95rem; background:#d83b01;">
-                            <i class="fas fa-download"></i> داگرتنا پاوەرپۆینت (${item.fileSize || '5.0 MB'})
-                        </a>
-                        <a href="https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(item.fileUrl)}" target="_blank" class="btn-action-secondary" style="padding: 10px 18px; color:#fff; border-color:#666;">
-                            <i class="fas fa-external-link-alt"></i> ڤەکرن ل Office Viewer
-                        </a>
+            if (!canDownload && item.fileUrl && /^https?:\/\//i.test(item.fileUrl)) {
+                const embedUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(item.fileUrl)}`;
+                contentHtml = `<iframe src="${embedUrl}" style="width:100%; height:640px; border:none; background:#ffffff;" allowfullscreen></iframe>`;
+            } else if (!canDownload) {
+                contentHtml = `
+                    <div style="text-align:center; padding:30px; color:#ffffff; max-width:520px;">
+                        <i class="fas fa-file-powerpoint" style="font-size: 3.5rem; color: #d83b01; margin-bottom: 14px;"></i>
+                        <h3 style="margin: 0 0 10px;">${item.title}</h3>
+                        <p style="margin: 0; font-size: 0.9rem; color: #cccccc;">تەنێ بۆ تەماشەکرنێ یە.</p>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                contentHtml = `
+                    <div style="text-align:center; padding:30px; color:#ffffff; max-width:550px;">
+                        <i class="fas fa-file-powerpoint" style="font-size: 4rem; color: #d83b01; margin-bottom: 16px;"></i>
+                        <h3 style="margin: 0 0 10px; font-size: 1.3rem;">سلایدێن مایکرۆسۆفت پاوەرپۆینت (PPTX)</h3>
+                        <p style="margin: 0 0 20px; font-size: 0.9rem; color: #cccccc; line-height: 1.5;">
+                            ئەڤ پەڕاوە ب شێوازێ سلاید هاتینە ئامادەکرن. دشێی ب شێوازێ تەواو دابگری یان ل Microsoft 365 ڤەکەی.
+                        </p>
+                        <div style="display:flex; justify-content:center; gap: 10px; flex-wrap:wrap;">
+                            <a href="${item.fileUrl}" target="_blank" download class="btn-action-primary" style="padding: 10px 22px; font-size: 0.95rem; background:#d83b01;">
+                                <i class="fas fa-download"></i> داگرتنا پاوەرپۆینت (${item.fileSize || '5.0 MB'})
+                            </a>
+                            <a href="https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(item.fileUrl)}" target="_blank" class="btn-action-secondary" style="padding: 10px 18px; color:#fff; border-color:#666;">
+                                <i class="fas fa-external-link-alt"></i> ڤەکرن ل Office Viewer
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
         } else if (type === 'html') {
             docViewport.innerHTML = '';
+            const rawHtml = dataStore.getHtmlContentFromItem(item);
             const iframe = document.createElement('iframe');
             iframe.style.width = '100%';
             iframe.style.height = '640px';
             iframe.style.border = 'none';
             iframe.style.borderRadius = '12px';
-            iframe.style.background = '#0a0f1d';
-            iframe.srcdoc = item.htmlContent || `<div style="padding:40px; text-align:center; font-family:sans-serif; color:#fff;"><h2>${item.title}</h2><p>${item.description || ''}</p></div>`;
+            iframe.style.background = '#ffffff';
+            iframe.setAttribute('allowfullscreen', 'true');
+            iframe.setAttribute('allow', 'fullscreen; autoplay; clipboard-write; encrypted-media');
+            if (!canDownload) {
+                iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
+            }
+            iframe.srcdoc = rawHtml || `<div style="padding:40px; text-align:center; font-family:sans-serif; color:#222;"><h2>${item.title}</h2><p>${item.description || ''}</p></div>`;
             docViewport.appendChild(iframe);
+
+            if (canDownload) {
+                if (rawHtml) {
+                    const blob = new Blob([rawHtml], { type: 'text/html;charset=utf-8' });
+                    docModalDownload.href = URL.createObjectURL(blob);
+                    docModalDownload.download = item.fileName && item.fileName.endsWith('.html') ? item.fileName : `${item.title}.html`;
+                } else {
+                    docModalDownload.href = item.fileUrl || '#';
+                }
+
+                if (docModalFullscreenBtn) {
+                    docModalFullscreenBtn.onclick = () => {
+                        if (rawHtml) {
+                            const blob = new Blob([rawHtml], { type: 'text/html;charset=utf-8' });
+                            const blobUrl = URL.createObjectURL(blob);
+                            window.open(blobUrl, '_blank');
+                        }
+                    };
+                }
+            }
+
             docModal.classList.add('open');
             dataStore.incrementViews(teacher.id, item.id, 'malzama');
             return;
         } else if (type === 'image') {
             contentHtml = `
                 <div style="padding:20px; text-align:center;">
-                    <img src="${item.fileUrl || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80'}" alt="${item.title}" style="max-width:100%; max-height:75vh; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+                    <img src="${item.fileData || item.fileUrl || 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80'}" alt="${item.title}" ${!canDownload ? 'draggable="false" oncontextmenu="return false;"' : ''} style="max-width:100%; max-height:75vh; border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,0.5); ${!canDownload ? 'pointer-events:none; user-select:none;' : ''}">
                 </div>
             `;
+            if (docModalFullscreenBtn && canDownload) {
+                docModalFullscreenBtn.onclick = () => {
+                    window.open(item.fileData || item.fileUrl, '_blank');
+                };
+            }
         } else {
             // PDF
+            const pdfSrc = item.fileData || item.fileUrl || 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf';
+            const pdfParams = canDownload ? '#toolbar=1' : '#toolbar=0&navpanes=0&scrollbar=1';
             contentHtml = `
-                <iframe src="${item.fileUrl || 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf'}" style="width:100%; height:550px; border:none; background:#ffffff;"></iframe>
+                <iframe src="${pdfSrc}${pdfParams}" style="width:100%; height:550px; border:none; background:#ffffff;"></iframe>
             `;
+            if (docModalFullscreenBtn && canDownload) {
+                docModalFullscreenBtn.onclick = () => {
+                    window.open(pdfSrc, '_blank');
+                };
+            }
         }
 
         docViewport.innerHTML = contentHtml;
@@ -832,19 +948,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (docModalGdriveSave) {
         docModalGdriveSave.addEventListener('click', async () => {
+            const notify = (msg, kind) => {
+                if (window.CloudflareLessons) window.CloudflareLessons.showToast(msg, kind);
+            };
             if (!currentViewingDocItem) return;
             if (!window.GoogleDriveService) {
-                alert('گووگڵ درایڤ ئامادە نییە.');
+                notify('گووگڵ درایڤ ئامادە نییە.', 'error');
                 return;
             }
 
             if (!window.GoogleDriveService.getAccessToken()) {
-                const wantAuth = confirm('بۆ پاشەکەوتکردن لە Google Drive پێویستە بچیتە ژوورەوە بە هەژماری Google. ئایا دەتەوێت پەیوەست بیت؟');
-                if (!wantAuth) return;
                 try {
                     await window.GoogleDriveService.signInWithGoogle();
                 } catch (e) {
-                    alert('پەیوەستبوون سەرکەوتوو نەبوو: ' + e.message);
+                    notify('پەیوەستبوون ب Google Drive سەرکەوتوو نەبوو: ' + e.message, 'error');
                     return;
                 }
             }
@@ -879,9 +996,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     description: `کەرەستەی خوێندن لە پلاتفۆرمی پۆلا 10-11-12 - مامۆستا ${teacher.name}`
                 });
 
-                alert(`مەلزەمەی (${item.title}) بە سەرکەوتوویی لە Google Drive ی تۆ پاشەکەوت کرا!`);
+                notify(`مەلزەمەی (${item.title}) بە سەرکەوتوویی لە Google Drive ی تۆ پاشەکەوت کرا!`, 'success');
             } catch (err) {
-                alert('هەڵە لە پاشەکەوتکردن لە Drive: ' + err.message);
+                notify('هەڵە لە پاشەکەوتکردن لە Drive: ' + err.message, 'error');
             } finally {
                 docModalGdriveSave.innerHTML = '<i class="fab fa-google-drive"></i> پاشەکەوت لە Drive';
             }
@@ -955,6 +1072,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const chosenLang = pill.getAttribute('data-lang');
             dataStore.setActiveLanguage(chosenLang);
             updateLanguageUI(chosenLang);
+            if (window.CloudflareLessons) {
+                window.CloudflareLessons.saveUserSettingsToServer({ lang: chosenLang });
+            }
         });
     });
 
@@ -984,4 +1104,130 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
         renderGradeTeachers(); // Shows waiting prompt initially
     }
+
+    // Live update when admin approves/rejects new submissions
+    window.addEventListener('educational-content-changed', () => {
+        if (currentSelectedTeacher) {
+            loadTeacherContent(currentSelectedTeacher);
+        }
+        renderGradeTeachers();
+    });
+
+    // ==========================================
+    // 9. CLOUDFLARE WORKER LESSONS FOR THIS GRADE
+    // ==========================================
+    const cfGradeGrid = document.getElementById('cf-grade-lessons-grid');
+    const cfGradeStatus = document.getElementById('cf-grade-lessons-status');
+    const cfGradeCount = document.getElementById('cf-grade-lessons-count');
+    const cfGradeRefreshBtn = document.getElementById('cf-grade-refresh-btn');
+
+    function renderGradeCloudflareLessons() {
+        if (!window.CloudflareLessons || !cfGradeGrid) return;
+        const allLessons = window.CloudflareLessons.getCachedLessons();
+        const gradeLessons = allLessons.filter(item => !item.grade || String(item.grade) === String(pola));
+
+        window.CloudflareLessons.renderLessonsGrid(cfGradeGrid, gradeLessons, {
+            emptyText: `هێشتا چ وانە بۆ (${currentGradeConfig.shortName}) لسەر سێرڤەرێ Cloudflare نەهاتینە بارکرن.`
+        });
+
+        if (cfGradeCount) {
+            cfGradeCount.textContent = `${gradeLessons.length} فایل`;
+        }
+        if (cfGradeStatus) {
+            cfGradeStatus.textContent = gradeLessons.length > 0
+                ? `${gradeLessons.length} وانە و فایل بۆ (${currentGradeConfig.shortName}) ئامادەنە`
+                : `چ وانە بۆ (${currentGradeConfig.shortName}) لسەر سێرڤەری نینن`;
+        }
+    }
+
+    async function loadGradeCloudflareLessons() {
+        if (!window.CloudflareLessons || !cfGradeGrid) return;
+        if (cfGradeStatus) {
+            cfGradeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> بارکرنا وانەیان ژ سێرڤەرێ Cloudflare...';
+        }
+        try {
+            await window.CloudflareLessons.fetchLessons();
+            renderGradeCloudflareLessons();
+        } catch (err) {
+            if (cfGradeStatus) {
+                cfGradeStatus.innerHTML = `<span style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> ${err.message}</span>`;
+            }
+            window.CloudflareLessons.renderLessonsGrid(cfGradeGrid, [], {
+                emptyText: 'نەشیا پەیوەندیێ ب سێرڤەرێ وانەیان بکەت.'
+            });
+        }
+    }
+
+    if (cfGradeRefreshBtn) {
+        cfGradeRefreshBtn.addEventListener('click', loadGradeCloudflareLessons);
+    }
+    window.addEventListener('cloudflareLessonsUpdated', renderGradeCloudflareLessons);
+
+    // Quick Compose inside Grade Page (For Students & Teachers)
+    const cfGradeComposeForm = document.getElementById('cf-grade-compose-form');
+    const cfGradePostFile = document.getElementById('cf-grade-post-file');
+    const cfGradeFileLabel = document.getElementById('cf-grade-file-label');
+    if (cfGradePostFile && cfGradeFileLabel) {
+        cfGradePostFile.addEventListener('change', () => {
+            const f = cfGradePostFile.files && cfGradePostFile.files[0];
+            cfGradeFileLabel.textContent = f ? f.name : 'فایل';
+        });
+    }
+    if (cfGradeComposeForm) {
+        cfGradeComposeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!window.CloudflareLessons) return;
+            if (!window.CloudflareLessons.canManageOrDownload()) {
+                window.CloudflareLessons.showToast('تەنێ مامۆستا و ئەدمین دشێن وانەیان بەلاڤ بکەن.', 'error');
+                return;
+            }
+            const user = window.CloudflareLessons.getCurrentUser();
+            if (!user) {
+                window.CloudflareLessons.openAuthModal('login', 'بۆ بەلاڤکرنا وانەیێ ل ڤێ پۆلێ، سەرەتا بچۆ ژوور.');
+                return;
+            }
+            const title = (document.getElementById('cf-grade-post-title') || {}).value.trim();
+            const content = (document.getElementById('cf-grade-post-content') || {}).value.trim();
+            const file = cfGradePostFile && cfGradePostFile.files ? cfGradePostFile.files[0] : null;
+            if (!title) return;
+
+            const submitBtn = document.getElementById('cf-grade-compose-submit');
+            const origHtml = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> بەلاڤکرن...';
+            }
+            try {
+                await window.CloudflareLessons.uploadLesson({
+                    file: file || null,
+                    meta: {
+                        user_id: user.id,
+                        author_name: user.full_name,
+                        role: user.role,
+                        title: title,
+                        content: content,
+                        description: content,
+                        grade: String(pola),
+                        createdAt: new Date().toISOString()
+                    }
+                });
+                cfGradeComposeForm.reset();
+                if (cfGradeFileLabel) cfGradeFileLabel.textContent = 'فایل';
+                const det = document.getElementById('cf-grade-compose-details');
+                if (det) det.open = false;
+                window.CloudflareLessons.showToast('ب سەرکەفتوویی لسەر سێرڤەری هاتە بەلاڤکرن! ✅', 'success');
+                renderGradeCloudflareLessons();
+            } catch (err) {
+                window.CloudflareLessons.showToast(err.message || 'نەشیا بەلاڤ بکەت.', 'error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = origHtml;
+                }
+            }
+        });
+    }
+
+    loadGradeCloudflareLessons();
 });
+

@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ڕێبەری زانکۆ و وەرگرتن | قۆناغا زانکۆیێ و معەدل</title>
+    <meta name="description" content="ڕێبەری گشتگیری بەش و کۆلێژەکانی زانکۆکانی کوردستان، پشکنین و هەژمارکردنی کۆنمرەی وەرگرتن (معەدل)، پارالێل و تایبەت.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        :root {
+            --univ-primary: #7209b7;
+            --univ-secondary: #4361ee;
+            --univ-accent: #4cc9f0;
+            --univ-success: #10b981;
+            --univ-warning: #f59e0b;
+        }
+
+        .univ-container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 15px 60px;
+        }
+
+        /* Top navigation header */
+        .univ-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 12px 18px;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px var(--shadow-color);
+        }
+
+        .univ-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .univ-brand-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #7209b7, #4361ee);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 12px rgba(114, 9, 183, 0.3);
+        }
+
+        .univ-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Hero Calculator Section */
+        .calculator-hero {
+            background: linear-gradient(135deg, rgba(114, 9, 183, 0.08), rgba(67, 97, 238, 0.08));
+            border: 1px solid rgba(114, 9, 183, 0.2);
+            border-radius: 20px;
+            padding: 26px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 24px var(--shadow-color);
+        }
+
+        .calculator-hero::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(114, 9, 183, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .calc-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+            align-items: flex-end;
+        }
+
+        .calc-input-box {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: right;
+        }
+
+        .calc-input-box label {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--primary-text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .calc-input-box input, 
+        .calc-input-box select {
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: var(--surface-color);
+            color: var(--primary-text);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .calc-input-box input:focus, 
+        .calc-input-box select:focus {
+            border-color: var(--univ-primary);
+            box-shadow: 0 0 0 3px rgba(114, 9, 183, 0.15);
+        }
+
+        .calc-btn-primary {
+            background: linear-gradient(135deg, #7209b7, #4361ee);
+            color: #ffffff;
+            border: none;
+            padding: 13px 20px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(114, 9, 183, 0.3);
+            transition: all 0.2s;
+        }
+
+        .calc-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(114, 9, 183, 0.4);
+        }
+
+        .calc-btn-reset {
+            background: var(--surface-color);
+            color: var(--secondary-text);
+            border: 1px solid var(--border-color);
+            padding: 13px 16px;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .calc-btn-reset:hover {
+            color: var(--primary-text);
+            border-color: var(--univ-primary);
+        }
+
+        /* Results summary pills */
+        .results-summary-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--border-color);
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .summary-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .summary-badge.accepted {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .summary-badge.parallel {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .summary-badge.private {
+            background: rgba(67, 97, 238, 0.15);
+            color: #4361ee;
+            border: 1px solid rgba(67, 97, 238, 0.3);
+        }
+
+        /* Search & Category Filter Navigation */
+        .controls-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .search-box-row {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-box-row input {
+            width: 100%;
+            padding: 14px 44px 14px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            background: var(--surface-color);
+            color: var(--primary-text);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            box-shadow: 0 4px 12px var(--shadow-color);
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .search-box-row input:focus {
+            border-color: var(--univ-primary);
+            box-shadow: 0 0 0 3px rgba(114, 9, 183, 0.15);
+        }
+
+        .search-box-row i {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary-text);
+            font-size: 1.1rem;
+        }
+
+        .category-filter-pills {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+        }
+
+        .cat-btn {
+            background: var(--surface-color);
+            color: var(--secondary-text);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .cat-btn:hover {
+            border-color: var(--univ-primary);
+            color: var(--primary-text);
+        }
+
+        .cat-btn.active {
+            background: var(--univ-primary);
+            color: #ffffff;
+            border-color: var(--univ-primary);
+            box-shadow: 0 3px 10px rgba(114, 9, 183, 0.3);
+        }
+
+        /* Departments Cards Grid */
+        .departments-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 18px;
+        }
+
+        .dept-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 14px var(--shadow-color);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            border-top: 4px solid var(--univ-primary);
+        }
+
+        .dept-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+            border-color: var(--univ-primary);
+        }
+
+        .dept-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .dept-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            flex-shrink: 0;
+        }
+
+        .dept-title-group h3 {
+            margin: 0 0 3px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-text);
+            line-height: 1.3;
+        }
+
+        .dept-title-group .dept-sub {
+            font-size: 0.78rem;
+            color: var(--secondary-text);
+            direction: ltr;
+            text-align: right;
+            display: block;
+        }
+
+        .dept-score-matrix {
+            background: rgba(0, 0, 0, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin: 12px 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+
+        [data-theme="dark"] .dept-score-matrix {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .score-col {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .score-label {
+            font-size: 0.72rem;
+            color: var(--secondary-text);
+            font-weight: 600;
+        }
+
+        .score-val {
+            font-size: 1.05rem;
+            font-weight: 800;
+        }
+
+        .score-val.general {
+            color: #10b981;
+        }
+        .score-val.parallel {
+            color: #f59e0b;
+        }
+        .score-val.private {
+            color: #3b82f6;
+        }
+
+        .dept-meta-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .meta-tag {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 8px;
+            background: rgba(0, 123, 255, 0.08);
+            color: var(--primary-text);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .dept-desc {
+            font-size: 0.84rem;
+            color: var(--secondary-text);
+            line-height: 1.5;
+            margin: 0 0 14px;
+            flex-grow: 1;
+        }
+
+        .dept-univs-box {
+            font-size: 0.76rem;
+            color: var(--secondary-text);
+            background: rgba(114, 9, 183, 0.05);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        .dept-footer-actions {
+            display: flex;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .dept-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .dept-btn-primary {
+            background: linear-gradient(135deg, #7209b7, #4361ee);
+            color: #ffffff;
+        }
+        .dept-btn-primary:hover {
+            opacity: 0.92;
+        }
+
+        .dept-btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--primary-text);
+        }
+        .dept-btn-outline:hover {
+            border-color: var(--univ-primary);
+            color: var(--univ-primary);
+        }
+
+        /* Admission Status Indicator Pill on Cards */
+        .admission-status-pill {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Detail Modal */
+        .univ-modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(4px);
+        }
+
+        .univ-modal-dialog {
+            background: var(--surface-color);
+            border-radius: 20px;
+            max-width: 650px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            text-align: right;
+            padding: 26px;
+            position: relative;
+        }
+
+        .univ-modal-close {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--surface-color);
+            color: var(--secondary-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .univ-modal-close:hover {
+            color: #e63946;
+            border-color: #e63946;
+        }
+
+        /* Study Materials section */
+        .univ-resources-section {
+            margin-top: 40px;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 24px;
+            text-align: right;
+            box-shadow: 0 4px 16px var(--shadow-color);
+        }
+
+        @media (max-width: 600px) {
+            .calc-form-grid {
+                grid-template-columns: 1fr;
+            }
+            .departments-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="univ-container">
+        <!-- Top Nav / Back to Home -->
+        <header class="univ-header">
+            <a href="index.html" class="univ-brand">
+                <div class="univ-brand-icon">
+                    <i class="fas fa-university"></i>
+                </div>
+                <div>
+                    <h1 style="margin:0; font-size:1.25rem; font-weight:800;">ڕێبەری زانکۆ و وەرگرتن</h1>
+                    <span style="font-size:0.8rem; color:var(--secondary-text);">کۆنمرە (معەدل) و سەرجەم بەشەکانی زانکۆ</span>
+                </div>
+            </a>
+
+            <div class="univ-actions">
+                <a href="grade.html?pola=univ" class="btn-cancel" style="padding:7px 14px; font-size:0.82rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-book-reader" style="color:var(--univ-primary);"></i> مەلزەمە و موحازەراتێن زانکۆ
+                </a>
+                <a href="index.html" class="btn-save" style="background:var(--univ-primary); padding:7px 14px; font-size:0.82rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-home"></i> سەرەکی
+                </a>
+                <button id="univ-theme-toggle" class="theme-toggle-button" style="width:36px; height:36px;" title="گۆڕینی تێما">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Calculator Hero Banner -->
+        <section class="calculator-hero">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h2 style="margin:0 0 6px; font-size:1.35rem; color:var(--primary-text); font-weight:800;">
+                        <i class="fas fa-calculator" style="color:var(--univ-primary);"></i> پشکنینی ڕاستەوخۆی نمرەی پۆلا ١٢ (معەدل)
+                    </h2>
+                    <p style="margin:0; font-size:0.88rem; color:var(--secondary-text);">
+                        نمرەی خۆت یان معەدلی پێشبینیکراو بنووسە تا دەستبەجێ بەشە شایستەکانی خۆت ببینی:
+                    </p>
+                </div>
+                <span style="background:rgba(114,9,183,0.12); color:var(--univ-primary); padding:4px 12px; border-radius:20px; font-size:0.8rem; font-weight:700;">
+                    ساڵی نوێی خوێندن
+                </span>
+            </div>
+
+            <!-- Form inputs -->
+            <div class="calc-form-grid">
+                <div class="calc-input-box" style="flex:1.2;">
+                    <label for="student-score-input">
+                        <i class="fas fa-percentage" style="color:var(--univ-primary);"></i> نمرە / معەدل (وەک: 87.5):
+                    </label>
+                    <input type="number" id="student-score-input" min="50" max="100" step="0.1" placeholder="بۆ نموونە: 86.4">
+                </div>
+
+                <div class="calc-input-box">
+                    <label for="student-branch-select">
+                        <i class="fas fa-graduation-cap" style="color:var(--univ-secondary);"></i> لقی خوێندن:
+                    </label>
+                    <select id="student-branch-select">
+                        <option value="all">گشت لقەکان (زانستی و وێژەیی)</option>
+                        <option value="scientific">زانستی (Scientific)</option>
+                        <option value="literary">وێژەیی (Literary)</option>
+                    </select>
+                </div>
+
+                <div class="calc-input-box">
+                    <label for="student-city-select">
+                        <i class="fas fa-map-marker-alt" style="color:#e63946;"></i> زانکۆ یان پارێزگا:
+                    </label>
+                    <select id="student-city-select">
+                        <option value="all">گشت زانکۆکانی هەرێمی کوردستان</option>
+                        <option value="دهۆک">زانکۆکانی دهۆک و زاخۆ</option>
+                        <option value="هەولێر">زانکۆکانی هەولێر</option>
+                        <option value="سلێمانی">زانکۆکانی سلێمانی</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:8px;">
+                    <button type="button" id="calc-apply-btn" class="calc-btn-primary" style="flex:1;">
+                        <i class="fas fa-search"></i> پیشاندان
+                    </button>
+                    <button type="button" id="calc-reset-btn" class="calc-btn-reset" title="پاککردنەوە">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Score Results Summary Strip -->
+            <div class="results-summary-strip" id="score-summary-strip" style="display:none;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:0.9rem; font-weight:700;">ئەنجامی شایستەبوون بۆ معەدلی <span id="summary-score-value" style="color:var(--univ-primary);"></span>:</span>
+                    <span class="summary-badge accepted" id="badge-accepted-count">
+                        <i class="fas fa-check-circle"></i> <span id="count-accepted">0</span> حکومی گشتی
+                    </span>
+                    <span class="summary-badge parallel" id="badge-parallel-count">
+                        <i class="fas fa-adjust"></i> <span id="count-parallel">0</span> پارالێل
+                    </span>
+                    <span class="summary-badge private" id="badge-private-count">
+                        <i class="fas fa-university"></i> <span id="count-private">0</span> ئەهلی و تایبەت
+                    </span>
+                </div>
+                <div style="font-size:0.8rem; color:var(--secondary-text);">
+                    <i class="fas fa-info-circle"></i> نمرەکان نزیکەیین بەپێی ساڵنامەی فەرمی وەرگرتن
+                </div>
+            </div>
+        </section>
+
+        <!-- Search & Category Filters -->
+        <section class="controls-toolbar">
+            <div class="search-box-row">
+                <i class="fas fa-search"></i>
+                <input type="text" id="dept-search-input" placeholder="گەڕان بەدوای بەشێکدا... (وەک: پزیشکی، دەرمانسازی، ئەندازیاری پرۆگرامسازی، نەوت، یاسا، ژمێریاری، IT)">
+            </div>
+
+            <div class="category-filter-pills" id="dept-category-pills">
+                <button class="cat-btn active" data-cat="all">
+                    <i class="fas fa-th-large"></i> هەموو بەشەکان (<span id="total-dept-count">0</span>)
+                </button>
+                <button class="cat-btn" data-cat="medical">
+                    <i class="fas fa-user-md" style="color:#e63946;"></i> کۆلێژێن پزیشکی
+                </button>
+                <button class="cat-btn" data-cat="engineering">
+                    <i class="fas fa-cogs" style="color:#4361ee;"></i> ئەندازیاری
+                </button>
+                <button class="cat-btn" data-cat="science">
+                    <i class="fas fa-laptop-code" style="color:#00b4d8;"></i> زانست و کۆمپیوتەر
+                </button>
+                <button class="cat-btn" data-cat="business_law">
+                    <i class="fas fa-balance-scale" style="color:#f59e0b;"></i> کارگێڕی و یاسا
+                </button>
+                <button class="cat-btn" data-cat="arts">
+                    <i class="fas fa-language" style="color:#8b5cf6;"></i> زمان و پەروەردە
+                </button>
+                <button class="cat-btn" data-cat="polytechnic">
+                    <i class="fas fa-tools" style="color:#10b981;"></i> پەیمانگە تەکنیکییەکان
+                </button>
+            </div>
+        </section>
+
+        <!-- Departments Grid -->
+        <main class="departments-grid" id="departments-grid">
+            <!-- Rendered by university.js -->
+        </main>
+
+        <!-- University Study Resources (مەلزەمە و کەرەستەکانی قۆناغا زانکۆیێ) -->
+        <section class="univ-resources-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <div>
+                    <h2 style="margin:0 0 4px; font-size:1.25rem; font-weight:800;">
+                        <i class="fas fa-folder-open" style="color:var(--univ-primary);"></i> مەلزەمە و کەرەستەکانی خوێندنی زانکۆ
+                    </h2>
+                    <p style="margin:0; font-size:0.85rem; color:var(--secondary-text);">
+                        سەرچاوەکان، موحازەرات و فایلی PDF، پاوەرپۆینت بۆ قۆناغەکانی زانکۆ
+                    </p>
+                </div>
+                <a href="grade.html?pola=univ" class="btn-save" style="background:var(--univ-primary); padding:8px 16px; font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="fas fa-external-link-alt"></i> چوون بۆ کتێبخانەی زانکۆ
+                </a>
+            </div>
+            <div style="background:rgba(0,0,0,0.02); border:1px dashed var(--border-color); border-radius:12px; padding:18px; text-align:center;">
+                <p style="margin:0 0 8px; font-size:0.9rem; color:var(--primary-text); font-weight:600;">
+                    ئایا مامۆستای زانکۆیت یان قوتابی؟
+                </p>
+                <p style="margin:0; font-size:0.82rem; color:var(--secondary-text);">
+                    دەتوانیت مەلزەمە و وانەکانی خۆت باربکەیت (Upload) تا لە لایەن ئەدمینەوە پەسەند بکرێت و هەمووان سوودی لێ وەرگرن.
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Department Detail Modal -->
+    <div class="univ-modal-backdrop" id="dept-modal-backdrop">
+        <div class="univ-modal-dialog">
+            <button type="button" class="univ-modal-close" id="dept-modal-close">&times;</button>
+            <div id="dept-modal-body">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="educational-data.js"></script>
+    <script src="university.js"></script>
+</body>
+</html>

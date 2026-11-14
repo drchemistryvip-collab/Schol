@@ -13,6 +13,88 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const TEMPLATE_FILE = path.join(__dirname, 'ai-template.json');
+const COMMUNITY_POSTS_FILE = path.join(__dirname, 'community-posts.json');
+const COMMUNITY_UPLOADS_DIR = path.join(__dirname, 'community-uploads');
+
+interface CommunityComment {
+  id: string;
+  author_id: string;
+  author_name: string;
+  author_role: string;
+  text: string;
+  createdAt: number;
+}
+
+interface CommunityPost {
+  id: string;
+  author_id: string;
+  author_name: string;
+  author_username: string;
+  author_role: string;
+  title: string;
+  content: string;
+  imageUrl: string;
+  link: string;
+  status: 'pending' | 'approved' | 'rejected';
+  comments: CommunityComment[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface AuthorizedImageUser {
+  id?: string;
+  username: string;
+  full_name?: string;
+  grantedAt: number;
+}
+
+interface CommunityStore {
+  authorizedImageUsers: AuthorizedImageUser[];
+  posts: CommunityPost[];
+}
+
+function readCommunityStore(): CommunityStore {
+  try {
+    if (fs.existsSync(COMMUNITY_POSTS_FILE)) {
+      const raw = JSON.parse(fs.readFileSync(COMMUNITY_POSTS_FILE, 'utf-8'));
+      return {
+        authorizedImageUsers: Array.isArray(raw.authorizedImageUsers) ? raw.authorizedImageUsers : [],
+        posts: Array.isArray(raw.posts) ? raw.posts : []
+      };
+    }
+  } catch (e) {
+    console.error('Failed to read community-posts.json:', e);
+  }
+  return { authorizedImageUsers: [], posts: [] };
+}
+
+function writeCommunityStore(store: CommunityStore) {
+  fs.writeFileSync(COMMUNITY_POSTS_FILE, JSON.stringify(store, null, 2), 'utf-8');
+}
+
+function saveBase64PostImage(dataUrl: string, postId: string): string {
+  if (!dataUrl || !dataUrl.startsWith('data:image/')) return '';
+  const match = dataUrl.match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.+)$/i);
+  if (!match) return '';
+  const ext = match[1].toLowerCase() === 'jpeg' ? 'jpg' : match[1].toLowerCase();
+  const base64Data = match[2];
+  if (!fs.existsSync(COMMUNITY_UPLOADS_DIR)) {
+    fs.mkdirSync(COMMUNITY_UPLOADS_DIR, { recursive: true });
+  }
+  const fileName = `${postId}.${ext}`;
+  const fullPath = path.join(COMMUNITY_UPLOADS_DIR, fileName);
+  fs.writeFileSync(fullPath, Buffer.from(base64Data, 'base64'));
+  return `/community-uploads/${fileName}`;
+}
+
+function isUserAuthorizedForImages(store: CommunityStore, userId: string, username: string): boolean {
+  const cleanId = String(userId || '').trim();
+  const cleanUsername = String(username || '').trim().toLowerCase();
+  return store.authorizedImageUsers.some(u =>
+    (cleanId && u.id && String(u.id) === cleanId) ||
+    (cleanUsername && u.username && String(u.username).trim().toLowerCase() === cleanUsername)
+  );
+}
 
 function getAiTemplateConfig() {
   try {
@@ -43,15 +125,25 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-  // Initialize Gemini AI SDK
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      }
+  // Shared server-side Gemini AI client (uses process.env.GEMINI_API_KEY only)
+  let cachedAiClient: GoogleGenAI | null = null;
+  function getServerAiClient(): GoogleGenAI {
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not configured on the server.');
     }
-  });
+    if (!cachedAiClient) {
+      cachedAiClient = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+    }
+    return cachedAiClient;
+  }
 
   // Health check endpoint
   app.get('/api/health', (req, res) => {
@@ -77,55 +169,44 @@ async function startServer() {
   });
 
   // =========================================================================
-  // GEMINI API KEY VALIDATION ENDPOINT
+  // SERVER-SIDE GEMINI STATUS CHECK ENDPOINT
   // =========================================================================
-  app.post('/api/gemini/validate-key', async (req, res) => {
+  app.get('/api/gemini/status', async (req, res) => {
     try {
-      const { apiKey } = req.body;
-      const keyToTest = (apiKey && typeof apiKey === 'string' && apiKey.trim()) || process.env.GEMINI_API_KEY;
-      if (!keyToTest) {
-        return res.status(400).json({
-          success: false,
-          valid: false,
-          error: 'خەلەتە: هیچ کلیلی API نەهاتە دیتن یان دیاریکردن.'
-        });
-      }
-
-      const client = new GoogleGenAI({ apiKey: keyToTest });
+      const client = getServerAiClient();
       const testRes = await client.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: 'Test connection: reply with OK'
+        model: 'gemini-4-hydrogen',
+        contents: 'Reply with OK'
       });
 
       if (testRes && testRes.text) {
         return res.json({
           success: true,
-          valid: true,
-          message: 'سەرکەفتی بوو! کلیلی API یا دروستە و مۆدێلا Gemini چالاکە.'
-        });
-      } else {
-        return res.status(400).json({
-          success: false,
-          valid: false,
-          error: 'خەلەتە: مۆدێلێ نەشیا وەڵام بدەت.'
+          ready: true,
+          model: 'gemini-4-hydrogen'
         });
       }
-    } catch (err: any) {
-      console.error('Validation of Gemini API key failed:', err);
-      const msg = err.message || '';
-      return res.status(400).json({
+      return res.status(502).json({
         success: false,
-        valid: false,
-        error: `خەلەتە: کلیلی API نادروستە یان کار ناکەت (${msg})`
+        ready: false,
+        error: 'Model returned an empty response.'
+      });
+    } catch (err: any) {
+      console.error('Server Gemini status check failed:', err);
+      return res.status(500).json({
+        success: false,
+        ready: false,
+        error: err.message || 'Gemini service is unavailable on the server.'
       });
     }
   });
 
   // =========================================================================
-  // GEMINI TEACHER CONTENT GENERATION ENDPOINT
+  // GEMINI TEACHER CONTENT GENERATION ENDPOINT (Server-Side Only)
   // =========================================================================
   app.post('/api/gemini/generate-teacher-content', async (req, res) => {
     try {
+      const ai = getServerAiClient();
       const {
         subject = 'کیمیا',
         grade = '12',
@@ -147,15 +228,20 @@ async function startServer() {
 
       const promptParts: any[] = [];
 
-      // If user uploaded an image, provide image inline data
-      if (fileData && fileType && fileType.startsWith('image/')) {
-        const cleanBase64 = fileData.replace(/^data:image\/[a-zA-Z0-9.+_-]+;base64,/, '');
-        promptParts.push({
-          inlineData: {
-            mimeType: fileType,
-            data: cleanBase64
+      // Attach uploaded image or PDF as inlineData when provided
+      if (fileData && typeof fileData === 'string') {
+        const detectedMime = fileType || (fileData.match(/^data:([^;]+);base64,/)?.[1] || '');
+        if (detectedMime && (detectedMime.startsWith('image/') || detectedMime === 'application/pdf')) {
+          const cleanBase64 = fileData.replace(/^data:[^;]+;base64,/, '');
+          if (cleanBase64) {
+            promptParts.push({
+              inlineData: {
+                mimeType: detectedMime,
+                data: cleanBase64
+              }
+            });
           }
-        });
+        }
       }
 
       // Build comprehensive prompt
@@ -197,10 +283,10 @@ Return STRICT JSON complying with the requested schema. No markdown formatting o
 
       promptParts.push({ text: promptText });
 
-      // Call Gemini 3.8 Flash model
+      // Call Gemini 4 Hydrogen model on the server
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: promptParts,
+        model: 'gemini-4-hydrogen',
+        contents: { parts: promptParts },
         config: {
           systemInstruction: 'You are an educational AI assistant generating structured Kurdish curriculum PowerPoint slides and multiple choice questions.',
           responseMimeType: 'application/json',
@@ -255,7 +341,10 @@ Return STRICT JSON complying with the requested schema. No markdown formatting o
         }
       });
 
-      const rawText = response.text || '{}';
+      const rawText = (response.text || '{}')
+        .replace(/^```json\s*/i, '')
+        .replace(/```\s*$/, '')
+        .trim();
       let parsedData: any = {};
       try {
         parsedData = JSON.parse(rawText);
@@ -290,11 +379,261 @@ Return STRICT JSON complying with the requested schema. No markdown formatting o
       });
     } catch (err: any) {
       console.error('Error generating teacher content with Gemini:', err);
-      res.status(500).json({
+      const status = typeof err?.status === 'number' ? err.status : 500;
+      res.status(status >= 400 && status < 600 ? status : 500).json({
         success: false,
         error: err.message || 'Error occurred while contacting Gemini API'
       });
     }
+  });
+
+  // =========================================================================
+  // COMMUNITY POSTS, MODERATION, COMMENTS & IMAGE PERMISSIONS API
+  // =========================================================================
+  if (!fs.existsSync(COMMUNITY_UPLOADS_DIR)) {
+    fs.mkdirSync(COMMUNITY_UPLOADS_DIR, { recursive: true });
+  }
+  app.use('/community-uploads', express.static(COMMUNITY_UPLOADS_DIR));
+
+  app.get('/api/community-posts', (req, res) => {
+    const store = readCommunityStore();
+    const userId = String(req.query.userId || '').trim();
+    const username = String(req.query.username || '').trim();
+    const isAdmin = req.query.isAdmin === 'true';
+
+    const visiblePosts = store.posts
+      .filter(p => {
+        if (isAdmin) return true;
+        if (p.status === 'approved') return true;
+        if (userId && String(p.author_id) === userId) return true;
+        return false;
+      })
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    res.json({
+      posts: visiblePosts,
+      authorizedImageUsers: isAdmin ? store.authorizedImageUsers : [],
+      canCurrentUserPostImages: isAdmin || isUserAuthorizedForImages(store, userId, username)
+    });
+  });
+
+  app.post('/api/community-posts', (req, res) => {
+    try {
+      const store = readCommunityStore();
+      const body = req.body || {};
+      const userId = String(body.user_id || body.author_id || '').trim();
+      const authorName = String(body.author_name || 'بەکارهێنەر').trim();
+      const authorUsername = String(body.author_username || '').trim();
+      const authorRole = String(body.author_role || 'student').trim();
+      const isAdmin = Boolean(body.isAdmin === true || authorRole === 'admin');
+      const title = String(body.title || '').trim();
+      const content = String(body.content || '').trim();
+      const rawImage = String(body.imageData || body.imageUrl || '').trim();
+      const rawLink = String(body.link || '').trim();
+
+      if (!userId) {
+        return res.status(401).json({ error: 'تکایە سەرەتا بچۆ ژوور.' });
+      }
+      if (!title && !content) {
+        return res.status(400).json({ error: 'تکایە ناڤونیشان یان دەقێ پۆستێ بنڤیسە.' });
+      }
+
+      const canPostImage = isAdmin || isUserAuthorizedForImages(store, userId, authorUsername);
+      if (!canPostImage && rawImage) {
+        return res.status(403).json({
+          error: 'بتنی ئەدمین یان ئەو کەسێ ئەدمینی ڕێک پێ دایی دشێن وێنەی بەلاڤ بکەن؛ قوتابی بتنی دشێن نڤیسینێ بەلاڤ بکەن.'
+        });
+      }
+
+      const postId = 'cp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      let finalImageUrl = '';
+      if (canPostImage && rawImage) {
+        if (rawImage.startsWith('data:image/')) {
+          finalImageUrl = saveBase64PostImage(rawImage, postId);
+        } else if (/^https?:\/\//i.test(rawImage) || rawImage.startsWith('/community-uploads/')) {
+          finalImageUrl = rawImage;
+        }
+      }
+
+      const finalLink = canPostImage ? rawLink : '';
+      const now = Date.now();
+      const newPost: CommunityPost = {
+        id: postId,
+        author_id: userId,
+        author_name: authorName,
+        author_username: authorUsername,
+        author_role: isAdmin ? 'admin' : authorRole,
+        title,
+        content,
+        imageUrl: finalImageUrl,
+        link: finalLink,
+        status: isAdmin ? 'approved' : 'pending',
+        comments: [],
+        createdAt: now,
+        updatedAt: now
+      };
+
+      store.posts.unshift(newPost);
+      writeCommunityStore(store);
+
+      res.json({
+        success: true,
+        post: newPost,
+        pendingReview: newPost.status === 'pending'
+      });
+    } catch (err: any) {
+      console.error('Error creating community post:', err);
+      res.status(500).json({ error: err.message || 'نەشیا پۆستی تۆمار بکەت.' });
+    }
+  });
+
+  app.post('/api/community-posts/:id/moderate', (req, res) => {
+    const store = readCommunityStore();
+    const { id } = req.params;
+    const { isAdmin, status } = req.body || {};
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'بتنی ئەدمین دشێت پێداچوونێ بکەت.' });
+    }
+    if (status !== 'approved' && status !== 'rejected') {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+    const post = store.posts.find(p => p.id === id);
+    if (!post) {
+      return res.status(404).json({ error: 'پۆست نەهاتە دیتن.' });
+    }
+    post.status = status;
+    post.updatedAt = Date.now();
+    writeCommunityStore(store);
+    res.json({ success: true, post });
+  });
+
+  app.delete('/api/community-posts/:id', (req, res) => {
+    const store = readCommunityStore();
+    const { id } = req.params;
+    const userId = String((req.body && req.body.user_id) || req.query.userId || '').trim();
+    const isAdmin = Boolean((req.body && req.body.isAdmin === true) || req.query.isAdmin === 'true');
+
+    const idx = store.posts.findIndex(p => p.id === id);
+    if (idx === -1) {
+      return res.status(404).json({ error: 'پۆست نەهاتە دیتن.' });
+    }
+    const target = store.posts[idx];
+    if (!isAdmin && (!userId || String(target.author_id) !== userId)) {
+      return res.status(403).json({ error: 'تۆ بتنی دشێی پۆستێن خۆ ژێببەی.' });
+    }
+
+    if (target.imageUrl && target.imageUrl.startsWith('/community-uploads/')) {
+      const filePath = path.join(COMMUNITY_UPLOADS_DIR, path.basename(target.imageUrl));
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch (e) {}
+      }
+    }
+
+    store.posts.splice(idx, 1);
+    writeCommunityStore(store);
+    res.json({ success: true });
+  });
+
+  app.post('/api/community-posts/:id/comments', (req, res) => {
+    const store = readCommunityStore();
+    const { id } = req.params;
+    const { user_id, author_name, author_role, text } = req.body || {};
+
+    if (!user_id) {
+      return res.status(401).json({ error: 'بۆ نڤیسینا کۆمێنتێ، تکایە سەرەتا بچۆ ژوور.' });
+    }
+    const cleanText = String(text || '').trim();
+    if (!cleanText) {
+      return res.status(400).json({ error: 'تکایە کۆمێنتا خۆ بنڤیسە.' });
+    }
+
+    const post = store.posts.find(p => p.id === id);
+    if (!post) {
+      return res.status(404).json({ error: 'پۆست نەهاتە دیتن.' });
+    }
+    if (post.status !== 'approved') {
+      return res.status(403).json({ error: 'کۆمێنت بتنی ل سەر پۆستێن پەسەندکری ڤەکرینە.' });
+    }
+
+    const comment: CommunityComment = {
+      id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      author_id: String(user_id),
+      author_name: String(author_name || 'بەکارهێنەر'),
+      author_role: String(author_role || 'student'),
+      text: cleanText,
+      createdAt: Date.now()
+    };
+
+    post.comments = Array.isArray(post.comments) ? post.comments : [];
+    post.comments.push(comment);
+    post.updatedAt = Date.now();
+    writeCommunityStore(store);
+    res.json({ success: true, comment, post });
+  });
+
+  app.delete('/api/community-posts/:id/comments/:commentId', (req, res) => {
+    const store = readCommunityStore();
+    const { id, commentId } = req.params;
+    const userId = String((req.body && req.body.user_id) || req.query.userId || '').trim();
+    const isAdmin = Boolean((req.body && req.body.isAdmin === true) || req.query.isAdmin === 'true');
+
+    const post = store.posts.find(p => p.id === id);
+    if (!post) return res.status(404).json({ error: 'پۆست نەهاتە دیتن.' });
+    const comments = Array.isArray(post.comments) ? post.comments : [];
+    const cIdx = comments.findIndex(c => c.id === commentId);
+    if (cIdx === -1) return res.status(404).json({ error: 'کۆمێنت نەهاتە دیتن.' });
+
+    if (!isAdmin && (!userId || String(comments[cIdx].author_id) !== userId)) {
+      return res.status(403).json({ error: 'تۆ بتنی دشێی کۆمێنتا خۆ ژێببەی.' });
+    }
+    comments.splice(cIdx, 1);
+    post.updatedAt = Date.now();
+    writeCommunityStore(store);
+    res.json({ success: true, post });
+  });
+
+  app.get('/api/community-posts/permissions', (req, res) => {
+    const store = readCommunityStore();
+    res.json({ authorizedImageUsers: store.authorizedImageUsers });
+  });
+
+  app.post('/api/community-posts/permissions', (req, res) => {
+    const store = readCommunityStore();
+    const { isAdmin, action, username, user_id, full_name, singleOnly } = req.body || {};
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'بتنی ئەدمین دشێت دەسەڵاتێ بدەت.' });
+    }
+    const cleanUsername = String(username || '').trim();
+    const cleanId = String(user_id || '').trim();
+
+    if (action === 'revoke') {
+      store.authorizedImageUsers = store.authorizedImageUsers.filter(u =>
+        (cleanUsername ? u.username.toLowerCase() !== cleanUsername.toLowerCase() : true) &&
+        (cleanId ? String(u.id || '') !== cleanId : true)
+      );
+    } else if (action === 'grant') {
+      if (!cleanUsername && !cleanId) {
+        return res.status(400).json({ error: 'تکایە یوزەرنەیم بنڤیسە.' });
+      }
+      const nextEntry: AuthorizedImageUser = {
+        id: cleanId || undefined,
+        username: cleanUsername,
+        full_name: String(full_name || '').trim() || undefined,
+        grantedAt: Date.now()
+      };
+      if (singleOnly) {
+        store.authorizedImageUsers = [nextEntry];
+      } else {
+        const exists = store.authorizedImageUsers.some(
+          u => u.username && cleanUsername && u.username.toLowerCase() === cleanUsername.toLowerCase()
+        );
+        if (!exists) {
+          store.authorizedImageUsers.push(nextEntry);
+        }
+      }
+    }
+    writeCommunityStore(store);
+    res.json({ success: true, authorizedImageUsers: store.authorizedImageUsers });
   });
 
   // =========================================================================

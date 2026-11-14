@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const personalizedUserCard = document.getElementById('personalized-user-card');
     const editMyProfileBtn = document.getElementById('edit-my-profile-btn');
     const btnTopSignout = document.getElementById('btn-top-signout');
+    const pendingTeacherVerifyBtn = document.getElementById('pending-teacher-verify-btn');
 
     // Modals
     const roleModal = document.getElementById('role-selection-modal');
@@ -170,20 +171,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 </a>
             `).join('');
 
+            const targetUrl = g.customUrl || `grade.html?pola=${g.id}`;
+            const isUniv = g.id === 'univ';
+
             return `
-                <div onclick="window.location.href='grade.html?pola=${g.id}'" class="grade-card-item" style="border-right-color: ${g.color || '#007bff'}; cursor:pointer;">
+                <div onclick="window.location.href='${targetUrl}'" class="grade-card-item" style="border-right-color: ${g.color || '#007bff'}; cursor:pointer; ${isUniv ? 'background: linear-gradient(135deg, var(--surface-color), rgba(114, 9, 183, 0.05));' : ''}">
                     <div class="grade-card-icon" style="background: ${g.color}18; color: ${g.color || '#007bff'};">
                         <i class="fas ${g.icon || 'fa-school'}"></i>
                     </div>
                     <div style="flex: 1;">
-                        <h3 style="margin: 0 0 4px; font-size: 1.05rem;">${g.name}</h3>
+                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                            <h3 style="margin: 0 0 2px; font-size: 1.05rem;">${g.name}</h3>
+                            ${isUniv ? '<span style="font-size:0.7rem; background:#7209b7; color:#fff; padding:1px 6px; border-radius:8px; font-weight:700;">بەش و معەدل</span>' : ''}
+                        </div>
                         <p style="margin: 0 0 4px; color: var(--secondary-text); font-size: 0.8rem;">
-                            <i class="fas fa-users" style="color:var(--blue-accent);"></i> ${teacherCount} مامۆستا (${dataStore.getLanguageLabel(currentLang)})
+                            ${isUniv 
+                                ? '<i class="fas fa-graduation-cap" style="color:#7209b7;"></i> ٢٥+ بەش و کۆنمرەکان | مەلزەمەی زانکۆ' 
+                                : `<i class="fas fa-users" style="color:var(--blue-accent);"></i> ${teacherCount} مامۆستا (${dataStore.getLanguageLabel(currentLang)})`}
                         </p>
                         ${subjectsPills ? `
                         <div style="margin-top: 4px; display:flex; flex-wrap:wrap; gap:3px; align-items:center;">
                             <span style="font-size:0.72rem; color:var(--secondary-text); margin-left:3px;"><i class="fas fa-layer-group"></i> بابەتەکان:</span>
                             ${subjectsPills}
+                        </div>
+                        ` : ''}
+                        ${isUniv ? `
+                        <div style="margin-top: 6px; display:flex; gap:6px;" onclick="event.stopPropagation();">
+                            <a href="university.html" style="font-size:0.75rem; color:#7209b7; text-decoration:none; font-weight:700; background:rgba(114,9,183,0.1); padding:2px 8px; border-radius:6px;">
+                                <i class="fas fa-calculator"></i> پشکنینا معەدلی
+                            </a>
+                            <a href="grade.html?pola=univ" style="font-size:0.75rem; color:var(--blue-accent); text-decoration:none; font-weight:600; background:rgba(0,123,255,0.1); padding:2px 8px; border-radius:6px;">
+                                <i class="fas fa-book"></i> مەلزەمەکان
+                            </a>
                         </div>
                         ` : ''}
                     </div>
@@ -215,8 +234,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. ROLE MANAGEMENT & INITIAL LAUNCH
     // ==========================================
     function updateRoleUI() {
+        const cfUser = window.CloudflareLessons ? window.CloudflareLessons.getCurrentUser() : null;
         const profile = getUserProfile();
-        const role = profile ? profile.role : dataStore.getUserRole();
+        const role = (cfUser && cfUser.role) || (profile && profile.role) || dataStore.getUserRole() || 'student';
         const isSuperAdmin = dataStore.isCurrentUserSuperAdmin();
         const currentLang = dataStore.getActiveLanguage();
 
@@ -225,7 +245,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Personalized Profile Info
-        if (profile) {
+        if (cfUser) {
+            if (topUserName) topUserName.textContent = cfUser.full_name || 'بەکارهێنەر';
+            if (topUserAvatar) {
+                topUserAvatar.src = (profile && profile.avatar) || (cfUser.role === 'teacher' ? RANDOM_AVATARS[2] : RANDOM_AVATARS[0]);
+            }
+            if (topUserBio) {
+                const subText = (profile && profile.bio && profile.bio !== 'مامۆستا' && profile.bio !== 'قوتابی')
+                    ? profile.bio
+                    : (cfUser.username ? `@${cfUser.username}` : '');
+                if (subText) {
+                    topUserBio.textContent = subText;
+                    topUserBio.style.display = 'block';
+                } else {
+                    topUserBio.style.display = 'none';
+                }
+            }
+        } else if (profile) {
             if (topUserName) topUserName.textContent = profile.name || 'بەکارهێنەر';
             if (topUserAvatar) {
                 topUserAvatar.src = profile.avatar || RANDOM_AVATARS[0];
@@ -240,6 +276,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Default signout button appearance
+        if (btnTopSignout) {
+            if (role === 'guest' && !cfUser) {
+                btnTopSignout.innerHTML = '<i class="fas fa-sign-in-alt"></i> چوونا ژوور / تۆمارکرن';
+                btnTopSignout.style.background = 'rgba(37, 99, 235, 0.12)';
+                btnTopSignout.style.color = 'var(--blue-accent)';
+                btnTopSignout.style.borderColor = 'rgba(37, 99, 235, 0.3)';
+            } else {
+                btnTopSignout.innerHTML = '<i class="fas fa-sign-out-alt"></i> دەرکەفتن (Sign Out)';
+                btnTopSignout.style.background = 'rgba(220,53,69,0.1)';
+                btnTopSignout.style.color = '#dc3545';
+                btnTopSignout.style.borderColor = 'rgba(220,53,69,0.25)';
+            }
+        }
+
         if (isSuperAdmin) {
             if (homeRoleBadge) {
                 homeRoleBadge.className = 'role-badge-pill admin';
@@ -247,22 +298,61 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (homeAdminLink) homeAdminLink.style.display = 'inline-flex';
             if (homeTeacherLink) homeTeacherLink.style.display = 'inline-flex';
+            if (pendingTeacherVerifyBtn) pendingTeacherVerifyBtn.style.display = 'none';
         } else if (role === 'teacher') {
-            if (homeRoleBadge) {
-                homeRoleBadge.className = 'role-badge-pill teacher';
-                homeRoleText.innerHTML = '<i class="fas fa-chalkboard-teacher"></i> مامۆستا';
+            const teacherRec = (profile && profile.teacherId ? dataStore.getTeacherById(profile.teacherId) : null) || dataStore.getCurrentTeacher();
+            const isVerifiedCfTeacher = Boolean(cfUser && cfUser.role === 'teacher');
+            const teacherStatus = isVerifiedCfTeacher
+                ? 'approved'
+                : ((teacherRec && teacherRec.status) || (profile && profile.teacherStatus) || 'pending');
+
+            if (teacherStatus === 'approved') {
+                if (homeRoleBadge) {
+                    homeRoleBadge.className = 'role-badge-pill teacher';
+                    homeRoleBadge.style.background = '';
+                    homeRoleBadge.style.color = '';
+                    homeRoleText.innerHTML = '<i class="fas fa-chalkboard-teacher"></i> مامۆستا';
+                }
+                if (homeTeacherLink) homeTeacherLink.style.display = 'inline-flex';
+                if (pendingTeacherVerifyBtn) pendingTeacherVerifyBtn.style.display = 'none';
+            } else {
+                if (homeRoleBadge) {
+                    homeRoleBadge.className = 'role-badge-pill';
+                    homeRoleBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+                    homeRoleBadge.style.color = '#d97706';
+                    homeRoleText.innerHTML = teacherStatus === 'rejected'
+                        ? '<i class="fas fa-ban"></i> داخوازی هاتە ڕەتکرن'
+                        : '<i class="fas fa-clock"></i> مامۆستا (ل چاڤەڕێی وەرگرتنێ)';
+                }
+                if (homeTeacherLink) homeTeacherLink.style.display = 'none';
+                if (pendingTeacherVerifyBtn) pendingTeacherVerifyBtn.style.display = 'inline-flex';
             }
-            if (homeTeacherLink) homeTeacherLink.style.display = 'inline-flex';
             if (homeAdminLink) homeAdminLink.style.display = 'none';
+        } else if (role === 'guest') {
+            if (homeRoleBadge) {
+                homeRoleBadge.className = 'role-badge-pill';
+                homeRoleBadge.style.background = 'rgba(100, 116, 139, 0.15)';
+                homeRoleBadge.style.color = 'var(--secondary-text)';
+                homeRoleText.innerHTML = '<i class="fas fa-user-clock"></i> مێڤان (Guest)';
+            }
+            if (homeTeacherLink) homeTeacherLink.style.display = 'none';
+            if (homeAdminLink) homeAdminLink.style.display = 'none';
+            if (pendingTeacherVerifyBtn) pendingTeacherVerifyBtn.style.display = 'none';
         } else {
             if (homeRoleBadge) {
                 homeRoleBadge.className = 'role-badge-pill';
+                homeRoleBadge.style.background = '';
+                homeRoleBadge.style.color = '';
                 homeRoleText.innerHTML = '<i class="fas fa-user-graduate"></i> قوتابی';
             }
             if (homeTeacherLink) homeTeacherLink.style.display = 'none';
             if (homeAdminLink) homeAdminLink.style.display = 'none';
+            if (pendingTeacherVerifyBtn) pendingTeacherVerifyBtn.style.display = 'none';
         }
 
+        if (typeof updateCfQuickComposeUI === 'function') {
+            updateCfQuickComposeUI();
+        }
         renderGrades();
     }
 
@@ -358,11 +448,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const selected = Array.from(checkedBoxes).map(cb => cb.value);
 
         if (selected.length === 0) {
-            alert('تکایە بەلایەنی کەمەوە پۆلێک هەڵبژێرە.');
+            showAppToast('تکایە بەلایەنی کەمەوە پۆلێک هەڵبژێرە.', 'error');
             return;
         }
 
         dataStore.setStudentGrades(selected);
+        if (window.CloudflareLessons) {
+            window.CloudflareLessons.saveUserSettingsToServer({ grades: selected });
+        }
         studentGradesModal.style.display = 'none';
         isShowingAllTemporarily = false;
         updateRoleUI();
@@ -388,105 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Load Gemini API Key
-        const geminiKeyInput = document.getElementById('settings-gemini-key');
-        const geminiKeyStatus = document.getElementById('settings-gemini-key-status');
-        const currentGeminiKey = localStorage.getItem('gemini_custom_api_key') || '';
-        if (geminiKeyInput) {
-            geminiKeyInput.value = currentGeminiKey;
-        }
-        if (geminiKeyStatus) {
-            if (currentGeminiKey) {
-                geminiKeyStatus.innerHTML = '<span style="color:#28a745;"><i class="fas fa-check-circle"></i> کلیل تۆمارکراوە و ئامادەیە بۆ بەکارهێنان</span>';
-                geminiKeyStatus.style.display = 'block';
-            } else {
-                geminiKeyStatus.style.display = 'none';
-            }
-        }
-
         settingsModal.style.display = 'flex';
-    }
-
-    // Toggle Gemini key visibility
-    const toggleGeminiKeyBtn = document.getElementById('toggle-gemini-key-btn');
-    if (toggleGeminiKeyBtn) {
-        toggleGeminiKeyBtn.addEventListener('click', () => {
-            const input = document.getElementById('settings-gemini-key');
-            if (!input) return;
-            if (input.type === 'password') {
-                input.type = 'text';
-                toggleGeminiKeyBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
-            } else {
-                input.type = 'password';
-                toggleGeminiKeyBtn.innerHTML = '<i class="fas fa-eye"></i>';
-            }
-        });
-    }
-
-    // Test Gemini API Key
-    const testGeminiKeyBtn = document.getElementById('test-gemini-key-btn');
-    if (testGeminiKeyBtn) {
-        testGeminiKeyBtn.addEventListener('click', async () => {
-            const input = document.getElementById('settings-gemini-key');
-            const key = input ? input.value.trim() : '';
-            const statusEl = document.getElementById('settings-gemini-key-status');
-            if (!key) {
-                if (statusEl) {
-                    statusEl.innerHTML = '<span style="color:#dc3545; font-weight:bold;"><i class="fas fa-exclamation-triangle"></i> خەلەتە! تکایە سەرەتا کلیلی API بنووسە.</span>';
-                    statusEl.style.display = 'block';
-                }
-                return;
-            }
-
-            testGeminiKeyBtn.disabled = true;
-            testGeminiKeyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> د پشکنینێ دایە...';
-            if (statusEl) {
-                statusEl.innerHTML = '<span style="color:#007bff;"><i class="fas fa-spinner fa-spin"></i> پشکنینا دروستییا کلیلی ل سێرڤەری Google (Gemini 3.8 Flash)...</span>';
-                statusEl.style.display = 'block';
-            }
-
-            try {
-                const res = await fetch('/api/gemini/validate-key', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ apiKey: key })
-                });
-                const data = await res.json();
-                if (res.ok && data.valid) {
-                    localStorage.setItem('gemini_custom_api_key', key);
-                    if (statusEl) {
-                        statusEl.innerHTML = `
-                            <div style="background:rgba(40,167,69,0.12); border:1px solid #28a745; color:#28a745; padding:8px 12px; border-radius:8px; font-weight:bold;">
-                                <i class="fas fa-check-circle"></i> سەرکەفتی بوو! کلیلی API یا دروستە و مۆدێلا Gemini چالاکە.
-                            </div>
-                        `;
-                        statusEl.style.display = 'block';
-                    }
-                    showAppToast('سەرکەفتی بوو! کلیلی API یا دروستە و هاتە پاشکەفتن.', 'success');
-                } else {
-                    if (statusEl) {
-                        statusEl.innerHTML = `
-                            <div style="background:rgba(220,53,69,0.12); border:1px solid #dc3545; color:#dc3545; padding:8px 12px; border-radius:8px; font-weight:bold;">
-                                <i class="fas fa-times-circle"></i> خەلەتە! کلیلی API نادروستە یان کار ناکەت.
-                            </div>
-                        `;
-                        statusEl.style.display = 'block';
-                    }
-                }
-            } catch (err) {
-                if (statusEl) {
-                    statusEl.innerHTML = `
-                        <div style="background:rgba(220,53,69,0.12); border:1px solid #dc3545; color:#dc3545; padding:8px 12px; border-radius:8px; font-weight:bold;">
-                            <i class="fas fa-times-circle"></i> خەلەتە! کێشەیەک لە پەیوەندی کردن بە سێرڤەر ڕوویدا.
-                        </div>
-                    `;
-                    statusEl.style.display = 'block';
-                }
-            } finally {
-                testGeminiKeyBtn.disabled = false;
-                testGeminiKeyBtn.innerHTML = '<i class="fas fa-vial"></i> پشکنینا کلیلی';
-            }
-        });
     }
 
     if (settingsToggleBtn) settingsToggleBtn.addEventListener('click', openSettingsModal);
@@ -519,16 +514,21 @@ document.addEventListener('DOMContentLoaded', () => {
     setLightThemeBtn.addEventListener('click', () => {
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('userTheme', 'light');
+        if (window.CloudflareLessons) {
+            window.CloudflareLessons.saveUserSettingsToServer({ theme: 'light' });
+        }
     });
 
     setDarkThemeBtn.addEventListener('click', () => {
         document.documentElement.setAttribute('data-theme', 'dark');
         localStorage.setItem('userTheme', 'dark');
+        if (window.CloudflareLessons) {
+            window.CloudflareLessons.saveUserSettingsToServer({ theme: 'dark' });
+        }
     });
 
-    // Save All Settings
-    saveAllSettingsBtn.addEventListener('click', () => {
-        // 1. Followed grades
+    // Save All Settings (also syncs to Cloudflare /settings)
+    saveAllSettingsBtn.addEventListener('click', async () => {
         const checkedBoxes = settingsGradesGrid.querySelectorAll('input[type="checkbox"]:checked');
         const selected = Array.from(checkedBoxes).map(cb => cb.value);
 
@@ -536,27 +536,28 @@ document.addEventListener('DOMContentLoaded', () => {
             dataStore.setStudentGrades(selected);
         }
 
-        // 2. Language
         const pickedLangRadio = document.querySelector('#settings-lang-grid input[type="radio"]:checked');
+        const pickedLang = (pickedLangRadio && pickedLangRadio.value) || dataStore.getActiveLanguage();
         if (pickedLangRadio && pickedLangRadio.value) {
             dataStore.setActiveLanguage(pickedLangRadio.value);
         }
 
-        // 3. Gemini API Key
-        const geminiKeyInput = document.getElementById('settings-gemini-key');
-        if (geminiKeyInput) {
-            const trimmedKey = geminiKeyInput.value.trim();
-            if (trimmedKey) {
-                localStorage.setItem('gemini_custom_api_key', trimmedKey);
-            } else {
-                localStorage.removeItem('gemini_custom_api_key');
-            }
-        }
+        const currentTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('userTheme') || 'light';
 
         settingsModal.style.display = 'none';
         isShowingAllTemporarily = false;
         updateRoleUI();
-        alert('ڕێکخستنەکان بە سەرکەوتوویی پاشەکەوت کران.');
+
+        if (window.CloudflareLessons && window.CloudflareLessons.getCurrentUser()) {
+            await window.CloudflareLessons.saveUserSettingsToServer({
+                grades: selected.length > 0 ? selected : dataStore.getStudentGrades(),
+                lang: pickedLang,
+                theme: currentTheme
+            });
+            showAppToast('ڕێکخستنەکان لسەر هەژمارا تە ل سێرڤەری هاتنە پاراستن. ✅', 'success');
+        } else {
+            showAppToast('ڕێکخستنەکان بە سەرکەوتوویی پاشەکەوت کران.', 'success');
+        }
     });
 
     // ==========================================
@@ -575,6 +576,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const select = document.getElementById('reg-teacher-grades');
         const selectedGrades = Array.from(select.selectedOptions).map(opt => opt.value);
 
+        const isAdminUser = dataStore.isCurrentUserSuperAdmin();
         const newTeacher = dataStore.saveTeacher({
             name: name,
             subject: subject,
@@ -582,13 +584,17 @@ document.addEventListener('DOMContentLoaded', () => {
             phone: !contact.includes('@') ? contact : '',
             grades: selectedGrades.length ? selectedGrades : ['10', '11', '12'],
             lang: lang,
+            status: isAdminUser ? 'approved' : 'pending',
             viewsCount: 15
         });
 
         dataStore.setUserRole('teacher');
         teacherRegModal.style.display = 'none';
-        alert(`بەخێربێیت مامۆستا ${name}! پڕۆفایلی ئێوە تۆمارکرا.`);
-        window.location.href = 'teacher-dashboard.html';
+        if (isAdminUser) {
+            window.location.href = 'teacher-dashboard.html';
+        } else {
+            openTeacherVerifyModal(newTeacher);
+        }
     });
 
     // ==========================================
@@ -692,6 +698,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     const profileRoleStudentCard = document.getElementById('profile-role-student-card');
     const profileRoleTeacherCard = document.getElementById('profile-role-teacher-card');
+    const profileTeacherFields = document.getElementById('profile-teacher-fields');
+    const profileTeacherSubject = document.getElementById('profile-teacher-subject');
+    const profileTeacherPhone = document.getElementById('profile-teacher-phone');
     const profilePreviewAvatar = document.getElementById('profile-preview-avatar');
     const btnRandomAvatar = document.getElementById('btn-random-avatar');
     const profileAvatarUpload = document.getElementById('profile-avatar-upload');
@@ -700,17 +709,127 @@ document.addEventListener('DOMContentLoaded', () => {
     const avatarUploadBar = document.getElementById('avatar-upload-bar');
     const profileInputName = document.getElementById('profile-input-name');
     const profileInputBio = document.getElementById('profile-input-bio');
+    const profileFormError = document.getElementById('profile-form-error');
     const btnSaveProfile = document.getElementById('btn-save-profile');
+    const profileGuestSkipBtn = document.getElementById('profile-guest-skip-btn');
+
+    // Teacher WhatsApp / Telegram Verification Modal Elements
+    const teacherVerifyModal = document.getElementById('teacher-whatsapp-verify-modal');
+    const teacherVerifyMsgPreview = document.getElementById('teacher-verify-msg-preview');
+    const teacherSendWhatsappLink = document.getElementById('teacher-send-whatsapp-link');
+    const teacherSendTelegramLink = document.getElementById('teacher-send-telegram-link');
+    const copyAdminPhoneBtn = document.getElementById('copy-admin-phone-btn');
+    const copyTeacherVerifyMsgBtn = document.getElementById('copy-teacher-verify-msg-btn');
+    const teacherVerifyBrowseHomeBtn = document.getElementById('teacher-verify-browse-home-btn');
+
+    const ADMIN_CONTACT_LOCAL = '07501990353';
+    const ADMIN_CONTACT_INTL = '9647501990353';
 
     let currentSetupRole = 'student';
     let currentSetupAvatar = RANDOM_AVATARS[0];
+
+    function buildTeacherVerificationMessage(teacherObj) {
+        const t = teacherObj || {};
+        const lines = [
+            'سڵاڤ مامۆستا حوسێن، ئەز داخوازیا بوونە مامۆستا ل ماڵپەڕێ کیمیایێ دکەم:',
+            `• ناڤ: ${t.name || 'مامۆستایێ نوو'}`,
+            `• وانە / بابەت: ${t.subject || 'کیمیا (Chemistry)'}`,
+            t.phone ? `• ژمارا مۆبایلێ: ${t.phone}` : null,
+            t.email && !t.email.endsWith('@chem.vip') ? `• ئیمەیل: ${t.email}` : null,
+            t.id ? `• کۆدێ داخوازیێ: ${t.id}` : null,
+            'تکایە هەژمارا من وەک مامۆستا وەربگرە. سوپاس!'
+        ].filter(Boolean);
+        return lines.join('\n');
+    }
+
+    function openTeacherVerifyModal(teacherObj) {
+        const storedProfile = getUserProfile();
+        const storedUser = getStoredUser();
+        const resolvedTeacher = teacherObj
+            || (storedProfile && storedProfile.teacherId ? dataStore.getTeacherById(storedProfile.teacherId) : null)
+            || dataStore.getCurrentTeacher()
+            || {
+                id: (storedProfile && storedProfile.teacherId) || '',
+                name: (storedProfile && storedProfile.name) || (storedUser && storedUser.displayName) || 'مامۆستایێ نوو',
+                subject: (storedProfile && storedProfile.subject) || 'کیمیا (Chemistry)',
+                phone: (storedProfile && storedProfile.phone) || '',
+                email: (storedUser && storedUser.email) || ''
+            };
+
+        const msgText = buildTeacherVerificationMessage(resolvedTeacher);
+        const encodedMsg = encodeURIComponent(msgText);
+
+        if (teacherVerifyMsgPreview) {
+            teacherVerifyMsgPreview.textContent = msgText;
+        }
+        if (teacherSendWhatsappLink) {
+            teacherSendWhatsappLink.href = `https://wa.me/${ADMIN_CONTACT_INTL}?text=${encodedMsg}`;
+        }
+        if (teacherSendTelegramLink) {
+            teacherSendTelegramLink.href = `https://t.me/+${ADMIN_CONTACT_INTL}?text=${encodedMsg}`;
+        }
+        if (teacherVerifyModal) {
+            teacherVerifyModal.style.display = 'flex';
+        }
+    }
+
+    function copyTextQuietly(text, toastMsg) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                if (toastMsg) showAppToast(toastMsg, 'success');
+            }).catch(() => {});
+        }
+    }
+
+    if (copyAdminPhoneBtn) {
+        copyAdminPhoneBtn.addEventListener('click', () => {
+            copyTextQuietly(ADMIN_CONTACT_LOCAL, `ژمارا (${ADMIN_CONTACT_LOCAL}) هاتە کۆپیکرن!`);
+        });
+    }
+
+    if (copyTeacherVerifyMsgBtn) {
+        copyTeacherVerifyMsgBtn.addEventListener('click', () => {
+            const msg = teacherVerifyMsgPreview ? teacherVerifyMsgPreview.textContent : '';
+            if (msg) copyTextQuietly(msg, 'دەقێ نامەیێ هاتە کۆپیکرن!');
+        });
+    }
+
+    if (teacherSendTelegramLink) {
+        teacherSendTelegramLink.addEventListener('click', () => {
+            const msg = teacherVerifyMsgPreview ? teacherVerifyMsgPreview.textContent : '';
+            if (msg) copyTextQuietly(msg, 'دەقێ نامەیێ کۆپی بوو — د تلگرامێ دا Paste بکە و بنێرە.');
+        });
+    }
+
+    if (teacherVerifyBrowseHomeBtn) {
+        teacherVerifyBrowseHomeBtn.addEventListener('click', () => {
+            if (teacherVerifyModal) teacherVerifyModal.style.display = 'none';
+            if (authGateScreen) authGateScreen.style.display = 'none';
+            if (profileSetupModal) profileSetupModal.style.display = 'none';
+            if (mainAppContainer) mainAppContainer.style.display = 'block';
+            isShowingAllTemporarily = true;
+            updateRoleUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    if (pendingTeacherVerifyBtn) {
+        pendingTeacherVerifyBtn.addEventListener('click', () => {
+            openTeacherVerifyModal();
+        });
+    }
 
     function openProfileSetupModal(prefillUser = null) {
         const storedProfile = getUserProfile();
         const storedUser = prefillUser || getStoredUser();
 
-        currentSetupRole = (storedProfile && storedProfile.role) || 'student';
+        currentSetupRole = (storedProfile && (storedProfile.role === 'teacher' ? 'teacher' : 'student')) || 'student';
         currentSetupAvatar = (storedProfile && storedProfile.avatar) || (storedUser && storedUser.photoURL) || RANDOM_AVATARS[0];
+
+        if (profileFormError) {
+            profileFormError.style.display = 'none';
+            profileFormError.textContent = '';
+        }
 
         // Select role visually
         setProfileSetupRole(currentSetupRole);
@@ -722,12 +841,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Fill Name
         if (profileInputName) {
-            profileInputName.value = (storedProfile && storedProfile.name) || (storedUser && (storedUser.displayName || storedUser.fullName)) || '';
+            const rawName = (storedProfile && !storedProfile.isGuest && storedProfile.name)
+                || (storedUser && !storedUser.isGuest && (storedUser.displayName || storedUser.fullName))
+                || '';
+            profileInputName.value = rawName;
         }
 
         // Fill Bio / Note
         if (profileInputBio) {
-            profileInputBio.value = (storedProfile && storedProfile.bio) || '';
+            profileInputBio.value = (storedProfile && !storedProfile.isGuest && storedProfile.bio) || '';
+        }
+
+        // Fill Teacher Extra Fields
+        if (profileTeacherSubject) {
+            profileTeacherSubject.value = (storedProfile && storedProfile.subject) || 'کیمیا (Chemistry)';
+        }
+        if (profileTeacherPhone) {
+            profileTeacherPhone.value = (storedProfile && storedProfile.phone) || '';
         }
 
         if (avatarUploadProgress) avatarUploadProgress.style.display = 'none';
@@ -747,6 +877,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileRoleStudentCard.style.borderColor = 'var(--border-color)';
                 profileRoleStudentCard.style.background = 'var(--surface-color)';
             }
+            if (profileTeacherFields) profileTeacherFields.style.display = 'block';
         } else {
             if (profileRoleStudentCard) {
                 profileRoleStudentCard.classList.add('active');
@@ -758,6 +889,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileRoleTeacherCard.style.borderColor = 'var(--border-color)';
                 profileRoleTeacherCard.style.background = 'var(--surface-color)';
             }
+            if (profileTeacherFields) profileTeacherFields.style.display = 'none';
         }
     }
 
@@ -818,7 +950,10 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             reader.onerror = function() {
-                alert('کێشەیەک لە خوێندنەوەی وێنەکە ڕوویدا.');
+                if (profileFormError) {
+                    profileFormError.textContent = 'کێشەیەک لە خوێندنەوەی وێنەکە ڕوویدا.';
+                    profileFormError.style.display = 'block';
+                }
                 if (avatarUploadProgress) avatarUploadProgress.style.display = 'none';
             };
 
@@ -826,94 +961,151 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Save Profile button click
+    function enterMainHomePageImmediately() {
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        if (profileSetupModal) profileSetupModal.style.display = 'none';
+        if (studentGradesModal) studentGradesModal.style.display = 'none';
+        if (roleModal) roleModal.style.display = 'none';
+        if (teacherVerifyModal) teacherVerifyModal.style.display = 'none';
+        if (authGateScreen) authGateScreen.style.display = 'none';
+        if (mainAppContainer) mainAppContainer.style.display = 'block';
+
+        updateRoleUI();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Save Profile button click (Zero blocking async for immediate transition)
     if (btnSaveProfile) {
-        btnSaveProfile.addEventListener('click', async () => {
+        btnSaveProfile.addEventListener('click', () => {
             const name = profileInputName ? profileInputName.value.trim() : '';
             const bio = profileInputBio ? profileInputBio.value.trim() : '';
 
             if (!name) {
-                alert('تکایە ناوی خۆت بنووسە بۆ تەواوکردنی پرۆفایل.');
+                if (profileFormError) {
+                    profileFormError.textContent = 'تکایە ناوی خۆت بنووسە بۆ تەواوکردنی پرۆفایل.';
+                    profileFormError.style.display = 'block';
+                }
                 if (profileInputName) profileInputName.focus();
                 return;
             }
+            if (profileFormError) profileFormError.style.display = 'none';
 
-            const currentUser = getStoredUser() || {
+            const existingProfile = getUserProfile();
+            const existingUser = getStoredUser();
+            const currentUser = (existingUser && !existingUser.isGuest) ? existingUser : {
                 uid: 'user_' + Date.now(),
                 displayName: name,
-                email: 'user@chem.vip'
+                email: (existingUser && existingUser.email) || 'student@chem.vip'
             };
+
+            const subjectVal = profileTeacherSubject ? profileTeacherSubject.value.trim() : 'کیمیا (Chemistry)';
+            const phoneVal = profileTeacherPhone ? profileTeacherPhone.value.trim() : '';
 
             const profileData = {
                 name: name,
                 role: currentSetupRole,
                 avatar: currentSetupAvatar || RANDOM_AVATARS[0],
                 bio: bio,
+                subject: subjectVal,
+                phone: phoneVal,
+                teacherId: (existingProfile && existingProfile.teacherId) || '',
+                teacherStatus: (existingProfile && existingProfile.teacherStatus) || '',
                 isProfileComplete: true,
+                isGuest: false,
                 updatedAt: Date.now()
             };
 
-            saveUserProfile(profileData);
-
-            // Update session
+            // Update session & role immediately
             currentUser.displayName = name;
             currentUser.photoURL = profileData.avatar;
+            currentUser.isGuest = false;
             saveUserSession(currentUser);
-
-            // Set role in dataStore
             dataStore.setUserRole(currentSetupRole);
 
-            // If teacher, register into local teachers list if not existing
-            if (currentSetupRole === 'teacher') {
-                const currentTeacher = dataStore.getCurrentTeacher();
-                if (!currentTeacher || currentTeacher.id === 't_hussein') {
-                    const newTeacher = dataStore.saveTeacher({
-                        name: name,
-                        subject: 'کیمیا (Chemistry)',
-                        email: currentUser.email,
-                        avatar: profileData.avatar,
-                        grades: ['12', '11', '10'],
-                        lang: dataStore.getActiveLanguage(),
-                        viewsCount: 10
-                    });
-                    dataStore.setCurrentTeacher(newTeacher);
-                }
-            }
-
-            // Sync with Firestore if user is signed in with Firebase
-            if (typeof firebase !== 'undefined' && firebase.firestore && currentUser.uid) {
-                try {
-                    const db = firebase.firestore();
-                    await db.collection('users').doc(currentUser.uid).set({
+            // Background Firestore sync (non-blocking, only when authenticated with Firebase Auth)
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+                const authUser = firebase.auth().currentUser;
+                const firestoreDb = window.db || (firebase.firestore ? firebase.firestore() : null);
+                if (firestoreDb) {
+                    const userDocPayload = {
                         fullName: name,
+                        email: authUser.email || currentUser.email || 'user@chem.vip',
                         role: currentSetupRole,
-                        photoURL: profileData.avatar,
                         bio: bio,
                         isProfileComplete: true,
                         updatedAt: firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
-                    }, { merge: true });
-                } catch (fsErr) {
-                    console.warn('Firestore sync note:', fsErr);
+                    };
+                    if (profileData.avatar && profileData.avatar.length <= 180000) {
+                        userDocPayload.photoURL = profileData.avatar;
+                    }
+                    firestoreDb.collection('users').doc(authUser.uid).set(userDocPayload, { merge: true }).catch(() => {});
                 }
             }
 
-            // Remove setupProfile query param from URL
-            if (window.history && window.history.replaceState) {
-                const cleanUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, cleanUrl);
+            if (currentSetupRole === 'teacher') {
+                const isSuperAdmin = dataStore.isCurrentUserSuperAdmin();
+                const realEmail = (currentUser.email && currentUser.email !== 'user@chem.vip' && currentUser.email !== 'student@chem.vip') ? currentUser.email : '';
+                const existingTeacher = (profileData.teacherId ? dataStore.getTeacherById(profileData.teacherId) : null)
+                    || (realEmail ? dataStore.getAllTeachers().find(t => t.email && t.email.toLowerCase() === realEmail.toLowerCase()) : null);
+
+                const isAlreadyApproved = isSuperAdmin || (existingTeacher && existingTeacher.status !== 'pending' && existingTeacher.status !== 'rejected');
+
+                if (isAlreadyApproved) {
+                    const savedTeacher = dataStore.saveTeacher({
+                        id: (existingTeacher && existingTeacher.id) || (isSuperAdmin ? 't_hussein' : ('t_' + Date.now())),
+                        name: name,
+                        subject: subjectVal || 'کیمیا (Chemistry)',
+                        email: realEmail,
+                        phone: phoneVal,
+                        bio: bio || 'مامۆستایێ شارەزا',
+                        avatar: profileData.avatar,
+                        grades: (existingTeacher && existingTeacher.grades) || ['10', '11', '12'],
+                        lang: dataStore.getActiveLanguage(),
+                        status: 'approved',
+                        viewsCount: (existingTeacher && existingTeacher.viewsCount) || 10
+                    });
+                    profileData.teacherId = savedTeacher.id;
+                    profileData.teacherStatus = 'approved';
+                    saveUserProfile(profileData);
+                    isShowingAllTemporarily = true;
+                    enterMainHomePageImmediately();
+                    showAppToast(`بەخێربێیت مامۆستا ${name}! پەناڵی مامۆستایان چالاکە.`, 'success');
+                } else {
+                    const pendingTeacherId = (existingTeacher && existingTeacher.id) || profileData.teacherId || ('t_' + Date.now());
+                    const pendingTeacher = dataStore.saveTeacher({
+                        id: pendingTeacherId,
+                        name: name,
+                        subject: subjectVal || 'کیمیا (Chemistry)',
+                        email: realEmail,
+                        phone: phoneVal,
+                        bio: bio || 'مامۆستایێ نوو',
+                        avatar: profileData.avatar,
+                        grades: ['10', '11', '12'],
+                        lang: dataStore.getActiveLanguage(),
+                        status: 'pending',
+                        viewsCount: 10
+                    });
+                    profileData.teacherId = pendingTeacher.id;
+                    profileData.teacherStatus = 'pending';
+                    saveUserProfile(profileData);
+
+                    if (profileSetupModal) profileSetupModal.style.display = 'none';
+                    openTeacherVerifyModal(pendingTeacher);
+                    showAppToast('داخوازییا تە هاتە تۆمارکرن! تکایە نامێ بۆ ئەدمینی (07501990353) بنێرە.', 'info');
+                }
+                return;
             }
 
-            if (profileSetupModal) profileSetupModal.style.display = 'none';
-            if (authGateScreen) authGateScreen.style.display = 'none';
-            if (mainAppContainer) mainAppContainer.style.display = 'block';
-
-            updateRoleUI();
+            // STUDENT FLOW: Save and enter homepage IMMEDIATELY with zero blocking!
+            saveUserProfile(profileData);
+            if (!dataStore.hasStudentChosenGrades()) {
+                dataStore.setStudentGrades(['10', '11', '12', 'univ']);
+            }
+            isShowingAllTemporarily = false;
+            enterMainHomePageImmediately();
             showAppToast(`بەخێربێیت ${name}! پڕۆفایلی تە بە سەرکەوتوویی تۆمارکرا.`, 'success');
-
-            // If student has not chosen grades yet, prompt them now
-            if (currentSetupRole === 'student' && !dataStore.hasStudentChosenGrades()) {
-                openStudentOnboardingModal();
-            }
         });
     }
 
@@ -926,35 +1118,104 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 10. AUTH GATE & ROUTING CONTROLLER
-    // (شاشەی چوونەژوورەوەی پێشینە - خو تشتەک نەهێتە سەرێ ژبلی لوگین بە یان ئەکاونتەک نی)
+    // 10. AUTH GATE, GUEST ENTRY & ROUTING CONTROLLER
     // ==========================================
     const gateGoogleSigninBtn = document.getElementById('gate-google-signin-btn');
+    const gateCfLoginBtn = document.getElementById('gate-cf-login-btn');
+    const gateCfRegisterBtn = document.getElementById('gate-cf-register-btn');
+    const gateGuestLoginBtn = document.getElementById('gate-guest-login-btn');
     const gateFastLoginBtn = document.getElementById('gate-fast-login-btn');
     const gateFastName = document.getElementById('gate-fast-name');
     const gateFastEmail = document.getElementById('gate-fast-email');
 
+    if (gateCfLoginBtn) {
+        gateCfLoginBtn.addEventListener('click', () => {
+            if (window.CloudflareLessons) {
+                window.CloudflareLessons.openAuthModal('login');
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+    }
+
+    if (gateCfRegisterBtn) {
+        gateCfRegisterBtn.addEventListener('click', () => {
+            if (window.CloudflareLessons) {
+                window.CloudflareLessons.openAuthModal('register');
+            } else {
+                window.location.href = 'register.html';
+            }
+        });
+    }
+
+    function enterAsGuest() {
+        const guestUser = {
+            uid: 'guest_' + Date.now(),
+            displayName: 'مێڤان (Guest)',
+            email: '',
+            photoURL: RANDOM_AVATARS[0],
+            isGuest: true
+        };
+        const guestProfile = {
+            name: 'مێڤان (Guest)',
+            role: 'guest',
+            avatar: RANDOM_AVATARS[0],
+            bio: 'گەڕان وەک مێڤان',
+            isProfileComplete: true,
+            isGuest: true,
+            updatedAt: Date.now()
+        };
+
+        localStorage.removeItem('is_admin_mode_active');
+        if (window.CloudflareLessons) {
+            localStorage.removeItem('parwarda_cf_user');
+        }
+        saveUserSession(guestUser);
+        saveUserProfile(guestProfile);
+        dataStore.setUserRole('guest');
+        isShowingAllTemporarily = true;
+
+        enterMainHomePageImmediately();
+        showAppToast('بەخێربێیت وەک مێڤان! دەتوانیت گشت قۆناغ و وانان ببینی.', 'info');
+    }
+
+    if (gateGuestLoginBtn) {
+        gateGuestLoginBtn.addEventListener('click', enterAsGuest);
+    }
+    if (profileGuestSkipBtn) {
+        profileGuestSkipBtn.addEventListener('click', enterAsGuest);
+    }
+
     function checkAuthStateAndDisplay() {
+        const cfUser = window.CloudflareLessons ? window.CloudflareLessons.getCurrentUser() : null;
         const storedUser = getStoredUser();
         const profile = getUserProfile();
         const urlNeedsSetup = window.location.search.includes('setupProfile=true');
 
+        if (cfUser) {
+            if (authGateScreen) authGateScreen.style.display = 'none';
+            if (profileSetupModal) profileSetupModal.style.display = 'none';
+            if (mainAppContainer) mainAppContainer.style.display = 'block';
+            updateRoleUI();
+            return;
+        }
+
         if (!storedUser) {
-            // Not logged in -> Show Auth Gate, Hide Main App, Hide Profile Modal
             if (authGateScreen) authGateScreen.style.display = 'flex';
             if (mainAppContainer) mainAppContainer.style.display = 'none';
             if (profileSetupModal) profileSetupModal.style.display = 'none';
             return;
         }
 
-        // User is logged in -> Hide Auth Gate
         if (authGateScreen) authGateScreen.style.display = 'none';
 
-        // Check if Profile is incomplete or setup requested
-        if (!profile || !profile.isProfileComplete || urlNeedsSetup) {
+        if ((!profile || !profile.isProfileComplete || urlNeedsSetup) && !storedUser.isGuest) {
             if (mainAppContainer) mainAppContainer.style.display = 'none';
             openProfileSetupModal(storedUser);
         } else {
+            if (profile && profile.role === 'guest') {
+                isShowingAllTemporarily = true;
+            }
             if (profileSetupModal) profileSetupModal.style.display = 'none';
             if (mainAppContainer) mainAppContainer.style.display = 'block';
             updateRoleUI();
@@ -987,9 +1248,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.removeItem('is_admin_mode_active');
                 }
 
-                // Check profile
                 const profile = getUserProfile();
-                if (!profile || !profile.isProfileComplete) {
+                if (!profile || !profile.isProfileComplete || profile.isGuest) {
                     openProfileSetupModal(user);
                 } else {
                     checkAuthStateAndDisplay();
@@ -998,7 +1258,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.warn("Google Auth error:", err);
-            alert('کێشەیەک لە چوونەژوورەوە بە Google چێبوو: ' + (err.message || ''));
+            showAppToast('کێشەیەک لە چوونەژوورەوە بە Google چێبوو: ' + (err.message || ''), 'error');
         } finally {
             if (gateGoogleSigninBtn) gateGoogleSigninBtn.disabled = false;
         }
@@ -1008,7 +1268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gateGoogleSigninBtn.addEventListener('click', handleGoogleLogin);
     }
 
-    // Fast Direct Sign-in Handler (Fallback without popups)
+    // Fast Direct Sign-in Handler
     if (gateFastLoginBtn) {
         gateFastLoginBtn.addEventListener('click', () => {
             const name = (gateFastName && gateFastName.value.trim()) || 'بەکارهێنەری نوێ';
@@ -1022,14 +1282,24 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             saveUserSession(userObj);
-
-            // Open Profile Setup immediately
+            if (authGateScreen) authGateScreen.style.display = 'none';
             openProfileSetupModal(userObj);
         });
     }
 
-    // Sign Out Handler (تسجیل خروج)
+    // Sign Out Handler
     async function handleSignOut() {
+        const cfUser = window.CloudflareLessons ? window.CloudflareLessons.getCurrentUser() : null;
+        const profile = getUserProfile();
+        if (!cfUser && profile && profile.role === 'guest') {
+            if (window.CloudflareLessons) {
+                window.CloudflareLessons.openAuthModal('login');
+            } else {
+                window.location.href = 'login.html';
+            }
+            return;
+        }
+
         try {
             if (window.GoogleDriveService) {
                 await window.GoogleDriveService.signOut();
@@ -1041,6 +1311,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Sign out error:", err);
         }
 
+        if (window.CloudflareLessons) {
+            window.CloudflareLessons.logoutUser();
+        }
         saveUserSession(null);
         saveUserProfile(null);
         localStorage.removeItem('is_admin_mode_active');
@@ -1049,6 +1322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (authGateScreen) authGateScreen.style.display = 'flex';
         if (mainAppContainer) mainAppContainer.style.display = 'none';
         if (profileSetupModal) profileSetupModal.style.display = 'none';
+        if (teacherVerifyModal) teacherVerifyModal.style.display = 'none';
 
         showAppToast('بە سەرکەوتوویی دەرچوویت (Sign Out).', 'info');
     }
@@ -1057,9 +1331,26 @@ document.addEventListener('DOMContentLoaded', () => {
         btnTopSignout.addEventListener('click', handleSignOut);
     }
 
-    // Subscribe to Firebase Auth
+    // Sync top bar theme icon & language changes to Cloudflare /settings
+    const topThemeBtn = document.getElementById('theme-toggle-btn');
+    if (topThemeBtn) {
+        topThemeBtn.addEventListener('click', () => {
+            setTimeout(() => {
+                if (window.CloudflareLessons && window.CloudflareLessons.getCurrentUser()) {
+                    const activeTheme = document.documentElement.getAttribute('data-theme') || 'light';
+                    window.CloudflareLessons.saveUserSettingsToServer({ theme: activeTheme });
+                }
+            }, 50);
+        });
+    }
+
+    // Subscribe to Firebase Auth (only when not overriding Cloudflare session)
     if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().onAuthStateChanged((user) => {
+            if (window.CloudflareLessons && window.CloudflareLessons.getCurrentUser()) {
+                checkAuthStateAndDisplay();
+                return;
+            }
             if (user) {
                 saveUserSession(user);
                 if (window.isSuperAdmin && window.isSuperAdmin(user)) {
@@ -1074,12 +1365,301 @@ document.addEventListener('DOMContentLoaded', () => {
         checkAuthStateAndDisplay();
     }
 
-    // Language Change Listener
-    window.addEventListener('languageChanged', (e) => {
+    // Cloudflare Auth & Settings Sync Listeners
+    window.addEventListener('parwardaAuthChanged', () => {
+        checkAuthStateAndDisplay();
+        if (typeof renderHomeCloudflareLessons === 'function') {
+            renderHomeCloudflareLessons();
+        }
+    });
+
+    window.addEventListener('parwardaSettingsApplied', () => {
+        updateRoleUI();
+        if (typeof renderHomeCloudflareLessons === 'function') {
+            renderHomeCloudflareLessons();
+        }
+    });
+
+    // Real-time teacher approval sync listener
+    window.addEventListener('teachersUpdated', () => {
+        const profile = getUserProfile();
+        if (profile && profile.role === 'teacher' && profile.teacherId) {
+            const updatedTeacher = dataStore.getTeacherById(profile.teacherId);
+            if (updatedTeacher && updatedTeacher.status && updatedTeacher.status !== profile.teacherStatus) {
+                const prevStatus = profile.teacherStatus;
+                profile.teacherStatus = updatedTeacher.status;
+                saveUserProfile(profile);
+                if (updatedTeacher.status === 'approved' && prevStatus !== 'approved') {
+                    if (teacherVerifyModal) teacherVerifyModal.style.display = 'none';
+                    showAppToast('پیرۆزە! ئەدمین داخوازییا تە وەک مامۆستا وەرگرت. پەناڵی مامۆستایان چالاک بوو! ✅', 'success');
+                }
+            }
+        }
         updateRoleUI();
     });
 
-    // Run initial state check
+    // Language Change Listener (also syncs to Cloudflare /settings)
+    window.addEventListener('languageChanged', (ev) => {
+        updateRoleUI();
+        const lang = (ev && ev.detail && ev.detail.lang) || dataStore.getActiveLanguage();
+        if (window.CloudflareLessons && window.CloudflareLessons.getCurrentUser() && lang) {
+            window.CloudflareLessons.saveUserSettingsToServer({ lang: lang });
+        }
+    });
+
+    // ==========================================
+    // 11. CLOUDFLARE WORKER LESSONS, POSTS & QUESTIONS CONTROLLER
+    // ==========================================
+    const cfHomeGrid = document.getElementById('cf-home-lessons-grid');
+    const cfHomeStatus = document.getElementById('cf-home-lessons-status');
+    const cfHomeGradeFilter = document.getElementById('cf-home-grade-filter');
+    const cfHomeSearch = document.getElementById('cf-home-search');
+    const cfHomeRefreshBtn = document.getElementById('cf-home-refresh-btn');
+    const cfTypeFilterBtns = document.querySelectorAll('#cf-home-type-filters .g-filter-btn');
+    const cfBookmarksCountEl = document.getElementById('cf-bookmarks-count');
+
+    // Quick Compose Elements
+    const cfComposeGuestBanner = document.getElementById('cf-compose-guest-banner');
+    const cfQuickComposeBox = document.getElementById('cf-quick-compose-box');
+    const cfComposeSummaryLabel = document.getElementById('cf-compose-summary-label');
+    const cfQuickComposeForm = document.getElementById('cf-quick-compose-form');
+    const cfPostTitleInput = document.getElementById('cf-post-title');
+    const cfPostGradeSelect = document.getElementById('cf-post-grade');
+    const cfPostContentInput = document.getElementById('cf-post-content');
+    const cfPostFileInput = document.getElementById('cf-post-file');
+    const cfPostFileLabel = document.getElementById('cf-post-file-label');
+    const cfPostSubmitBtn = document.getElementById('cf-post-submit-btn');
+    const cfQuickPostError = document.getElementById('cf-quick-post-error');
+    const cfBannerLoginBtn = document.getElementById('cf-banner-login-btn');
+    const cfBannerRegisterBtn = document.getElementById('cf-banner-register-btn');
+
+    let currentCfTypeFilter = 'all';
+
+    if (cfBannerLoginBtn) {
+        cfBannerLoginBtn.addEventListener('click', () => {
+            if (window.CloudflareLessons) window.CloudflareLessons.openAuthModal('login');
+        });
+    }
+    if (cfBannerRegisterBtn) {
+        cfBannerRegisterBtn.addEventListener('click', () => {
+            if (window.CloudflareLessons) window.CloudflareLessons.openAuthModal('register');
+        });
+    }
+
+    const cfStudentPostsBanner = document.getElementById('cf-student-posts-banner');
+    const cfFilterMineBtn = document.getElementById('cf-filter-mine-btn');
+
+    function updateCfQuickComposeUI() {
+        const cfUser = window.CloudflareLessons ? window.CloudflareLessons.getCurrentUser() : null;
+        const canManage = window.CloudflareLessons ? window.CloudflareLessons.canManageOrDownload() : false;
+
+        if (canManage) {
+            if (cfComposeGuestBanner) cfComposeGuestBanner.style.display = 'none';
+            if (cfStudentPostsBanner) cfStudentPostsBanner.style.display = 'none';
+            if (cfQuickComposeBox) cfQuickComposeBox.style.display = 'block';
+            if (cfFilterMineBtn) cfFilterMineBtn.style.display = 'inline-flex';
+            if (cfComposeSummaryLabel) {
+                const authorTitle = cfUser ? cfUser.full_name : 'مامۆستا / ئەدمین';
+                cfComposeSummaryLabel.textContent = `بەلاڤکرنا وانە یان فایلەکا نوو ب ناڤێ (${authorTitle})`;
+            }
+        } else if (cfUser || getStoredUser()) {
+            if (cfComposeGuestBanner) cfComposeGuestBanner.style.display = 'none';
+            if (cfQuickComposeBox) cfQuickComposeBox.style.display = 'none';
+            if (cfStudentPostsBanner) cfStudentPostsBanner.style.display = 'flex';
+            if (cfFilterMineBtn) cfFilterMineBtn.style.display = 'none';
+        } else {
+            if (cfComposeGuestBanner) cfComposeGuestBanner.style.display = 'flex';
+            if (cfQuickComposeBox) cfQuickComposeBox.style.display = 'none';
+            if (cfStudentPostsBanner) cfStudentPostsBanner.style.display = 'none';
+            if (cfFilterMineBtn) cfFilterMineBtn.style.display = 'none';
+        }
+    }
+
+    if (cfHomeGradeFilter && gradesConfig) {
+        cfHomeGradeFilter.innerHTML = '<option value="all">هەمی پۆل و قۆناغ</option>' +
+            gradesConfig.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    }
+    if (cfPostGradeSelect && gradesConfig) {
+        cfPostGradeSelect.innerHTML = '<option value="all">گشتی (هەمی پۆل)</option>' +
+            gradesConfig.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        cfPostGradeSelect.value = '12';
+    }
+
+    if (cfPostFileInput && cfPostFileLabel) {
+        cfPostFileInput.addEventListener('change', () => {
+            const f = cfPostFileInput.files && cfPostFileInput.files[0];
+            cfPostFileLabel.textContent = f
+                ? `فایل هەلبژێردرا: ${f.name}`
+                : 'هاوپێچکرنا فایلەکێ (PDF, HTML, PPTX, وێنە...)';
+        });
+    }
+
+    if (cfQuickComposeForm) {
+        cfQuickComposeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!window.CloudflareLessons) return;
+
+            if (!window.CloudflareLessons.canManageOrDownload()) {
+                if (cfQuickPostError) {
+                    cfQuickPostError.textContent = 'قوتابی نەشێت وانە و فایلان ل ڤێرە بەلاڤ بکەت. بۆ پۆستان بچۆ بەشێ پۆستێن گشتی.';
+                    cfQuickPostError.style.display = 'block';
+                }
+                return;
+            }
+
+            const cfUser = window.CloudflareLessons.getCurrentUser();
+            if (!cfUser) {
+                window.CloudflareLessons.openAuthModal('login');
+                return;
+            }
+
+            const title = cfPostTitleInput ? cfPostTitleInput.value.trim() : '';
+            const grade = cfPostGradeSelect ? cfPostGradeSelect.value : 'all';
+            const content = cfPostContentInput ? cfPostContentInput.value.trim() : '';
+            const file = (cfPostFileInput && cfPostFileInput.files && cfPostFileInput.files[0]) || null;
+
+            if (!title && !content && !file) {
+                if (cfQuickPostError) {
+                    cfQuickPostError.textContent = 'تکایە ناڤونیشان و ناوەڕۆکی بنڤیسە.';
+                    cfQuickPostError.style.display = 'block';
+                }
+                return;
+            }
+
+            if (cfQuickPostError) cfQuickPostError.style.display = 'none';
+            const origHtml = cfPostSubmitBtn ? cfPostSubmitBtn.innerHTML : '';
+            if (cfPostSubmitBtn) {
+                cfPostSubmitBtn.disabled = true;
+                cfPostSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> بەلاڤکرن...';
+            }
+
+            try {
+                await window.CloudflareLessons.uploadLesson({
+                    file: file,
+                    meta: {
+                        user_id: cfUser.id,
+                        author_name: cfUser.full_name,
+                        role: cfUser.role,
+                        title: title,
+                        content: content,
+                        description: content,
+                        grade: grade,
+                        fileName: file ? file.name : '',
+                        createdAt: new Date().toISOString()
+                    }
+                });
+
+                cfQuickComposeForm.reset();
+                if (cfPostGradeSelect) cfPostGradeSelect.value = '12';
+                if (cfPostFileLabel) {
+                    cfPostFileLabel.textContent = 'هاوپێچکرنا فایلەکێ (ئارەزوومەندانە: PDF, وێنە...)';
+                }
+                showAppToast(
+                    cfUser.role === 'teacher'
+                        ? 'وانە ب ناڤێ مامۆستای ب سەرکەفتوویی هاتە بەلاڤکرن! ✅'
+                        : 'پۆست / پسیارا تە ب سەرکەفتوویی هاتە بەلاڤکرن! ✅',
+                    'success'
+                );
+            } catch (err) {
+                if (cfQuickPostError) {
+                    cfQuickPostError.textContent = err.message || 'نەشیا بەلاڤ بکەت.';
+                    cfQuickPostError.style.display = 'block';
+                }
+            } finally {
+                if (cfPostSubmitBtn) {
+                    cfPostSubmitBtn.disabled = false;
+                    cfPostSubmitBtn.innerHTML = origHtml;
+                }
+            }
+        });
+    }
+
+    cfTypeFilterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            cfTypeFilterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentCfTypeFilter = btn.getAttribute('data-cf-type') || 'all';
+            renderHomeCloudflareLessons();
+        });
+    });
+
+    function renderHomeCloudflareLessons() {
+        if (!window.CloudflareLessons || !cfHomeGrid) return;
+        const allLessons = window.CloudflareLessons.getCachedLessons();
+        const cfUser = window.CloudflareLessons.getCurrentUser();
+        const bookmarks = window.CloudflareLessons.getBookmarkedIds();
+        const pickedGrade = cfHomeGradeFilter ? cfHomeGradeFilter.value : 'all';
+        const q = cfHomeSearch ? cfHomeSearch.value.trim().toLowerCase() : '';
+
+        if (cfBookmarksCountEl) {
+            cfBookmarksCountEl.textContent = bookmarks.length;
+        }
+
+        const filtered = allLessons.filter(item => {
+            if (currentCfTypeFilter === 'teacher' && item.role !== 'teacher') return false;
+            if (currentCfTypeFilter === 'student' && item.role !== 'student') return false;
+            if (currentCfTypeFilter === 'bookmarks' && !bookmarks.includes(String(item.id))) return false;
+            if (currentCfTypeFilter === 'mine' && (!cfUser || String(item.user_id) !== String(cfUser.id))) return false;
+
+            if (pickedGrade !== 'all' && String(item.grade) !== String(pickedGrade)) {
+                return false;
+            }
+            if (q) {
+                const hay = [item.title, item.content, item.description, item.subject, item.chapter, item.author_name, item.fileName]
+                    .filter(Boolean).join(' ').toLowerCase();
+                if (!hay.includes(q)) return false;
+            }
+            return true;
+        });
+
+        let emptyMsg = 'هێشتا چ وانە و پۆست ل سێرڤەری نەهاتینە بارکرن.';
+        if (currentCfTypeFilter === 'bookmarks') {
+            emptyMsg = 'هێشتا تە چ وانە نیشان نەکرینە (Bookmarks). کلیک ل ئایکۆنا نیشانکرنێ لسەر هەر وانەیەکێ بکە!';
+        } else if (currentCfTypeFilter === 'mine') {
+            emptyMsg = 'هێشتا تە چ وانە یان پسیار بەلاڤ نەکرینە.';
+        } else if (allLessons.length > 0) {
+            emptyMsg = 'چ وانە ب ڤی فلتەرێ لێگەریانێ نەهاتنە دیتن.';
+        }
+
+        window.CloudflareLessons.renderLessonsGrid(cfHomeGrid, filtered, {
+            emptyText: emptyMsg
+        });
+
+        if (cfHomeStatus) {
+            cfHomeStatus.textContent = allLessons.length > 0
+                ? `${filtered.length} ژ ${allLessons.length} وانە و پۆست لسەر سێرڤەری هەنە`
+                : 'هێشتا چ وانە لسەر سێرڤەری نینن';
+        }
+    }
+
+    async function loadHomeCloudflareLessons() {
+        if (!window.CloudflareLessons || !cfHomeGrid) return;
+        if (cfHomeStatus) {
+            cfHomeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> بارکرنا وانەیان ژ سێرڤەرێ Cloudflare...';
+        }
+        try {
+            await window.CloudflareLessons.fetchLessons();
+            renderHomeCloudflareLessons();
+        } catch (err) {
+            if (cfHomeStatus) {
+                cfHomeStatus.innerHTML = `<span style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> ${err.message}</span>`;
+            }
+            window.CloudflareLessons.renderLessonsGrid(cfHomeGrid, [], {
+                emptyText: 'نەشیا پەیوەندیێ ب سێرڤەرێ وانەیان بکەت.'
+            });
+        }
+    }
+
+    if (cfHomeGradeFilter) cfHomeGradeFilter.addEventListener('change', renderHomeCloudflareLessons);
+    if (cfHomeSearch) cfHomeSearch.addEventListener('input', renderHomeCloudflareLessons);
+    if (cfHomeRefreshBtn) cfHomeRefreshBtn.addEventListener('click', loadHomeCloudflareLessons);
+    window.addEventListener('cloudflareLessonsUpdated', renderHomeCloudflareLessons);
+
+    // Run initial state check & fetch Cloudflare lessons immediately on page load
+    updateCfQuickComposeUI();
     checkAuthStateAndDisplay();
+    loadHomeCloudflareLessons();
 });
+
+
 

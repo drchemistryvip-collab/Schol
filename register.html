@@ -1,77 +1,127 @@
-<!-- START OF FILE: register.html -->
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تۆمارکرنا هژمارەکا نوو</title>
+    <title>دروستکرنا هەژمارێ (Register) | پەروەردە و کیمیا</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        .role-choice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .role-choice-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 14px 10px;
+            border-radius: 14px;
+            border: 2px solid var(--border-color);
+            background: var(--surface-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .role-choice-card:hover {
+            border-color: var(--blue-accent);
+        }
+        .role-choice-card.active-student {
+            border-color: #16a34a;
+            background: rgba(22, 163, 74, 0.08);
+        }
+        .role-choice-card.active-teacher {
+            border-color: #7c3aed;
+            background: rgba(124, 58, 237, 0.08);
+        }
+    </style>
 </head>
 <body>
-    <div class="container" style="max-width: 450px;">
-        <div id="login-modal" class="modal-overlay" style="display: flex; position: static; background: none;">
-            <div class="modal-content" style="border-top: 5px solid var(--green-accent);">
-                <h2 class="modal-header">تۆمارکرنا هژمارەکا نوو</h2>
+    <div class="container" style="max-width: 490px;">
+        <div id="register-modal" class="modal-overlay" style="display: flex; position: static; background: none;">
+            <div class="modal-content" style="border-top: 5px solid var(--green-accent); border-radius: 20px; padding: 28px 24px; text-align: right;">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="width:60px; height:60px; border-radius:16px; background:rgba(22,163,74,0.12); color:#16a34a; display:inline-flex; align-items:center; justify-content:center; font-size:1.7rem; margin-bottom:10px;">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h2 class="modal-header" style="margin:0 0 6px; border:none; padding:0;">دروستکرنا هەژمارێ (Register)</h2>
+                    <p style="margin:0; font-size:0.86rem; color:var(--secondary-text);">
+                        وەک قوتابی یان مامۆستا خۆ تۆمار بکە دا هەموو تایبەتمەندییان بکاربینی
+                    </p>
+                </div>
+
                 <form id="register-form">
                     <div class="form-group">
-                        <label for="fullName">ناڤێ سێ قولی</label>
-                        <input type="text" id="fullName" placeholder="بۆ نموونە: ئەحمەد حسێن عەلی" required>
+                        <label for="full_name"><i class="fas fa-id-card" style="color:#16a34a;"></i> ناڤێ تەمام (Full Name)</label>
+                        <input type="text" id="full_name" placeholder="بۆ نموونە: ئەحمەد حسێن عەلی" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="phoneNumber">رەقەم موبایل</label>
-                        <input type="tel" id="phoneNumber" placeholder="بۆ نموونە: 0750..." required>
+                        <label for="username"><i class="fas fa-user" style="color:var(--blue-accent);"></i> یوزەرنەیم (Username)</label>
+                        <input type="text" id="username" placeholder="بۆ نموونە: ahmed_99" autocomplete="username" required style="direction:ltr; text-align:right;">
                     </div>
+
                     <div class="form-group">
-                        <label for="email">ئیمەیل</label>
-                        <input type="email" id="email" placeholder="ئیمەیلێ خۆ بنڤیسە" required>
+                        <label for="password"><i class="fas fa-lock" style="color:var(--blue-accent);"></i> پاسوۆرد (Password)</label>
+                        <input type="password" id="password" placeholder="••••••••" autocomplete="new-password" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="password">تێپەڕەوشە (Password)</label>
-                        <input type="password" id="password" placeholder="••••••••" required>
+                        <label><i class="fas fa-user-tag" style="color:#7c3aed;"></i> جۆرێ هەژمارێ هەلبژێرە:</label>
+                        <div class="role-choice-grid">
+                            <label class="role-choice-card active-student" id="reg-card-student">
+                                <input type="radio" name="role" value="student" checked style="display:none;">
+                                <i class="fas fa-user-graduate" style="font-size:1.65rem; color:#16a34a;"></i>
+                                <strong style="font-size:0.95rem;">قوتابی (Student)</strong>
+                                <span style="font-size:0.74rem; color:var(--secondary-text);">وانە، پسیار و نیشانکرن</span>
+                            </label>
+                            <label class="role-choice-card" id="reg-card-teacher">
+                                <input type="radio" name="role" value="teacher" style="display:none;">
+                                <i class="fas fa-chalkboard-teacher" style="font-size:1.65rem; color:#7c3aed;"></i>
+                                <strong style="font-size:0.95rem;">مامۆستا (Teacher)</strong>
+                                <span style="font-size:0.74rem; color:var(--secondary-text);">بەلاڤکرنا وانە و فایلان</span>
+                            </label>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">دووبارەکردنەوەی تێپەڕەوشە (Confirm Password)</label>
-                        <input type="password" id="confirmPassword" placeholder="تێپەڕەوشەیێ دوبارە بنڤیسە" required>
+
+                    <!-- Conditional Teacher Secret Code -->
+                    <div id="teacher-code-group" class="form-group" style="display:none; background:rgba(124,58,237,0.08); border:1.5px solid rgba(124,58,237,0.3); border-radius:12px; padding:14px; margin-bottom:14px;">
+                        <label for="teacher_code" style="color:#6d28d9; font-weight:700;">
+                            <i class="fas fa-key"></i> کۆدێ نهێنی یێ مامۆستایان (teacher_code)
+                        </label>
+                        <input type="password" id="teacher_code" placeholder="کۆدێ نهێنی یێ تایبەت ب مامۆستایان بنڤیسە...">
+                        <small style="display:block; margin-top:5px; color:var(--secondary-text); font-size:0.78rem;">
+                            تەنێ مامۆستایێن هەڵگرێ کۆدێ نهێنی دشێن هەژمارا مامۆستای دروست بکەن.
+                        </small>
                     </div>
-                    <p id="register-error" class="error-text"></p>
-                    <div class="form-actions">
-                        <button type="submit" class="btn-save">تۆمار بکە</button>
+
+                    <p id="register-error" class="error-text" style="display:none; background:rgba(220,38,38,0.1); padding:10px 12px; border-radius:10px; font-weight:700;"></p>
+
+                    <div class="form-actions" style="margin-top: 16px;">
+                        <button type="submit" class="btn-save" style="width:100%; padding:12px; font-size:1rem; background:linear-gradient(135deg, #16a34a, #15803d); justify-content:center; border-radius:12px;">
+                            <i class="fas fa-user-plus"></i> دروستکرنا هەژمارێ (Register)
+                        </button>
                     </div>
                 </form>
 
-                <div style="margin: 18px 0; display:flex; align-items:center; gap:10px;">
-                    <div style="flex:1; height:1px; background:var(--border-color);"></div>
-                    <span style="font-size:0.8rem; color:var(--secondary-text);">یان</span>
-                    <div style="flex:1; height:1px; background:var(--border-color);"></div>
-                </div>
-
-                <button type="button" id="google-register-btn" class="gsi-material-button" style="width:100%; height:44px; justify-content:center;">
-                    <div class="gsi-material-button-state"></div>
-                    <div class="gsi-material-button-content-wrapper">
-                        <div class="gsi-material-button-icon">
-                            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="display: block;">
-                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                                <path fill="none" d="M0 0h48v48H0z"></path>
-                            </svg>
-                        </div>
-                        <span class="gsi-material-button-contents">تۆمارکردنی خێرا بە گووگڵ (Sign in with Google)</span>
-                    </div>
-                </button>
-
-                <p style="text-align: center; margin-top: 20px; font-size: 0.9em;">
-                    هژمارا تە یا هەی؟ <a href="login.html" style="color: var(--blue-accent);">ل ڤێرە داخل ببە</a>
+                <p style="text-align: center; margin-top: 20px; font-size: 0.92rem; color:var(--secondary-text);">
+                    هەژمارا تە یا هەی؟ <a href="login.html" style="color: var(--blue-accent); font-weight:700; text-decoration:none;">ل ڤێرە بچۆ ژوور (Login)</a>
+                </p>
+                <p style="text-align: center; margin-top: 10px; font-size: 0.85rem;">
+                    <a href="index.html" style="color: var(--secondary-text); text-decoration:none;">
+                        <i class="fas fa-arrow-right"></i> زڤرین بۆ لاپەڕێ سەرەکی
+                    </a>
                 </p>
             </div>
         </div>
     </div>
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="firebase-config.js"></script>
+
+    <script src="educational-data.js"></script>
+    <script src="cloudflare-lessons.js"></script>
     <script src="register-script.js"></script>
 </body>
 </html>

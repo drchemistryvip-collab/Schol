@@ -157,6 +157,7 @@
         </button>
         <button class="admin-tab" data-view="teachers-mgmt-view">
             <i class="fas fa-users-cog"></i> بەڕێوەبردنی مامۆستایان
+            <span class="count-pill" id="teachers-pending-badge" style="display:none; background:#f59e0b; color:#fff;">0</span>
         </button>
         <button class="admin-tab" data-view="user-management-view">
             <i class="fas fa-user-friends"></i> بەکارهێنەران و بەشداری
@@ -166,6 +167,10 @@
         </button>
         <button class="admin-tab" data-view="drive-backups-view" style="color:#4285F4; border-color:rgba(66,133,244,0.4);">
             <i class="fab fa-google-drive"></i> کۆگای Google Drive و گەڕاندنەوە
+        </button>
+        <button class="admin-tab" data-view="community-posts-view">
+            <i class="fas fa-newspaper" style="color:#ea580c;"></i> پۆستێن قوتابیان (چاوەڕێ)
+            <span class="count-pill" id="community-pending-badge" style="background:#f59e0b; color:#fff;">0</span>
         </button>
     </div>
 
@@ -187,6 +192,9 @@
                     <button class="btn-lang-small filter-approval-btn" data-filter="all">هەمی بابەت</button>
                 </div>
             </div>
+
+            <!-- Pending New Teacher Requests Container -->
+            <div id="pending-teachers-requests-box" style="margin-bottom:22px;"></div>
 
             <!-- Approvals Container -->
             <div id="approvals-list-container">
@@ -244,6 +252,9 @@
                         <!-- User chat list will be loaded here -->
                     </ul>
                 </aside>
+            </div>
+        </div>
+
         <!-- VIEW 5: AI & POWERPOINT MASTER TEMPLATE MANAGEMENT -->
         <div id="ai-template-view" class="content-view" style="display: none;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom: 20px;">
@@ -379,6 +390,67 @@
                 <div id="admin-drive-files-container" style="display:grid; grid-template-columns:1fr; gap:10px;">
                     <!-- Populated dynamically -->
                 </div>
+            </div>
+        </div>
+
+        <!-- VIEW 7: COMMUNITY POSTS MODERATION & SINGLE-USER IMAGE PERMISSION -->
+        <div id="community-posts-view" class="content-view" style="display:none;">
+            <div style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:16px; padding:20px; margin-bottom:18px; text-align:right; box-shadow:0 4px 15px var(--shadow-color);">
+                <h2 style="margin:0 0 6px; font-size:1.35rem; color:var(--primary-text); display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-image" style="color:#ea580c;"></i> ڕێکپێدانا وێنە بەلاڤکرنێ د پۆستان دا
+                </h2>
+                <p style="margin:0 0 14px; color:var(--secondary-text); font-size:0.88rem;">
+                    قوتابی ب تنێ دشێن پۆستێن نڤیسینێ (بێ وێنە) فرێکەن. ئەدمین دشێت ب تنێ بۆ کەسەکی دیارکری رێکێ بدەت وێنەیان ژی بەلاڤ بکەت.
+                </p>
+
+                <form id="ap-grant-image-form" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+                    <input type="text" id="ap-grant-username" placeholder="یوزەرنەیم یان ناڤێ بەکارهێنەری بنڤیسە..." required style="flex:1; min-width:210px; padding:9px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;">
+                    <label style="display:inline-flex; align-items:center; gap:6px; font-size:0.86rem; cursor:pointer;">
+                        <input type="checkbox" id="ap-grant-single-only" checked>
+                        ب تنێ ئێک کەس رێپێدای بیت (ڕێکێ ژ یێن دی بستینە)
+                    </label>
+                    <button type="submit" class="btn-save" style="background:#ea580c; padding:9px 18px; font-size:0.88rem;">
+                        <i class="fas fa-user-check"></i> رێکپێدان
+                    </button>
+                </form>
+
+                <div style="font-size:0.86rem; color:var(--secondary-text); margin-bottom:6px; font-weight:bold;">
+                    کەسێ رێپێدای یێ نوکە بۆ بەلاڤکرنا وێنەیان:
+                </div>
+                <div id="ap-authorized-users-list" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+                <div>
+                    <h2 style="margin:0 0 4px; font-size:1.35rem;">
+                        <i class="fas fa-newspaper" style="color:#ea580c;"></i> پێداچوونا پۆستێن قوتابیان و بەکارهێنەران
+                    </h2>
+                    <p style="margin:0; color:var(--secondary-text); font-size:0.88rem;">
+                        هەر پۆستەکێ ژ لایێ قوتابیان ڤە دهێتە فرێکرن ل سەر دۆخێ «چاوەروان بە» دمینیت هەتا ئەدمین وەربگریت.
+                    </p>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button type="button" class="btn-lang-small ap-community-filter-btn active" data-filter="pending">ل چاڤەڕێیێ (چاوەروان)</button>
+                    <button type="button" class="btn-lang-small ap-community-filter-btn" data-filter="all">هەمی پۆست</button>
+                    <button type="button" id="ap-refresh-community-btn" class="btn-cancel" style="padding:6px 12px; font-size:0.85rem;">
+                        <i class="fas fa-sync-alt"></i> نوێکردنەوە
+                    </button>
+                </div>
+            </div>
+
+            <div id="ap-community-status-msg" style="display:none; padding:11px 14px; border-radius:10px; margin-bottom:14px; font-size:0.9rem; text-align:right;"></div>
+            <div id="ap-community-posts-list"></div>
+        </div>
+    </div>
+
+    <!-- IN-APP CONFIRM MODAL FOR COMMUNITY MODERATION -->
+    <div id="ap-confirm-modal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); align-items:center; justify-content:center; z-index:10000; padding:15px;">
+        <div style="background:var(--surface-color); border-radius:16px; max-width:420px; width:100%; padding:22px; text-align:right; box-shadow:0 18px 45px rgba(0,0,0,0.4);">
+            <h3 style="margin:0 0 8px; color:#dc3545; font-size:1.15rem;"><i class="fas fa-exclamation-triangle"></i> پشتڕاستکرن</h3>
+            <p id="ap-confirm-text" style="margin:0 0 18px; color:var(--secondary-text); font-size:0.92rem; line-height:1.6;">ئایا پشتڕاستی ژ ئەنجامدانا ڤی کارەکی؟</p>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" id="ap-confirm-cancel-btn" class="btn-cancel" style="padding:7px 16px;">پەشیمانبوون</button>
+                <button type="button" id="ap-confirm-ok-btn" class="btn-delete-action" style="padding:7px 18px;">بەلێ</button>
             </div>
         </div>
     </div>

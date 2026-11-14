@@ -29,7 +29,7 @@ async function checkIsAdmin(user) {
     if (isSuperAdmin(user)) return true;
     try {
         if (typeof firebase !== 'undefined' && firebase.firestore) {
-            const db = firebase.firestore();
+            const db = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
             const userDoc = await db.collection('users').doc(user.uid).get();
             return userDoc.exists && userDoc.data().isAdmin === true;
         }
@@ -56,7 +56,7 @@ async function checkUserStatus(user) {
     if (isSuperAdmin(user)) {
         try {
             if (typeof firebase !== 'undefined' && firebase.firestore) {
-                const db = firebase.firestore();
+                const db = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
                 const userDocRef = db.collection('users').doc(user.uid);
                 await userDocRef.set({
                     email: user.email,
@@ -74,7 +74,7 @@ async function checkUserStatus(user) {
 
     try {
         if (typeof firebase !== 'undefined' && firebase.firestore) {
-            const db = firebase.firestore();
+            const db = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
             const userDocRef = db.collection('users').doc(user.uid);
             const doc = await userDocRef.get();
 

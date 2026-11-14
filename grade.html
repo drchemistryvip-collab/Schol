@@ -635,6 +635,50 @@
         </div>
 
         <!-- ======================================================== -->
+        <!-- CLOUDFLARE SERVER LESSONS FOR THIS GRADE (Auto GET Load) -->
+        <!-- ======================================================== -->
+        <section class="step-section-card" id="cf-grade-lessons-section" style="margin-bottom:20px;">
+            <div class="step-section-header">
+                <div class="step-title-group">
+                    <h2>
+                        <i class="fas fa-cloud-download-alt" style="color:var(--blue-accent);"></i> وانە و فایلێن بارکری یێن ڤێ پۆلێ (سێرڤەر)
+                    </h2>
+                    <p id="cf-grade-lessons-status">بارکرنا وانەیان ژ سێرڤەرێ Cloudflare...</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span id="cf-grade-lessons-count" style="background:rgba(0,123,255,0.12); color:var(--blue-accent); font-weight:bold; font-size:0.85rem; padding:6px 14px; border-radius:20px; border:1px solid rgba(0,123,255,0.25);">0 فایل</span>
+                    <button type="button" id="cf-grade-refresh-btn" class="btn-action-secondary" style="padding:6px 12px; font-size:0.82rem;">
+                        <i class="fas fa-sync-alt"></i> نوێکرن
+                    </button>
+                </div>
+            </div>
+
+            <details id="cf-grade-compose-details" style="display:none; margin-bottom:14px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:12px; padding:10px 14px;">
+                <summary style="cursor:pointer; font-weight:700; font-size:0.9rem; color:var(--blue-accent); display:flex; align-items:center; justify-content:space-between; list-style:none;">
+                    <span><i class="fas fa-plus-circle"></i> وانە یان فایلەکا نوو بۆ ڤێ پۆلێ بەلاڤ بکە (تەنێ مامۆستا / ئەدمین)</span>
+                    <span id="cf-grade-author-pill" style="font-size:0.76rem; color:var(--secondary-text); font-weight:600;">پێتڤی ب هەژمارا مامۆستایی یە</span>
+                </summary>
+                <form id="cf-grade-compose-form" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+                    <div style="display:grid; grid-template-columns:1fr auto; gap:8px;">
+                        <input type="text" id="cf-grade-post-title" placeholder="ناڤونیشانێ وانێ یان فایلێ..." required style="padding:9px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:inherit; font-size:0.88rem;">
+                        <label style="padding:9px 12px; border-radius:9px; border:1px dashed var(--blue-accent); color:var(--blue-accent); cursor:pointer; font-size:0.82rem; font-weight:700; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">
+                            <i class="fas fa-paperclip"></i> <span id="cf-grade-file-label">فایل</span>
+                            <input type="file" id="cf-grade-post-file" accept=".pdf,.png,.jpg,.jpeg,.webp,.pptx,.ppt,.html,.htm" style="display:none;">
+                        </label>
+                    </div>
+                    <textarea id="cf-grade-post-content" rows="2" placeholder="کورتەیا وانێ یان تێبینیێ بنڤیسە..." style="padding:9px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:inherit; font-size:0.88rem;"></textarea>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button type="submit" id="cf-grade-compose-submit" class="btn-action-primary" style="padding:8px 18px; font-size:0.86rem;">
+                            <i class="fas fa-paper-plane"></i> بەلاڤکرن لسەر سێرڤەری
+                        </button>
+                    </div>
+                </form>
+            </details>
+
+            <div id="cf-grade-lessons-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(235px, 1fr)); gap:14px;"></div>
+        </section>
+
+        <!-- ======================================================== -->
         <!-- STEP 1: SUBJECTS SECTION (ئێکسەر بابەت بهێن) -->
         <!-- ======================================================== -->
         <section class="step-section-card" id="step-1-section">
@@ -797,6 +841,9 @@
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap: 8px;">
+                    <button id="doc-modal-fullscreen-btn" class="btn-action-secondary" style="padding: 6px 14px; font-size: 0.85rem;" title="ڤەکرن ل شاشەیا تەواو / پەڕەیەکێ نوو">
+                        <i class="fas fa-expand"></i> شاشەیا تەواو
+                    </button>
                     <button id="doc-modal-gdrive-save-btn" class="btn-action-secondary" style="padding: 6px 14px; font-size: 0.85rem; border-color:#4285F4; color:#4285F4;" title="پاشەکەوتکردن لە Google Drive ی خۆت">
                         <i class="fab fa-google-drive"></i> پاشەکەوت لە Drive
                     </button>
@@ -842,6 +889,7 @@
     <script src="google-drive-integration.js"></script>
     <script src="translations.js"></script>
     <script src="educational-data.js"></script>
+    <script src="cloudflare-lessons.js"></script>
     <script src="grade.js"></script>
 </body>
 </html>

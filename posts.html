@@ -1,118 +1,245 @@
-<!-- START OF FILE: posts.html -->
 <!DOCTYPE html>
 <html lang="ku" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پوست</title>
+    <title>پۆستێن گشتی | پلاتفۆرما کیمیایێ</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="posts.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-    <div class="container" style="max-width: 800px;">
-        <div class="page-controls">
-            <div class="language-selector-icon">
-                <button id="lang-toggle-btn" title="Guhertina Zimanî"><i class="fas fa-globe"></i></button>
-                <div id="lang-menu" class="lang-menu">
-                    <button class="btn-lang-small" data-lang="ku_ba">بادینی</button>
-                    <button class="btn-lang-small" data-lang="ku_so">سۆرانی</button>
-                    <button class="btn-lang-small" data-lang="ar">عربي</button>
-                    <button class="btn-lang-small" data-lang="en">EN</button>
-                </div>
-            </div>
-            <button id="auth-action-btn" class="theme-toggle-button" title="چوونا ژوور / دەرکەفتن">
-                <i class="fas fa-right-to-bracket"></i>
+    <div class="container posts-page-shell">
+        <!-- Top Controls -->
+        <div class="page-controls" style="margin-bottom:14px;">
+            <a href="index.html" class="theme-toggle-button" title="زڤرین بۆ سەرەکی" style="width:auto; padding:0 14px; text-decoration:none; gap:6px; font-size:0.85rem;">
+                <i class="fas fa-home"></i> <span>سەرەکی</span>
+            </a>
+            <button id="posts-user-chip" type="button" class="theme-toggle-button" style="width:auto; padding:0 14px; gap:6px; font-size:0.84rem;" title="هەژمارا من">
+                <i class="fas fa-user-circle"></i> <span id="posts-user-chip-label">چوونەژوور</span>
             </button>
-            <button id="theme-toggle-btn" class="theme-toggle-button" title="Guhertina Temayê">
+            <button id="posts-admin-unlock-btn" type="button" class="theme-toggle-button" title="چوونا ژوور یا ئەدمینی">
+                <i class="fas fa-shield-alt"></i>
+            </button>
+            <button id="theme-toggle-btn" class="theme-toggle-button" title="گوهۆڕینا تێمایێ">
                 <i class="fas fa-moon"></i>
             </button>
         </div>
 
-        <header class="profile-header" id="admin-login-trigger">
-            <div class="title-container">
-                <h1>پوستێن گشتی</h1>
+        <!-- Header -->
+        <header class="posts-hero-header" id="admin-login-trigger">
+            <div class="posts-hero-icon">
+                <i class="fas fa-newspaper"></i>
             </div>
-            <h2>لێرە دشێی بابەتێن جۆراوجۆر ببینی</h2>
+            <div>
+                <h1>پۆستێن گشتی و گفتوگۆیا قوتابییان</h1>
+                <p>نڤیسینێن قوتابییان بێ وێنە دهێنە پێداچوون • کۆمێنت و شێرکرن بۆ هەمیا ڤەکرینە</p>
+            </div>
         </header>
 
+        <!-- ADMIN PANEL TOOLBAR (Visible ONLY when Admin is active) -->
+        <section id="posts-admin-toolbar" class="posts-admin-card" style="display:none;">
+            <div class="posts-admin-top">
+                <div>
+                    <h3><i class="fas fa-user-shield"></i> دەسەڵاتا ئەدمینی — پێداچوونا پۆستان و ڕێکپێدانا وێنەی</h3>
+                    <p id="admin-pending-summary">چاڤەڕێی بارکرنێ...</p>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <a href="admin-panel.html" class="posts-btn-secondary" style="text-decoration:none;">
+                        <i class="fas fa-tachometer-alt"></i> پەناڵی ئەدمین
+                    </a>
+                    <button type="button" id="admin-lock-btn" class="posts-btn-danger-outline">
+                        <i class="fas fa-lock"></i> گرتنا مۆدا ئەدمینی
+                    </button>
+                </div>
+            </div>
+
+            <!-- Single-user Image Permission Grant Box -->
+            <div class="admin-perm-box">
+                <div class="admin-perm-header">
+                    <strong><i class="fas fa-image" style="color:#7c3aed;"></i> ڕێکپێدانا بەلاڤکرنا وێنەی بۆ کەسەکێ دیارکری:</strong>
+                    <span class="perm-hint">ئەدمین هەردەم دشێت وێنە و نڤیسینێ بەلاڤ بکەت؛ ل ڤێرە دشێی ڕێکێ بدەییە کەسەکێ دی ژی.</span>
+                </div>
+                <form id="admin-grant-image-form" class="admin-perm-form">
+                    <input type="text" id="grant-username-input" placeholder="یوزەرنەیم یان ئایدی (username) بنڤیسە..." required>
+                    <label class="perm-checkbox-label">
+                        <input type="checkbox" id="grant-single-only" checked>
+                        <span>تەنێ بۆ ئەڤی کەسی بیت (ئێک کەس)</span>
+                    </label>
+                    <button type="submit" class="posts-btn-primary">
+                        <i class="fas fa-user-check"></i> ڕێکپێدان
+                    </button>
+                </form>
+                <div id="admin-authorized-list" class="authorized-chips-row"></div>
+            </div>
+
+            <!-- Pending Posts Review Queue -->
+            <div id="admin-pending-queue" class="admin-pending-queue"></div>
+        </section>
+
+        <!-- POST COMPOSER BOX -->
+        <section class="posts-composer-card" id="posts-composer-section">
+            <div id="composer-guest-notice" class="composer-guest-notice" style="display:none;">
+                <div>
+                    <strong><i class="fas fa-pen-nib" style="color:var(--blue-accent);"></i> تە دڤێت پۆستەکێ بنڤیسی؟</strong>
+                    <p>بۆ نڤیسینا پۆستان و کۆمێنتان، سەرەتا بچۆ ژوور یان هەژمارەکا نوو دروست بکە.</p>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button type="button" id="composer-login-btn" class="posts-btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> چوونەژوور
+                    </button>
+                    <button type="button" id="composer-register-btn" class="posts-btn-secondary">
+                        <i class="fas fa-user-plus"></i> هەژمارەکا نوو
+                    </button>
+                </div>
+            </div>
+
+            <form id="community-post-form" style="display:none;">
+                <div class="composer-header-row">
+                    <div>
+                        <h3 style="margin:0; font-size:1.08rem; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-feather-alt" style="color:var(--blue-accent);"></i>
+                            <span id="composer-heading-text">نڤیسینا پۆستەکێ نوو</span>
+                        </h3>
+                        <p id="composer-rule-hint" class="composer-rule-hint"></p>
+                    </div>
+                    <span id="composer-role-badge" class="composer-role-pill"></span>
+                </div>
+
+                <div class="composer-fields">
+                    <input type="text" id="cp-title" maxlength="140" placeholder="ناڤونیشانێ پۆستێ خۆ بنڤیسە..." required>
+                    <textarea id="cp-content" rows="3" maxlength="3000" placeholder="ناوەڕۆکێ پۆستێ خۆ ل ڤێرە بنڤیسە..." required></textarea>
+
+                    <!-- Image & Link controls: Strictly shown ONLY to Admin or Authorized Image Poster -->
+                    <div id="cp-media-controls" class="cp-media-controls" style="display:none;">
+                        <div class="cp-media-row">
+                            <label class="cp-upload-label">
+                                <i class="fas fa-image"></i>
+                                <span id="cp-image-filename">هەڵبژارتنا وێنەکی (تەنێ ئەدمین / ڕێکپێدایی)</span>
+                                <input type="file" id="cp-image-input" accept="image/*" style="display:none;">
+                            </label>
+                            <button type="button" id="cp-clear-image-btn" class="posts-btn-danger-outline" style="display:none; padding:6px 10px; font-size:0.8rem;">
+                                <i class="fas fa-times"></i> لادانا وێنەی
+                            </button>
+                        </div>
+                        <img id="cp-image-preview" src="" alt="پێشبینینا وێنەی" class="cp-image-preview" style="display:none;">
+                        <input type="url" id="cp-link-input" placeholder="لینکەکێ دەرەکی (ئارەزوومەندانە: https://...)">
+                    </div>
+                </div>
+
+                <div id="cp-form-error" class="cp-form-error" style="display:none;"></div>
+
+                <div class="composer-footer-row">
+                    <span id="cp-approval-note" class="cp-approval-note"></span>
+                    <button type="submit" id="cp-submit-btn" class="posts-btn-primary">
+                        <i class="fas fa-paper-plane"></i> بەلاڤکرن
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- FILTER TABS (All Approved / My Posts including Pending) -->
+        <div class="posts-filter-bar">
+            <div class="posts-filter-pills">
+                <button type="button" class="p-filter-btn active" data-filter="all">
+                    <i class="fas fa-globe"></i> هەمی پۆست (<span id="count-all-posts">0</span>)
+                </button>
+                <button type="button" class="p-filter-btn" data-filter="mine" id="filter-mine-btn" style="display:none;">
+                    <i class="fas fa-user-clock"></i> پۆستێن من (<span id="count-my-posts">0</span>)
+                </button>
+            </div>
+            <button type="button" id="posts-refresh-btn" class="posts-btn-secondary" style="padding:7px 12px; font-size:0.82rem;">
+                <i class="fas fa-sync-alt"></i> نوێکرن
+            </button>
+        </div>
+
+        <!-- POSTS FEED -->
         <main id="posts-container" class="posts-container">
-            <p class="loading-text">پوست دهێنە بارکرن...</p>
+            <p class="loading-text">پۆست دهێنە بارکرن...</p>
         </main>
-        
-        <footer class="contact-footer">
-             <a href="index.html" style="color: var(--secondary-text); text-decoration: none;">زڤرین بۆ هەلبژارتنا پولان</a>
+
+        <footer class="contact-footer" style="margin-top:28px;">
+            <a href="index.html" class="posts-btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-arrow-right"></i> زڤرین بۆ لاپەڕا سەرەکی
+            </a>
         </footer>
     </div>
 
-    <!-- Bişkoka zêdekirina postî (Tenê bo admin) -->
-    <button id="add-post-btn" class="add-post-button admin-only" title="پوستەکێ نوو زێدەبکە">
-        <i class="fas fa-plus"></i>
-    </button>
-    
-    <!-- Modala zêdekirin/guhertina postî -->
-    <div id="post-modal" class="modal-overlay">
-        <div class="modal-content">
-             <h2 id="modal-title">پوستەکێ نوو زێدەبکە</h2>
-             <form id="post-form">
-                <input type="hidden" id="post-id">
-                <div class="form-group">
-                    <label for="post-title">ناڤونیشانێ بابەتی</label>
-                    <input type="text" id="post-title" placeholder="بۆ نموونە: وانەیەکا گرنگ">
-                </div>
-                <div class="form-group">
-                    <label for="post-description">وصف (کورتەیا بابەتی)</label>
-                    <textarea id="post-description" rows="4" placeholder="هەر تشتێ تە بڤێت لێرە بنڤیسە..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="post-image-upload">وێنەیەکێ هەلبژێرە (ئختیاری)</label>
-                    <input type="file" id="post-image-upload" accept="image/*">
-                    <img id="image-preview" src="#" alt="Pêşdîtina Wêneyî" class="image-preview"/>
-                </div>
-                 <div class="form-group">
-                    <label for="post-link">لینک (ئختیاری)</label>
-                    <input type="url" id="post-link" placeholder="https://example.com">
-                </div>
-                <p id="post-error" class="error-text"></p>
-                <div class="form-actions">
-                    <button type="submit" class="btn-save">بەلاڤ بکە</button>
-                    <button type="button" class="btn-cancel">داخستن</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modala mezinkirina wêneyî -->
+    <!-- Image Viewer Modal -->
     <div id="image-viewer-modal" class="modal-overlay image-viewer">
-        <span class="close-viewer">&times;</span>
-        <img class="modal-content-viewer" id="full-image">
+        <span class="close-viewer" id="close-image-viewer">&times;</span>
+        <img class="modal-content-viewer" id="full-image" alt="وێنە">
     </div>
 
-    <!-- Login Modal -->
-    <div id="login-modal" class="modal-overlay">
-        <div class="modal-content">
-             <h2 class="modal-header">چوونا ژوور یا ئەدمینی</h2>
-            <form id="login-form">
-                <div class="form-group"><label for="email">ئیمەیل</label><input type="email" id="email" required></div>
-                <div class="form-group"><label for="password">تێپەڕەوشە</label><input type="password" id="password" required></div>
-                <p id="login-error" class="error-text"></p>
-                <div class="form-actions">
-                    <button type="submit" class="btn-save">چوونا ژوور</button>
-                    <button type="button" id="login-cancel-btn" class="btn-cancel">داخستن</button>
-                </div>
+    <!-- External Share Modal (Fallback & Multi-App Picker) -->
+    <div id="share-post-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width:440px; text-align:right; direction:rtl;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                <h3 style="margin:0; font-size:1.12rem;"><i class="fas fa-share-alt" style="color:var(--blue-accent);"></i> شێرکرنا پۆستێ بۆ بەرنامێن دی</h3>
+                <button type="button" id="close-share-modal-btn" class="posts-icon-close">&times;</button>
+            </div>
+            <p id="share-post-preview-title" style="margin:0 0 14px; font-weight:700; color:var(--primary-text); font-size:0.95rem;"></p>
+            <div class="share-apps-grid">
+                <a id="share-whatsapp-link" href="#" target="_blank" rel="noopener noreferrer" class="share-app-btn whatsapp">
+                    <i class="fab fa-whatsapp"></i> واتس ئاپ (WhatsApp)
+                </a>
+                <a id="share-telegram-link" href="#" target="_blank" rel="noopener noreferrer" class="share-app-btn telegram">
+                    <i class="fab fa-telegram-plane"></i> تلگرام (Telegram)
+                </a>
+                <a id="share-facebook-link" href="#" target="_blank" rel="noopener noreferrer" class="share-app-btn facebook">
+                    <i class="fab fa-facebook-f"></i> فەیسبووک (Facebook)
+                </a>
+                <button type="button" id="share-copy-btn" class="share-app-btn copy">
+                    <i class="fas fa-copy"></i> کۆپیکرنا دەق و لینکێ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal (No window.confirm) -->
+    <div id="delete-post-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width:400px; text-align:center; direction:rtl;">
+            <div style="width:54px; height:54px; border-radius:50%; background:rgba(220,38,38,0.12); color:#dc2626; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:10px;">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <h3 style="margin:0 0 8px; font-size:1.12rem;">پشتراستکرنا ژێبرنێ</h3>
+            <p id="delete-post-confirm-msg" style="margin:0 0 16px; color:var(--secondary-text); font-size:0.9rem; line-height:1.5;"></p>
+            <div style="display:flex; gap:10px;">
+                <button type="button" id="cancel-delete-post-btn" class="posts-btn-secondary" style="flex:1; justify-content:center;">پەشیمانبوون</button>
+                <button type="button" id="confirm-delete-post-btn" class="posts-btn-danger" style="flex:1; justify-content:center;">
+                    <i class="fas fa-trash"></i> بەلێ، ژێببە
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Unlock Modal -->
+    <div id="admin-unlock-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width:410px; text-align:right; direction:rtl;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                <h3 style="margin:0; font-size:1.12rem;"><i class="fas fa-user-shield" style="color:#dc2626;"></i> چوونا ژوور یا ئەدمینی</h3>
+                <button type="button" id="close-admin-unlock-btn" class="posts-icon-close">&times;</button>
+            </div>
+            <form id="admin-unlock-form">
+                <p style="margin:0 0 12px; font-size:0.86rem; color:var(--secondary-text);">کۆدێ ئەدمینی بنڤیسە بۆ پێداچوونا پۆستان و ڕێکپێدانا وێنەی:</p>
+                <input type="password" id="admin-pass-input" placeholder="تێپەڕەوشەیا ئەدمینی..." required style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box; margin-bottom:10px;">
+                <div id="admin-unlock-error" class="cp-form-error" style="display:none; margin-bottom:10px;"></div>
+                <button type="submit" class="posts-btn-primary" style="width:100%; justify-content:center; background:#dc2626;">
+                    <i class="fas fa-unlock"></i> چالاککرنا مۆدا ئەدمینی
+                </button>
             </form>
         </div>
     </div>
-    
+
+    <div id="app-toast-container" style="position:fixed; bottom:20px; left:20px; z-index:999999; display:flex; flex-direction:column; gap:8px;"></div>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="firebase-config.js"></script>
     <script src="translations.js"></script>
-    <script src="auth-guard.js"></script>
-    <script src="main-script.js"></script>
+    <script src="educational-data.js"></script>
+    <script src="cloudflare-lessons.js"></script>
     <script src="posts-script.js"></script>
 </body>
 </html>

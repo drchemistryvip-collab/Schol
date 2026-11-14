@@ -65,7 +65,86 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    const pendingTeachersBox = document.getElementById('pending-teachers-requests-box');
+    const teachersPendingBadge = document.getElementById('teachers-pending-badge');
+
+    function renderPendingTeacherRequestsBox() {
+        const pendingTeachers = dataStore.getPendingTeachers ? dataStore.getPendingTeachers() : [];
+        if (teachersPendingBadge) {
+            if (pendingTeachers.length > 0) {
+                teachersPendingBadge.textContent = pendingTeachers.length;
+                teachersPendingBadge.style.display = 'inline-block';
+            } else {
+                teachersPendingBadge.style.display = 'none';
+            }
+        }
+        if (!pendingTeachersBox) return;
+
+        if (pendingTeachers.length === 0) {
+            pendingTeachersBox.innerHTML = '';
+            return;
+        }
+
+        pendingTeachersBox.innerHTML = `
+            <div style="background:rgba(245,158,11,0.08); border:1.5px solid rgba(245,158,11,0.35); border-radius:16px; padding:18px; text-align:right;">
+                <h3 style="margin:0 0 12px; font-size:1.15rem; color:#d97706; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-user-plus"></i> داخوازیێن مامۆستایێن نوو بۆ وەرگرتنێ (${pendingTeachers.length})
+                </h3>
+                ${pendingTeachers.map(t => `
+                    <div class="approval-card" style="margin-bottom:10px; border-right-color:#f59e0b; padding:14px 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                            <div>
+                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+                                    <strong style="font-size:1.05rem;">${t.name}</strong>
+                                    <span style="background:rgba(138,43,226,0.12); color:#7209b7; font-size:0.78rem; padding:2px 8px; border-radius:8px; font-weight:bold;">
+                                        ${t.subject || 'کیمیا'}
+                                    </span>
+                                    <span style="background:rgba(245,158,11,0.15); color:#d97706; font-size:0.75rem; padding:2px 8px; border-radius:8px; font-weight:bold;">
+                                        ل چاڤەڕێی وەرگرتنێ ⏳
+                                    </span>
+                                </div>
+                                <div style="font-size:0.84rem; color:var(--secondary-text);">
+                                    ${t.phone ? `<span style="margin-left:10px;"><i class="fas fa-phone"></i> <span style="direction:ltr; display:inline-block;">${t.phone}</span></span>` : ''}
+                                    ${t.email ? `<span style="margin-left:10px;"><i class="fas fa-envelope"></i> ${t.email}</span>` : ''}
+                                    ${t.bio ? `<span><i class="fas fa-info-circle"></i> ${t.bio}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="action-btn-group">
+                                <button type="button" class="btn-approve-action btn-approve-teacher-req" data-id="${t.id}">
+                                    <i class="fas fa-check-circle"></i> وەربگرە وەک مامۆستا ✅
+                                </button>
+                                <button type="button" class="btn-reject-action btn-reject-teacher-req" data-id="${t.id}">
+                                    <i class="fas fa-times-circle"></i> ڕەتکردنەوە
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        pendingTeachersBox.querySelectorAll('.btn-approve-teacher-req').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tid = btn.getAttribute('data-id');
+                dataStore.approveTeacher(tid);
+                renderApprovals();
+                renderTeachersManagement();
+            });
+        });
+
+        pendingTeachersBox.querySelectorAll('.btn-reject-teacher-req').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tid = btn.getAttribute('data-id');
+                dataStore.rejectTeacher(tid);
+                renderApprovals();
+                renderTeachersManagement();
+            });
+        });
+    }
+
     function renderApprovals() {
+        renderPendingTeacherRequestsBox();
+
         let items = [];
         if (currentApprovalFilter === 'pending') {
             items = dataStore.getPendingSubmissions();
@@ -76,14 +155,15 @@ document.addEventListener('DOMContentLoaded', () => {
             items = [...vids, ...qzs, ...mlzs].sort((a, b) => b.createdAt - a.createdAt);
         }
 
+        const pendingTeachersCount = dataStore.getPendingTeachers ? dataStore.getPendingTeachers().length : 0;
         const pendingOnlyCount = dataStore.getPendingSubmissions().length;
-        pendingBadgeCount.textContent = pendingOnlyCount;
+        pendingBadgeCount.textContent = pendingOnlyCount + pendingTeachersCount;
 
         if (items.length === 0) {
             approvalsListContainer.innerHTML = `
                 <div style="text-align:center; padding: 50px; background:var(--surface-color); border-radius:14px; border:1px solid var(--border-color); color:var(--secondary-text);">
                     <i class="fas fa-check-double" style="font-size: 3rem; color: #28a745; margin-bottom: 15px;"></i>
-                    <h3>دەستخۆش م. حسێن! هیچ داخوازییەکی چاوەڕوان نییە.</h3>
+                    <h3>دەستخۆش م. حسێن! هیچ داخوازییەکی وانە/مەلزەمە چاوەڕوان نییە.</h3>
                     <p>گشت وانە، پرسیار، مەلزەمە، و سلایدەکان پێداچوونەوەیان بۆ کراوە.</p>
                 </div>
             `;
@@ -97,16 +177,24 @@ document.addEventListener('DOMContentLoaded', () => {
             let contentDetailHtml = '';
 
             if (item.type === 'video') {
+                const vidId = dataStore.getYoutubeId(item.youtubeUrl);
                 typeBadge = '<span style="color:#ff0000; font-weight:bold;"><i class="fab fa-youtube"></i> وانەی ڤیدیۆیی یوتیوب</span>';
                 contentDetailHtml = `
                     <h3 style="margin:5px 0 8px; font-size:1.15rem;">${item.title}</h3>
                     <div style="font-size:0.9rem; color:var(--secondary-text); margin-bottom:8px;">
                         <strong>بەند:</strong> ${item.chapter || ''}
                     </div>
+                    ${vidId ? `
+                        <div style="margin: 10px 0; max-width: 440px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); background: #000; box-shadow:0 4px 15px rgba(0,0,0,0.15);">
+                            <div style="position:relative; width:100%; height:230px;">
+                                <iframe src="https://www.youtube.com/embed/${vidId}" style="width:100%; height:100%; border:none;" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    ` : ''}
                     ${item.youtubeUrl ? `
-                        <div style="margin: 10px 0;">
+                        <div style="margin: 8px 0;">
                             <a href="${item.youtubeUrl}" target="_blank" style="color:var(--blue-accent); font-size:0.85rem; text-decoration:none;">
-                                <i class="fas fa-external-link-alt"></i> لینکی یوتیوب: ${item.youtubeUrl}
+                                <i class="fas fa-external-link-alt"></i> بەستەری یوتیوب: ${item.youtubeUrl}
                             </a>
                         </div>
                     ` : ''}
@@ -230,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const id = btn.getAttribute('data-id');
                 const type = btn.getAttribute('data-type');
                 dataStore.approveItem(id, type);
+                alert('سەرکەفتی بوو! بابەت پەسەندکرا و ئێکسەر چووە جهێ گشتی بۆ هەموو قوتابیان. ✅');
                 renderApprovals();
             });
         });
@@ -238,8 +327,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-id');
                 const type = btn.getAttribute('data-type');
-                dataStore.rejectItem(id, type);
-                renderApprovals();
+                if (confirm('ئایا دڵنیایت لە ڕەتکردنەوەی ئەم داخوازییە؟ لە بەشی گشتی پیشان نادرێت.')) {
+                    dataStore.rejectItem(id, type);
+                    renderApprovals();
+                }
             });
         });
 
@@ -290,17 +381,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const imgSrc = item.fileData || item.fileUrl || 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?auto=format&fit=crop&w=1200&q=80';
             docViewport.innerHTML = `<img src="${imgSrc}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;">`;
         } else if (formatType === 'html') {
-            if (item.htmlContent) {
+            const rawHtml = dataStore.getHtmlContentFromItem(item);
+            if (rawHtml) {
                 const iframe = document.createElement('iframe');
-                iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
                 iframe.style.width = '100%';
                 iframe.style.height = '100%';
                 iframe.style.border = 'none';
                 iframe.style.background = '#ffffff';
-                iframe.srcdoc = item.htmlContent;
+                iframe.setAttribute('allowfullscreen', 'true');
+                iframe.setAttribute('allow', 'fullscreen; autoplay; clipboard-write; encrypted-media');
+                iframe.srcdoc = rawHtml;
                 docViewport.appendChild(iframe);
+
+                const blob = new Blob([rawHtml], { type: 'text/html;charset=utf-8' });
+                docModalDownload.href = URL.createObjectURL(blob);
+                docModalDownload.download = item.fileName && item.fileName.endsWith('.html') ? item.fileName : `${item.title}.html`;
+            } else if (item.fileUrl && item.fileUrl.startsWith('http')) {
+                docViewport.innerHTML = `<iframe src="${item.fileUrl}" width="100%" height="100%" style="border:none; background:#ffffff;"></iframe>`;
             } else {
-                docViewport.innerHTML = `<iframe sandbox="allow-scripts allow-same-origin" src="${item.fileData || item.fileUrl}" width="100%" height="100%" style="border:none; background:#ffffff;"></iframe>`;
+                docViewport.innerHTML = `
+                    <div style="text-align:center; padding:35px; color:#fff;">
+                        <i class="fas fa-file-code" style="font-size:3rem; color:#00b4d8; margin-bottom:12px;"></i>
+                        <h3>پەڕەی HTML (${item.title})</h3>
+                        <p style="color:var(--secondary-text);">دەقی فایلی HTML بەتاڵە یان بار نەکراوە.</p>
+                    </div>
+                `;
             }
         } else if (formatType === 'pptx') {
             if (item.fileUrl && item.fileUrl.startsWith('http')) {
@@ -339,36 +444,68 @@ document.addEventListener('DOMContentLoaded', () => {
         const teachers = dataStore.getAllTeachers();
 
         teachersMgmtList.innerHTML = teachers.map((teacher, index) => {
-            const isTop1 = index === 0;
+            const isTop1 = index === 0 && teacher.status !== 'pending';
             const langLabel = dataStore.getLanguageLabel(teacher.lang || 'ku_ba');
+            const isPending = teacher.status === 'pending';
+            const isRejected = teacher.status === 'rejected';
 
             return `
-                <div class="teacher-item-card">
+                <div class="teacher-item-card" style="${isPending ? 'border:1.5px solid #f59e0b; background:rgba(245,158,11,0.04);' : ''}">
                     <div class="teacher-avatar-and-info">
                         <img src="${teacher.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'}" alt="${teacher.name}">
                         <div>
-                            <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                 <h3 style="margin:0; font-size:1.15rem;">${teacher.name}</h3>
+                                ${isPending ? '<span style="background:#f59e0b; color:#fff; font-size:0.75rem; padding:2px 8px; border-radius:10px; font-weight:bold;">ل چاڤەڕێی وەرگرتنێ ⏳</span>' : ''}
+                                ${isRejected ? '<span style="background:#dc3545; color:#fff; font-size:0.75rem; padding:2px 8px; border-radius:10px; font-weight:bold;">ڕەتکراو</span>' : ''}
                                 ${isTop1 ? `<span style="background:linear-gradient(135deg, #f5af19, #e65c00); color:#fff; font-size:0.75rem; padding:2px 8px; border-radius:10px; font-weight:bold;"><i class="fas fa-fire"></i> زۆرترین بینەر</span>` : ''}
                                 <span style="background:rgba(138,43,226,0.1); color:#8a2be2; font-size:0.75rem; padding:2px 8px; border-radius:10px;">${langLabel}</span>
                             </div>
                             <p style="margin:3px 0; color:var(--blue-accent); font-size:0.9rem;">${teacher.subject || 'کیمیا'}</p>
                             <p style="margin:0; color:var(--secondary-text); font-size:0.8rem;">
-                                ${teacher.email || teacher.phone || ''} — پۆلەکانی وانەگۆتن: ${(teacher.grades || []).join('، ')}
+                                ${teacher.phone || teacher.email || ''} — پۆلەکانی وانەگۆتن: ${(teacher.grades || []).join('، ')}
                             </p>
                         </div>
                     </div>
-                    <div style="text-align:left;">
-                        <div style="font-size:1.1rem; font-weight:bold; color:var(--blue-accent); margin-bottom:5px;">
+                    <div style="text-align:left; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                        <div style="font-size:1.1rem; font-weight:bold; color:var(--blue-accent);">
                             <i class="fas fa-eye"></i> ${(teacher.viewsCount || 0).toLocaleString()} بینین
                         </div>
-                        <button class="btn-cancel delete-teacher-btn" data-id="${teacher.id}" style="padding:4px 10px; font-size:0.8rem; color:#dc3545; border-color:rgba(220,53,69,0.3);">
-                            <i class="fas fa-trash-alt"></i> لابردن
-                        </button>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            ${(isPending || isRejected) ? `
+                                <button class="btn-approve-action mgmt-approve-teacher-btn" data-id="${teacher.id}" style="padding:4px 10px; font-size:0.8rem;">
+                                    <i class="fas fa-check"></i> وەربگرە
+                                </button>
+                            ` : ''}
+                            ${isPending ? `
+                                <button class="btn-reject-action mgmt-reject-teacher-btn" data-id="${teacher.id}" style="padding:4px 10px; font-size:0.8rem;">
+                                    <i class="fas fa-ban"></i> ڕەتکردنەوە
+                                </button>
+                            ` : ''}
+                            <button class="btn-cancel delete-teacher-btn" data-id="${teacher.id}" style="padding:4px 10px; font-size:0.8rem; color:#dc3545; border-color:rgba(220,53,69,0.3);">
+                                <i class="fas fa-trash-alt"></i> لابردن
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
         }).join('');
+
+        teachersMgmtList.querySelectorAll('.mgmt-approve-teacher-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                dataStore.approveTeacher(btn.getAttribute('data-id'));
+                renderApprovals();
+                renderTeachersManagement();
+            });
+        });
+
+        teachersMgmtList.querySelectorAll('.mgmt-reject-teacher-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                dataStore.rejectTeacher(btn.getAttribute('data-id'));
+                renderApprovals();
+                renderTeachersManagement();
+            });
+        });
 
         document.querySelectorAll('.delete-teacher-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -378,8 +515,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 if (confirm('ئایا دڵنیایت لە لابردنی ئەم مامۆستایە؟')) {
-                    const teachers = dataStore.getAllTeachers().filter(t => t.id !== id);
-                    localStorage.setItem(dataStore.STORAGE_KEY_TEACHERS, JSON.stringify(teachers));
+                    const remaining = dataStore.getAllTeachers().filter(t => t.id !== id);
+                    localStorage.setItem(dataStore.STORAGE_KEY_TEACHERS, JSON.stringify(remaining));
+                    renderApprovals();
                     renderTeachersManagement();
                 }
             });
@@ -895,10 +1033,306 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ==========================================
+    // 7. COMMUNITY POSTS MODERATION & PERMISSIONS
+    // ==========================================
+    const communityPostsList = document.getElementById('ap-community-posts-list');
+    const communityPendingBadge = document.getElementById('community-pending-badge');
+    const communityStatusMsg = document.getElementById('ap-community-status-msg');
+    const communityFilterBtns = document.querySelectorAll('.ap-community-filter-btn');
+    const refreshCommunityBtn = document.getElementById('ap-refresh-community-btn');
+    const grantImageForm = document.getElementById('ap-grant-image-form');
+    const grantUsernameInput = document.getElementById('ap-grant-username');
+    const grantSingleOnlyInput = document.getElementById('ap-grant-single-only');
+    const authorizedUsersList = document.getElementById('ap-authorized-users-list');
+    const apConfirmModal = document.getElementById('ap-confirm-modal');
+    const apConfirmText = document.getElementById('ap-confirm-text');
+    const apConfirmOkBtn = document.getElementById('ap-confirm-ok-btn');
+    const apConfirmCancelBtn = document.getElementById('ap-confirm-cancel-btn');
+
+    let currentCommunityFilter = 'pending';
+    let pendingConfirmCallback = null;
+
+    function openApConfirm(message, onOk) {
+        if (!apConfirmModal || !apConfirmText) {
+            if (typeof onOk === 'function') onOk();
+            return;
+        }
+        apConfirmText.textContent = message;
+        pendingConfirmCallback = onOk;
+        apConfirmModal.style.display = 'flex';
+    }
+
+    if (apConfirmCancelBtn) {
+        apConfirmCancelBtn.addEventListener('click', () => {
+            if (apConfirmModal) apConfirmModal.style.display = 'none';
+            pendingConfirmCallback = null;
+        });
+    }
+
+    if (apConfirmOkBtn) {
+        apConfirmOkBtn.addEventListener('click', () => {
+            const cb = pendingConfirmCallback;
+            pendingConfirmCallback = null;
+            if (apConfirmModal) apConfirmModal.style.display = 'none';
+            if (typeof cb === 'function') cb();
+        });
+    }
+
+    function showCommunityStatus(msg, type = 'success') {
+        if (!communityStatusMsg) return;
+        communityStatusMsg.textContent = msg;
+        communityStatusMsg.style.display = 'block';
+        communityStatusMsg.style.background = type === 'success' ? 'rgba(40,167,69,0.14)' : 'rgba(220,53,69,0.14)';
+        communityStatusMsg.style.color = type === 'success' ? '#15803d' : '#b91c1c';
+        communityStatusMsg.style.border = `1px solid ${type === 'success' ? '#22c55e' : '#ef4444'}`;
+        setTimeout(() => {
+            if (communityStatusMsg) communityStatusMsg.style.display = 'none';
+        }, 5000);
+    }
+
+    function escapeApHtml(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function renderAuthorizedUsersList(users) {
+        if (!authorizedUsersList) return;
+        const list = Array.isArray(users) ? users : [];
+        if (list.length === 0) {
+            authorizedUsersList.innerHTML = '<span style="color:var(--secondary-text); font-size:0.84rem;">هەتا نوکە ب تنێ ئەدمین دشێت وێنەیان بەلاڤ بکەت.</span>';
+            return;
+        }
+        authorizedUsersList.innerHTML = list.map(entry => {
+            const uname = typeof entry === 'string' ? entry : (entry && (entry.username || entry.id)) || '';
+            const uid = typeof entry === 'object' && entry ? (entry.id || '') : '';
+            if (!uname) return '';
+            return `
+                <span style="display:inline-flex; align-items:center; gap:8px; padding:5px 12px; border-radius:999px; background:rgba(234,88,12,0.12); border:1px solid rgba(234,88,12,0.35); color:#c2410c; font-size:0.84rem; font-weight:bold;">
+                    <i class="fas fa-user-check"></i> @${escapeApHtml(uname)}
+                    <button type="button" class="ap-revoke-img-btn" data-username="${escapeApHtml(uname)}" data-id="${escapeApHtml(uid)}" title="ستەندنا رێکپێدانێ" style="border:none; background:none; color:#dc2626; cursor:pointer; font-size:0.95rem; padding:0;">&times;</button>
+                </span>
+            `;
+        }).join('');
+
+        authorizedUsersList.querySelectorAll('.ap-revoke-img-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const username = btn.getAttribute('data-username');
+                const user_id = btn.getAttribute('data-id');
+                try {
+                    const res = await fetch('/api/community-posts/permissions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'revoke', username, user_id, isAdmin: true })
+                    });
+                    if (!res.ok) throw new Error('نەشیا رێکپێدانێ بستینیت');
+                    showCommunityStatus(`رێکپێدانا وێنەیان ژ (@${username}) هاتە وەرگرتنەوە.`);
+                    await loadAdminCommunityPosts();
+                } catch (err) {
+                    showCommunityStatus(err.message || 'هەڵەیەک چێبوو.', 'error');
+                }
+            });
+        });
+    }
+
+    async function loadAdminCommunityPosts() {
+        try {
+            const res = await fetch('/api/community-posts?isAdmin=true');
+            if (!res.ok) throw new Error('نەشیا داتایێن پۆستان ژ سێرڤەری بینیت');
+            const data = await res.json();
+            const allPosts = Array.isArray(data.posts) ? data.posts : [];
+            const pendingPosts = allPosts.filter(p => p.status === 'pending');
+
+            if (communityPendingBadge) {
+                communityPendingBadge.textContent = pendingPosts.length;
+                communityPendingBadge.style.display = pendingPosts.length > 0 ? 'inline-block' : 'none';
+            }
+
+            renderAuthorizedUsersList(data.authorizedImageUsers || []);
+
+            if (!communityPostsList) return;
+            const filtered = currentCommunityFilter === 'pending' ? pendingPosts : allPosts;
+
+            if (filtered.length === 0) {
+                communityPostsList.innerHTML = `
+                    <div style="text-align:center; padding:45px; background:var(--surface-color); border-radius:14px; border:1px solid var(--border-color); color:var(--secondary-text);">
+                        <i class="fas fa-check-double" style="font-size:2.6rem; color:#28a745; margin-bottom:12px;"></i>
+                        <h3 style="margin:0 0 6px;">چ پۆست ل چاڤەڕێیێ نینن</h3>
+                        <p style="margin:0;">هەمی پۆستێن قوتابیان و بەکارهێنەران هاتینە پێداچوون.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            communityPostsList.innerHTML = filtered.map(post => {
+                const isPending = post.status === 'pending';
+                const isApproved = post.status === 'approved';
+                const isRejected = post.status === 'rejected';
+                const authorName = post.author_name || post.authorName || 'بەکارهێنەر';
+                const authorUsername = post.author_username || post.authorUsername || '';
+                const authorRole = post.author_role || post.authorRole || 'student';
+                const statusBadge = isPending
+                    ? '<span style="background:#fef3c7; color:#b45309; padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:bold;">چاوەروان بە ⏳</span>'
+                    : isApproved
+                        ? '<span style="background:#dcfce7; color:#15803d; padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:bold;">وەرگرتی / بەلاڤکری ✅</span>'
+                        : '<span style="background:#fee2e2; color:#b91c1c; padding:3px 10px; border-radius:999px; font-size:0.78rem; font-weight:bold;">ڕەتکری ❌</span>';
+
+                return `
+                    <div class="approval-card ${isApproved ? 'approved-border' : ''}" style="border-right-color:${isPending ? '#f59e0b' : isApproved ? '#28a745' : '#dc3545'};">
+                        <div class="approval-header">
+                            <div class="teacher-meta">
+                                <i class="fas fa-user-circle" style="font-size:1.5rem; color:#ea580c;"></i>
+                                <div>
+                                    <strong>${escapeApHtml(authorName)}</strong>
+                                    ${authorUsername ? `<span style="font-size:0.8rem; color:var(--secondary-text); margin-right:6px;">(@${escapeApHtml(authorUsername)})</span>` : ''}
+                                    <span style="background:rgba(234,88,12,0.1); color:#c2410c; font-size:0.76rem; padding:2px 8px; border-radius:6px; margin-right:6px;">
+                                        ${authorRole === 'admin' ? 'ئەدمین' : authorRole === 'teacher' ? 'مامۆستا' : 'قوتابی'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                ${statusBadge}
+                                <span style="font-size:0.78rem; color:var(--secondary-text);">
+                                    ${new Date(post.createdAt || Date.now()).toLocaleString('ku-IQ')}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:14px;">
+                            <h3 style="margin:0 0 8px; font-size:1.12rem;">${escapeApHtml(post.title)}</h3>
+                            <p style="margin:0 0 10px; color:var(--primary-text); white-space:pre-line; line-height:1.7;">${escapeApHtml(post.content)}</p>
+                            ${post.imageUrl ? `<img src="${escapeApHtml(post.imageUrl)}" alt="وێنێ پۆستی" style="max-width:340px; max-height:240px; border-radius:10px; border:1px solid var(--border-color); display:block; margin-top:8px;">` : ''}
+                            ${post.link ? `<div style="margin-top:8px; font-size:0.84rem;"><i class="fas fa-link"></i> <a href="${escapeApHtml(post.link)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue-accent);">${escapeApHtml(post.link)}</a></div>` : ''}
+                            <div style="margin-top:8px; font-size:0.8rem; color:var(--secondary-text);">
+                                <i class="far fa-comments"></i> ${(post.comments || []).length} کۆمێنت
+                            </div>
+                        </div>
+
+                        <div class="action-btn-group">
+                            ${!isApproved ? `
+                                <button type="button" class="btn-approve-action ap-mod-approve-btn" data-id="${escapeApHtml(post.id)}">
+                                    <i class="fas fa-check-circle"></i> وەرگرتن و بەلاڤکرن
+                                </button>
+                            ` : ''}
+                            ${!isRejected ? `
+                                <button type="button" class="btn-reject-action ap-mod-reject-btn" data-id="${escapeApHtml(post.id)}">
+                                    <i class="fas fa-ban"></i> ڕەتکرن
+                                </button>
+                            ` : ''}
+                            <button type="button" class="btn-delete-action ap-mod-delete-btn" data-id="${escapeApHtml(post.id)}">
+                                <i class="fas fa-trash-alt"></i> ژێبرن
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            communityPostsList.querySelectorAll('.ap-mod-approve-btn').forEach(btn => {
+                btn.addEventListener('click', () => moderateCommunityPost(btn.getAttribute('data-id'), 'approved'));
+            });
+            communityPostsList.querySelectorAll('.ap-mod-reject-btn').forEach(btn => {
+                btn.addEventListener('click', () => moderateCommunityPost(btn.getAttribute('data-id'), 'rejected'));
+            });
+            communityPostsList.querySelectorAll('.ap-mod-delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const postId = btn.getAttribute('data-id');
+                    openApConfirm('ئایا تۆ پشتڕاستی کو دەتەوێت ڤی پۆستی ب تەمامی ژێ ببەی؟', () => deleteAdminCommunityPost(postId));
+                });
+            });
+        } catch (err) {
+            console.error(err);
+            if (communityPostsList) {
+                communityPostsList.innerHTML = `<div style="color:#dc3545; text-align:center; padding:25px;">${escapeApHtml(err.message)}</div>`;
+            }
+        }
+    }
+
+    async function moderateCommunityPost(postId, status) {
+        try {
+            const res = await fetch(`/api/community-posts/${encodeURIComponent(postId)}/moderate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, isAdmin: true })
+            });
+            if (!res.ok) throw new Error('کردار سەرکەفتی نەبوو');
+            showCommunityStatus(status === 'approved' ? 'پۆست ب سەرکەفتی هاتە وەرگرتن و بەلاڤکرن ✅' : 'پۆست هاتە ڕەتکرن.');
+            await loadAdminCommunityPosts();
+        } catch (err) {
+            showCommunityStatus(err.message || 'هەڵەیەک چێبوو.', 'error');
+        }
+    }
+
+    async function deleteAdminCommunityPost(postId) {
+        try {
+            const res = await fetch(`/api/community-posts/${encodeURIComponent(postId)}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isAdmin: true })
+            });
+            if (!res.ok) throw new Error('نەشیا پۆستی ژێ ببەت');
+            showCommunityStatus('پۆست ب سەرکەفتی هاتە ژێبرن.');
+            await loadAdminCommunityPosts();
+        } catch (err) {
+            showCommunityStatus(err.message || 'هەڵەیەک چێبوو.', 'error');
+        }
+    }
+
+    if (grantImageForm) {
+        grantImageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = grantUsernameInput ? grantUsernameInput.value.trim() : '';
+            if (!username) return;
+            const singleOnly = grantSingleOnlyInput ? grantSingleOnlyInput.checked : true;
+            try {
+                const res = await fetch('/api/community-posts/permissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'grant', username, singleOnly, isAdmin: true })
+                });
+                if (!res.ok) throw new Error('نەشیا رێکپێدانێ تۆمار بکەت');
+                if (grantUsernameInput) grantUsernameInput.value = '';
+                showCommunityStatus(`رێکپێدانا وێنە بەلاڤکرنێ بۆ (${username}) هاتە دان ✅`);
+                await loadAdminCommunityPosts();
+            } catch (err) {
+                showCommunityStatus(err.message || 'هەڵەیەک چێبوو.', 'error');
+            }
+        });
+    }
+
+    communityFilterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            communityFilterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentCommunityFilter = btn.getAttribute('data-filter') || 'pending';
+            loadAdminCommunityPosts();
+        });
+    });
+
+    if (refreshCommunityBtn) {
+        refreshCommunityBtn.addEventListener('click', loadAdminCommunityPosts);
+    }
+
+    const communityPostsTab = document.querySelector('.admin-tab[data-view="community-posts-view"]');
+    if (communityPostsTab) {
+        communityPostsTab.addEventListener('click', loadAdminCommunityPosts);
+    }
+
+    // Listen for live teacher requests from Firestore
+    window.addEventListener('teachersUpdated', () => {
+        renderApprovals();
+        renderTeachersManagement();
+    });
+
     // Initial render
     renderApprovals();
     renderTeachersManagement();
     renderUserAccounts();
     loadAiTemplateConfig();
+    loadAdminCommunityPosts();
 });
+
 
