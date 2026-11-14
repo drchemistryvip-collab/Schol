@@ -18,7 +18,9 @@
 (function (global) {
     'use strict';
 
-    const CLOUDFLARE_WORKER_URL = 'https://parwarda-api.hussein-zebary-chemistry96.workers.dev';
+    const API_BASE_URL = 'https://parwarda-api.hussein-zebary-chemistry96.workers.dev';
+    const CLOUDFLARE_WORKER_URL = API_BASE_URL;
+    global.API_BASE_URL = API_BASE_URL;
     const CF_USER_STORAGE_KEY = 'parwarda_cf_user';
     const ADMIN_USERNAME = 'hussein23';
     const ADMIN_PASSWORD = 'hussein1996';
@@ -1665,6 +1667,7 @@
 
     global.CloudflareLessons = {
         API_URL: CLOUDFLARE_WORKER_URL,
+        API_BASE_URL: API_BASE_URL,
         // Auth & Settings
         getCurrentUser: getCurrentUser,
         setCurrentUser: setCurrentUser,

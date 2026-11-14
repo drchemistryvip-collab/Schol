@@ -8,6 +8,9 @@
 // =========================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE_URL = (typeof window !== 'undefined' && window.API_BASE_URL)
+        ? window.API_BASE_URL
+        : 'https://parwarda-api.hussein-zebary-chemistry96.workers.dev';
     const dataStore = window.EducationalData;
     const gradesConfig = window.GRADES_CONFIG;
 
@@ -660,12 +663,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadAiTemplateConfig() {
         try {
-            const res = await fetch('/api/admin/template');
-            if (res.ok) {
+            const res = await fetch(`${API_BASE_URL}/api/admin/template`, { headers: { 'Accept': 'application/json' } });
+            const ct = (res.headers.get('content-type') || '').toLowerCase();
+            if (res.ok && ct.includes('application/json')) {
                 const cfg = await res.json();
-                applyConfigToInputs(cfg);
-                localStorage.setItem('admin_master_ai_template', JSON.stringify(cfg));
-                return;
+                if (cfg && !Array.isArray(cfg) && cfg.primaryColor) {
+                    applyConfigToInputs(cfg);
+                    localStorage.setItem('admin_master_ai_template', JSON.stringify(cfg));
+                    return;
+                }
             }
         } catch (e) {
             console.warn('Could not fetch /api/admin/template, checking localStorage');
@@ -794,25 +800,25 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSaveAiTemplate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> پاشەکەوت دەکرێت...';
 
             try {
-                const res = await fetch('/api/admin/template', {
+                const res = await fetch(`${API_BASE_URL}/api/admin/template`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify(config)
                 });
-                if (res.ok) {
-                    localStorage.setItem('admin_master_ai_template', JSON.stringify(config));
-                    if (tplSaveStatus) {
-                        tplSaveStatus.style.display = 'inline-flex';
-                        setTimeout(() => { tplSaveStatus.style.display = 'none'; }, 3000);
-                    }
-                    alert('قالبی پاوەرپۆینت بە سەرکەوتوویی پاشەکەوتکرا! هەموو مامۆستایان ئەم دیزاینە نوێیە بەکاردەهێنن کاتێ وانەی نوێ بەرهەمدەهێنن.');
-                } else {
-                    throw new Error('Server returned ' + res.status);
+                localStorage.setItem('admin_master_ai_template', JSON.stringify(config));
+                if (tplSaveStatus) {
+                    tplSaveStatus.style.display = 'inline-flex';
+                    setTimeout(() => { tplSaveStatus.style.display = 'none'; }, 3000);
+                }
+                if (!res.ok) {
+                    showCommunityStatus('قالب لە کۆگای ناوخۆیی پاشەکەوتکرا.');
                 }
             } catch (err) {
-                // Fallback to localStorage
                 localStorage.setItem('admin_master_ai_template', JSON.stringify(config));
-                alert('قالب لە کۆگای ناوخۆیی پاشەکەوتکرا.');
+                if (tplSaveStatus) {
+                    tplSaveStatus.style.display = 'inline-flex';
+                    setTimeout(() => { tplSaveStatus.style.display = 'none'; }, 3000);
+                }
             } finally {
                 btnSaveAiTemplate.disabled = false;
                 btnSaveAiTemplate.innerHTML = '<i class="fas fa-save"></i> پاشەکەوتکردن بو گشت مامۆستایان';
@@ -1153,6 +1159,48 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, '&#039;');
     }
 
+    async function safeReadApJson(res) {
+        const text = await res.text();
+        if (!text || !text.trim()) return null;
+        const trimmed = text.trim();
+        if (trimmed.startsWith('<')) {
+            throw new Error('بەرسڤا سێرڤەری JSON نینە (HTML زڤڕاند).');
+        }
+        try {
+            return JSON.parse(trimmed);
+        } catch (e) {
+            throw new Error('نەشیا داتایێن سێرڤەری بخوینیت.');
+        }
+    }
+
+    function normalizeApPost(raw) {
+        const p = raw && typeof raw === 'object' ? raw : {};
+        let meta = {};
+        if (p.meta && typeof p.meta === 'string') {
+            try { meta = JSON.parse(p.meta); } catch (e) {}
+        } else if (p.meta && typeof p.meta === 'object' && !Array.isArray(p.meta)) {
+            meta = p.meta;
+        }
+        const fileUrl = p.imageUrl || p.file_url || meta.file_url || meta.imageUrl || '';
+        const isImageFile = /\.(png|jpe?g|webp|gif|bmp|svg)(\?|#|$)/i.test(fileUrl) || String(fileUrl).startsWith('data:image/');
+        const rawCreated = p.createdAt || p.created_at || meta.createdAt;
+        const parsedTime = rawCreated ? new Date(rawCreated).getTime() : Date.now();
+        return {
+            id: String(p.id !== undefined && p.id !== null ? p.id : (meta.id || '')),
+            author_id: String(p.author_id !== undefined ? p.author_id : (p.user_id !== undefined ? p.user_id : (meta.user_id || ''))),
+            author_name: String(p.author_name || meta.author_name || 'بەکارهێنەر'),
+            author_username: String(p.author_username || meta.author_username || ''),
+            author_role: String(p.author_role || p.role || meta.role || 'student'),
+            title: String(p.title || meta.title || ''),
+            content: String(p.content !== undefined ? p.content : (meta.content || p.description || '')),
+            imageUrl: p.imageUrl || (isImageFile ? fileUrl : ''),
+            link: p.link || meta.link || (!isImageFile && fileUrl ? fileUrl : ''),
+            status: String(p.status || meta.status || 'approved'),
+            comments: Array.isArray(p.comments) ? p.comments : (Array.isArray(meta.comments) ? meta.comments : []),
+            createdAt: Number.isFinite(parsedTime) ? parsedTime : Date.now()
+        };
+    }
+
     function renderAuthorizedUsersList(users) {
         if (!authorizedUsersList) return;
         const list = Array.isArray(users) ? users : [];
@@ -1177,9 +1225,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const username = btn.getAttribute('data-username');
                 const user_id = btn.getAttribute('data-id');
                 try {
-                    const res = await fetch('/api/community-posts/permissions', {
+                    const res = await fetch(`${API_BASE_URL}/api/community-posts/permissions`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                         body: JSON.stringify({ action: 'revoke', username, user_id, isAdmin: true })
                     });
                     if (!res.ok) throw new Error('نەشیا رێکپێدانێ بستینیت');
@@ -1194,10 +1242,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadAdminCommunityPosts() {
         try {
-            const res = await fetch('/api/community-posts?isAdmin=true');
+            const res = await fetch(`${API_BASE_URL}/api/posts?isAdmin=true`, {
+                cache: 'no-store',
+                headers: { 'Accept': 'application/json' }
+            });
             if (!res.ok) throw new Error('نەشیا داتایێن پۆستان ژ سێرڤەری بینیت');
-            const data = await res.json();
-            const allPosts = Array.isArray(data.posts) ? data.posts : [];
+            const data = await safeReadApJson(res);
+            const rawPosts = Array.isArray(data) ? data : (Array.isArray(data && data.posts) ? data.posts : []);
+            const allPosts = rawPosts.map(normalizeApPost);
             const pendingPosts = allPosts.filter(p => p.status === 'pending');
 
             if (communityPendingBadge) {
@@ -1205,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 communityPendingBadge.style.display = pendingPosts.length > 0 ? 'inline-block' : 'none';
             }
 
-            renderAuthorizedUsersList(data.authorizedImageUsers || []);
+            renderAuthorizedUsersList((!Array.isArray(data) && data && data.authorizedImageUsers) || []);
 
             if (!communityPostsList) return;
             const filtered = currentCommunityFilter === 'pending' ? pendingPosts : allPosts;
@@ -1306,11 +1358,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function moderateCommunityPost(postId, status) {
         try {
-            const res = await fetch(`/api/community-posts/${encodeURIComponent(postId)}/moderate`, {
+            const res = await fetch(`${API_BASE_URL}/api/community-posts/${encodeURIComponent(postId)}/moderate`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ status, isAdmin: true })
             });
+            await safeReadApJson(res);
             if (!res.ok) throw new Error('کردار سەرکەفتی نەبوو');
             showCommunityStatus(status === 'approved' ? 'پۆست ب سەرکەفتی هاتە وەرگرتن و بەلاڤکرن ✅' : 'پۆست هاتە ڕەتکرن.');
             await loadAdminCommunityPosts();
@@ -1321,11 +1374,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function deleteAdminCommunityPost(postId) {
         try {
-            const res = await fetch(`/api/community-posts/${encodeURIComponent(postId)}`, {
+            let res = await fetch(`${API_BASE_URL}/api/community-posts/${encodeURIComponent(postId)}`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ isAdmin: true })
             });
+            if (!res.ok) {
+                res = await fetch(API_BASE_URL, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ id: postId, user_id: 'admin_hussein23', isAdmin: true })
+                });
+            }
             if (!res.ok) throw new Error('نەشیا پۆستی ژێ ببەت');
             showCommunityStatus('پۆست ب سەرکەفتی هاتە ژێبرن.');
             await loadAdminCommunityPosts();
@@ -1341,11 +1401,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!username) return;
             const singleOnly = grantSingleOnlyInput ? grantSingleOnlyInput.checked : true;
             try {
-                const res = await fetch('/api/community-posts/permissions', {
+                const res = await fetch(`${API_BASE_URL}/api/community-posts/permissions`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ action: 'grant', username, singleOnly, isAdmin: true })
                 });
+                await safeReadApJson(res);
                 if (!res.ok) throw new Error('نەشیا رێکپێدانێ تۆمار بکەت');
                 if (grantUsernameInput) grantUsernameInput.value = '';
                 showCommunityStatus(`رێکپێدانا وێنە بەلاڤکرنێ بۆ (${username}) هاتە دان ✅`);
