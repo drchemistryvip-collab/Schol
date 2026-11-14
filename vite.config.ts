@@ -15,6 +15,7 @@ const htmlFiles = fs.readdirSync(__dirname)
 
 export default defineConfig(() => {
   return {
+    base: '/',
     plugins: [
       react(),
       tailwindcss(),
@@ -26,17 +27,23 @@ export default defineConfig(() => {
 
           const files = fs.readdirSync(__dirname);
           files.forEach(file => {
-            // Copy all .js, .json, .css, .txt, .svg, .png and Netlify redirect files from root
+            // Copy root static assets (.js, .json, .css, .txt, .svg, .png, .ico, .webmanifest)
+            // Never copy _redirects or netlify.toml into dist/ so Cloudflare Workers Assets does not hit redirect loops
             const isTargetExt = /\.(js|json|css|txt|svg|png|ico|webmanifest)$/i.test(file);
-            const isSpecialFile = ['_redirects', '_headers', 'netlify.toml'].includes(file);
             const isExcluded = [
               'package.json',
               'package-lock.json',
               'tsconfig.json',
-              'bun.lock'
-            ].includes(file) || (file.startsWith('.') && !isSpecialFile);
+              'bun.lock',
+              'wrangler.jsonc',
+              'wrangler.toml',
+              'netlify.toml',
+              '_redirects',
+              'community-posts.json',
+              'ai-template.json'
+            ].includes(file) || file.startsWith('.');
 
-            if ((isTargetExt || isSpecialFile) && !isExcluded) {
+            if (isTargetExt && !isExcluded) {
               const srcPath = path.resolve(__dirname, file);
               const destPath = path.resolve(distDir, file);
               try {
