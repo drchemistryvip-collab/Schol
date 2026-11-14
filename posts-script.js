@@ -160,6 +160,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function sanitizeJsonPayload(obj) {
+        const clean = {};
+        if (!obj || typeof obj !== 'object') return clean;
+        Object.keys(obj).forEach((key) => {
+            const val = obj[key];
+            if (val === undefined) {
+                clean[key] = null;
+            } else if (Array.isArray(val)) {
+                clean[key] = val.map((item) => {
+                    if (item === undefined) return null;
+                    if (item && typeof item === 'object' && !(item instanceof Date)) {
+                        return sanitizeJsonPayload(item);
+                    }
+                    return item;
+                });
+            } else if (val && typeof val === 'object' && !(val instanceof Date)) {
+                clean[key] = sanitizeJsonPayload(val);
+            } else {
+                clean[key] = val;
+            }
+        });
+        return clean;
+    }
+
+    function normalizeComment(raw) {
+        const c = raw && typeof raw === 'object' ? raw : {};
+        const rawCreated = c.createdAt || c.created_at;
+        const parsedTime = rawCreated ? new Date(rawCreated).getTime() : Date.now();
+        const commentBody = c.content !== undefined && c.content !== null
+            ? String(c.content)
+            : (c.text !== undefined && c.text !== null ? String(c.text) : '');
+        return {
+            id: String(c.id !== undefined && c.id !== null ? c.id : ''),
+            post_id: String(c.post_id !== undefined && c.post_id !== null ? c.post_id : (c.postId !== undefined && c.postId !== null ? c.postId : '')),
+            author_id: String(c.author_id !== undefined && c.author_id !== null ? c.author_id : (c.user_id !== undefined && c.user_id !== null ? c.user_id : '')),
+            author_name: String(c.author_name || 'بەکارهێنەر'),
+            author_role: String(c.author_role || c.role || 'student'),
+            text: commentBody,
+            content: commentBody,
+            createdAt: Number.isFinite(parsedTime) ? parsedTime : Date.now()
+        };
+    }
+
     function normalizeCommunityPost(raw) {
         const p = raw && typeof raw === 'object' ? raw : {};
         let meta = {};
@@ -168,6 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (p.meta && typeof p.meta === 'object' && !Array.isArray(p.meta)) {
             meta = p.meta;
         }
+        let rawComments = p.comments !== undefined ? p.comments : meta.comments;
+        if (typeof rawComments === 'string') {
+            try { rawComments = JSON.parse(rawComments); } catch (e) { rawComments = []; }
+        }
+        const normalizedComments = Array.isArray(rawComments) ? rawComments.map(normalizeComment) : [];
         const fileUrl = p.imageUrl || p.file_url || meta.file_url || meta.imageUrl || '';
         const isImageFile = /\.(png|jpe?g|webp|gif|bmp|svg)(\?|#|$)/i.test(fileUrl) || String(fileUrl).startsWith('data:image/');
         const rawCreated = p.createdAt || p.created_at || meta.createdAt;
@@ -183,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             imageUrl: p.imageUrl || (isImageFile ? fileUrl : ''),
             link: p.link || meta.link || (!isImageFile && fileUrl ? fileUrl : ''),
             status: String(p.status || meta.status || 'approved'),
-            comments: Array.isArray(p.comments) ? p.comments : (Array.isArray(meta.comments) ? meta.comments : []),
+            comments: normalizedComments,
             createdAt: Number.isFinite(parsedTime) ? parsedTime : Date.now(),
             updatedAt: p.updatedAt || (Number.isFinite(parsedTime) ? parsedTime : Date.now())
         };
@@ -639,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                                     ${canDelComment ? `<button type="button" class="comment-del-btn" data-post-id="${escapeHtml(post.id)}" data-comment-id="${escapeHtml(c.id)}" title="ژێبرنا کۆمێنتێ"><i class="fas fa-trash"></i></button>` : ''}
                                                 </div>
                                             </div>
-                                            <p class="comment-item-text">${escapeHtml(c.text)}</p>
+                                            <p class="comment-item-text">${escapeHtml(c.text || c.content || '')}</p>
                                         </div>
                                     `;
                                 }).join('')}
@@ -690,23 +738,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 let data = null;
+                const postPayload = sanitizeJsonPayload({
+                    user_id: actor.id || '',
+                    author_id: actor.id || '',
+                    author_name: actor.name || 'بەکارهێنەر',
+                    author_username: actor.username || '',
+                    author_role: actor.role || 'student',
+                    role: actor.role || 'student',
+                    isAdmin: Boolean(actor.isAdmin),
+                    title: title || '',
+                    content: content || '',
+                    grade: 'community',
+                    imageData: imageData || '',
+                    link: link || '',
+                    file_url: link || '',
+                    created_at: Date.now()
+                });
                 const res = await fetch(`${API_BASE_URL}/api/posts`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({
-                        user_id: actor.id,
-                        author_name: actor.name,
-                        author_username: actor.username,
-                        author_role: actor.role,
-                        isAdmin: actor.isAdmin,
-                        title,
-                        content,
-                        imageData,
-                        link
-                    })
+                    body: JSON.stringify(postPayload)
                 });
                 data = await safeReadJson(res);
                 if (!res.ok) {
@@ -889,17 +943,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const delCommentBtn = e.target.closest('.comment-del-btn');
             if (delCommentBtn) {
-                const postId = delCommentBtn.getAttribute('data-post-id');
-                const commentId = delCommentBtn.getAttribute('data-comment-id');
+                const postId = delCommentBtn.getAttribute('data-post-id') || '';
+                const commentId = delCommentBtn.getAttribute('data-comment-id') || '';
                 const actor = getActor();
+                const delPayload = sanitizeJsonPayload({
+                    id: commentId || null,
+                    comment_id: commentId || null,
+                    post_id: postId || null,
+                    user_id: actor.id || '',
+                    isAdmin: Boolean(actor.isAdmin)
+                });
                 try {
-                    const res = await fetch(`${API_BASE_URL}/api/community-posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify({ user_id: actor.id, isAdmin: actor.isAdmin })
-                    });
-                    const d = await safeReadJson(res);
-                    if (!res.ok) {
+                    const deleteEndpoints = [
+                        `${API_BASE_URL}/api/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`,
+                        `${API_BASE_URL}/api/comments/${encodeURIComponent(commentId)}`,
+                        `${API_BASE_URL}/api/community-posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`
+                    ];
+                    let res = null;
+                    let d = null;
+                    for (let i = 0; i < deleteEndpoints.length; i++) {
+                        res = await fetch(deleteEndpoints[i], {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify(delPayload)
+                        });
+                        d = await safeReadJson(res).catch(() => null);
+                        if (res.ok || (res.status !== 404 && res.status !== 405)) break;
+                    }
+                    if (!res || !res.ok) {
                         throw new Error((d && d.error) || 'نەشیا کۆمێنتێ ژێببەت.');
                     }
                     notify('کۆمێنت هاتە ژێبرن.', 'info');
@@ -931,28 +1002,63 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const postId = commentForm.getAttribute('data-post-id');
+            const rawPostId = commentForm.getAttribute('data-post-id');
+            const cleanPostId = (rawPostId !== undefined && rawPostId !== null && String(rawPostId).trim() !== '')
+                ? String(rawPostId).trim()
+                : '';
             const input = commentForm.querySelector('.comment-input');
-            const text = input ? input.value.trim() : '';
-            if (!text) return;
+            const cleanText = input && input.value !== undefined && input.value !== null ? String(input.value).trim() : '';
+            if (!cleanPostId || !cleanText) return;
 
             const submitBtn = commentForm.querySelector('button[type="submit"]');
             if (submitBtn) submitBtn.disabled = true;
 
+            const cleanUserId = (actor.id !== undefined && actor.id !== null && String(actor.id).trim() !== '')
+                ? String(actor.id).trim()
+                : '';
+            const cleanAuthorName = (actor.name !== undefined && actor.name !== null && String(actor.name).trim() !== '')
+                ? String(actor.name).trim()
+                : 'بەکارهێنەر';
+            const cleanRole = (actor.role !== undefined && actor.role !== null && String(actor.role).trim() !== '' && actor.role !== 'guest')
+                ? String(actor.role).trim()
+                : 'student';
+            const nowTs = Date.now();
+
+            const commentPayload = sanitizeJsonPayload({
+                post_id: cleanPostId,
+                user_id: cleanUserId,
+                author_id: cleanUserId,
+                author_name: cleanAuthorName,
+                author_role: cleanRole,
+                role: cleanRole,
+                content: cleanText,
+                text: cleanText,
+                created_at: nowTs,
+                createdAt: nowTs
+            });
+
             try {
-                const res = await fetch(`${API_BASE_URL}/api/community-posts/${encodeURIComponent(postId)}/comments`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: actor.id,
-                        author_name: actor.name,
-                        author_role: actor.role,
-                        text
-                    })
-                });
-                const data = await safeReadJson(res);
-                if (!res.ok) throw new Error((data && data.error) || 'نەشیا کۆمێنتێ بنێریت.');
-                openCommentsSet.add(postId);
+                const commentEndpoints = [
+                    `${API_BASE_URL}/api/posts/${encodeURIComponent(cleanPostId)}/comments`,
+                    `${API_BASE_URL}/api/comments`,
+                    `${API_BASE_URL}/api/community-posts/${encodeURIComponent(cleanPostId)}/comments`
+                ];
+                let res = null;
+                let data = null;
+                for (let i = 0; i < commentEndpoints.length; i++) {
+                    res = await fetch(commentEndpoints[i], {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify(commentPayload)
+                    });
+                    data = await safeReadJson(res).catch(() => null);
+                    if (res.ok || (res.status !== 404 && res.status !== 405)) break;
+                }
+                if (!res || !res.ok) {
+                    throw new Error((data && data.error) || 'نەشیا کۆمێنتێ بنێریت.');
+                }
+                if (input) input.value = '';
+                openCommentsSet.add(cleanPostId);
                 await fetchPosts();
             } catch (err) {
                 notify(err.message || 'نەشیا کۆمێنتێ بنێریت.', 'error');

@@ -537,12 +537,12 @@ Return STRICT JSON complying with the requested schema. No markdown formatting o
   app.post('/api/community-posts/:id/comments', (req, res) => {
     const store = readCommunityStore();
     const { id } = req.params;
-    const { user_id, author_name, author_role, text } = req.body || {};
+    const { user_id, author_name, author_role, role, text, content } = req.body || {};
 
     if (!user_id) {
       return res.status(401).json({ error: 'بۆ نڤیسینا کۆمێنتێ، تکایە سەرەتا بچۆ ژوور.' });
     }
-    const cleanText = String(text || '').trim();
+    const cleanText = String(content || text || '').trim();
     if (!cleanText) {
       return res.status(400).json({ error: 'تکایە کۆمێنتا خۆ بنڤیسە.' });
     }
@@ -559,7 +559,7 @@ Return STRICT JSON complying with the requested schema. No markdown formatting o
       id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
       author_id: String(user_id),
       author_name: String(author_name || 'بەکارهێنەر'),
-      author_role: String(author_role || 'student'),
+      author_role: String(author_role || role || 'student'),
       text: cleanText,
       createdAt: Date.now()
     };
