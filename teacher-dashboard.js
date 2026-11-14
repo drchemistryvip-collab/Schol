@@ -1011,12 +1011,35 @@ document.addEventListener('DOMContentLoaded', function () {
                 iframe.style.background = '#ffffff';
                 iframe.style.borderRadius = '8px';
                 iframe.setAttribute('allowfullscreen', 'true');
-                iframe.setAttribute('allow', 'fullscreen; autoplay; clipboard-write; encrypted-media');
-                iframe.srcdoc = rawHtml;
+                iframe.setAttribute('allow', 'fullscreen; autoplay; microphone; clipboard-write; encrypted-media');
+                iframe.srcdoc = (window.CloudflareLessons && typeof window.CloudflareLessons.prepareHtmlForPreview === 'function')
+                    ? window.CloudflareLessons.prepareHtmlForPreview(rawHtml, item.fileUrl)
+                    : rawHtml;
                 docViewport.innerHTML = '';
                 docViewport.appendChild(iframe);
             } else if (item.fileUrl && item.fileUrl.startsWith('http')) {
-                docViewport.innerHTML = `<iframe src="${item.fileUrl}" width="100%" height="100%" style="border:none; background:#ffffff;"></iframe>`;
+                const iframe = document.createElement('iframe');
+                iframe.src = item.fileUrl;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.style.background = '#ffffff';
+                iframe.setAttribute('allowfullscreen', 'true');
+                iframe.setAttribute('allow', 'fullscreen; autoplay; microphone; clipboard-write; encrypted-media');
+                docViewport.appendChild(iframe);
+                if (window.CloudflareLessons && typeof window.CloudflareLessons.checkServerGeminiProxy === 'function') {
+                    window.CloudflareLessons.checkServerGeminiProxy().then(async (proxyOk) => {
+                        if (!proxyOk) return;
+                        try {
+                            const r = await fetch(item.fileUrl, { mode: 'cors' });
+                            if (!r.ok) return;
+                            const fetchedHtml = await r.text();
+                            if (!fetchedHtml) return;
+                            iframe.removeAttribute('src');
+                            iframe.srcdoc = window.CloudflareLessons.prepareHtmlForPreview(fetchedHtml, item.fileUrl);
+                        } catch (e) {}
+                    });
+                }
             } else {
                 docViewport.innerHTML = `
                     <div style="text-align:center; padding:35px; color:#fff;">
@@ -1370,7 +1393,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Render presentation in iframe
                 if (aiPresentationIframe && result.htmlContent) {
-                    aiPresentationIframe.srcdoc = result.htmlContent;
+                    aiPresentationIframe.srcdoc = (window.CloudflareLessons && typeof window.CloudflareLessons.prepareHtmlForPreview === 'function')
+                        ? window.CloudflareLessons.prepareHtmlForPreview(result.htmlContent)
+                        : result.htmlContent;
                 }
 
                 // Render modern interactive quiz cards

@@ -1002,6 +1002,118 @@
         return modal;
     }
 
+    let serverProxyStatusPromise = null;
+    let serverProxyReady = false;
+
+    async function checkServerGeminiProxy() {
+        if (serverProxyStatusPromise) return serverProxyStatusPromise;
+        serverProxyStatusPromise = (async () => {
+            try {
+                const res = await fetch('/api/gemini/status', {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    cache: 'no-store'
+                });
+                const ct = res.headers.get('content-type') || '';
+                if (!res.ok || !ct.includes('application/json')) {
+                    serverProxyReady = false;
+                    return false;
+                }
+                const data = await res.json();
+                serverProxyReady = Boolean(data && data.ready === true);
+                return serverProxyReady;
+            } catch (e) {
+                serverProxyReady = false;
+                return false;
+            }
+        })();
+        return serverProxyStatusPromise;
+    }
+
+    function buildHtmlProxyBridgeScript(originUrl) {
+        const safeOrigin = JSON.stringify(String(originUrl || window.location.origin));
+        const wsOrigin = JSON.stringify(String(originUrl || window.location.origin).replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:'));
+        return `<script data-parwarda-gemini-bridge="1">
+(function(){
+  try {
+    var ORIGIN = ${safeOrigin};
+    var WS_ORIGIN = ${wsOrigin};
+    var PROXY_TOKEN = 'server-proxy';
+    var origGetItem = Storage.prototype.getItem;
+    Storage.prototype.getItem = function(key) {
+      var val = origGetItem.call(this, key);
+      if (!val && (key === 'gk' || key === 'gk2')) return PROXY_TOKEN;
+      return val;
+    };
+    var origFetch = window.fetch;
+    if (typeof origFetch === 'function') {
+      window.fetch = function(input, init) {
+        var urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+        if (/^https:\\/\\/generativelanguage\\.googleapis\\.com\\/v1beta\\/models\\//i.test(urlStr)) {
+          var rest = urlStr.replace(/^https:\\/\\/generativelanguage\\.googleapis\\.com\\/v1beta\\//i, '');
+          var nextUrl = ORIGIN + '/api/gemini/v1beta/' + rest;
+          var nextInit = Object.assign({}, init || {});
+          if (nextInit.headers) {
+            var cleaned = {};
+            if (typeof Headers !== 'undefined' && nextInit.headers instanceof Headers) {
+              nextInit.headers.forEach(function(v, k){ if (k.toLowerCase() !== 'x-goog-api-key') cleaned[k] = v; });
+            } else {
+              Object.keys(nextInit.headers).forEach(function(k){ if (k.toLowerCase() !== 'x-goog-api-key') cleaned[k] = nextInit.headers[k]; });
+            }
+            nextInit.headers = cleaned;
+          }
+          return origFetch.call(window, nextUrl, nextInit);
+        }
+        return origFetch.apply(window, arguments);
+      };
+    }
+    var OrigWS = window.WebSocket;
+    if (typeof OrigWS === 'function') {
+      var WrappedWS = function(url, protocols) {
+        var urlStr = String(url || '');
+        if (/^wss:\\/\\/generativelanguage\\.googleapis\\.com\\/ws\\//i.test(urlStr)) {
+          var proxiedWsUrl = WS_ORIGIN + '/api/gemini/live';
+          return protocols ? new OrigWS(proxiedWsUrl, protocols) : new OrigWS(proxiedWsUrl);
+        }
+        return protocols ? new OrigWS(url, protocols) : new OrigWS(url);
+      };
+      WrappedWS.prototype = OrigWS.prototype;
+      WrappedWS.CONNECTING = OrigWS.CONNECTING;
+      WrappedWS.OPEN = OrigWS.OPEN;
+      WrappedWS.CLOSING = OrigWS.CLOSING;
+      WrappedWS.CLOSED = OrigWS.CLOSED;
+      window.WebSocket = WrappedWS;
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      ['ak', 'cbk'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && !el.value) el.value = PROXY_TOKEN;
+      });
+    });
+  } catch (e) {}
+})();
+</script>`;
+    }
+
+    function prepareHtmlForPreview(rawHtml, sourceUrl) {
+        if (!rawHtml || typeof rawHtml !== 'string') return rawHtml;
+        if (!serverProxyReady) return rawHtml;
+        if (rawHtml.indexOf('data-parwarda-gemini-bridge') !== -1) return rawHtml;
+
+        const baseTag = (sourceUrl && /^https?:\/\//i.test(sourceUrl) && !/<base\b/i.test(rawHtml))
+            ? `<base href="${escapeHtml(sourceUrl)}">`
+            : '';
+        const injection = baseTag + buildHtmlProxyBridgeScript(window.location.origin);
+
+        if (/<head[^>]*>/i.test(rawHtml)) {
+            return rawHtml.replace(/<head[^>]*>/i, (m) => `${m}\n${injection}`);
+        }
+        if (/<html[^>]*>/i.test(rawHtml)) {
+            return rawHtml.replace(/<html[^>]*>/i, (m) => `${m}\n<head>${injection}</head>`);
+        }
+        return `${injection}\n${rawHtml}`;
+    }
+
     function openLessonPreview(lesson) {
         if (!lesson) return;
         const modal = ensurePreviewModal();
@@ -1072,7 +1184,22 @@
                 if (lesson.fileType === 'image') {
                     viewportEl.innerHTML = `<img src="${escapeHtml(safeUrl)}" alt="${escapeHtml(lesson.title)}" ${!canDownload ? 'draggable="false" oncontextmenu="return false;"' : ''} style="max-width:100%; max-height:74vh; object-fit:contain; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,0.45); ${!canDownload ? 'pointer-events:none; user-select:none;' : ''}">`;
                 } else if (lesson.fileType === 'html') {
-                    viewportEl.innerHTML = `<iframe src="${escapeHtml(safeUrl)}" ${!canDownload ? 'sandbox="allow-scripts allow-same-origin allow-forms"' : ''} style="width:100%; height:74vh; min-height:420px; border:none; background:#ffffff; display:block;" allowfullscreen allow="fullscreen; autoplay; clipboard-write; encrypted-media"></iframe>`;
+                    viewportEl.innerHTML = `<iframe id="cf-html-preview-iframe" src="${escapeHtml(safeUrl)}" ${!canDownload ? 'sandbox="allow-scripts allow-same-origin allow-forms"' : ''} style="width:100%; height:74vh; min-height:420px; border:none; background:#ffffff; display:block;" allowfullscreen allow="fullscreen; autoplay; microphone; clipboard-write; encrypted-media"></iframe>`;
+                    (async function () {
+                        const proxyOk = await checkServerGeminiProxy();
+                        if (!proxyOk || !/^https?:\/\//i.test(safeUrl)) return;
+                        try {
+                            const htmlResp = await fetch(safeUrl, { mode: 'cors' });
+                            if (!htmlResp.ok) return;
+                            const rawHtml = await htmlResp.text();
+                            if (!rawHtml || modal.style.display === 'none') return;
+                            const frame = viewportEl.querySelector('#cf-html-preview-iframe');
+                            if (frame) {
+                                frame.removeAttribute('src');
+                                frame.srcdoc = prepareHtmlForPreview(rawHtml, safeUrl);
+                            }
+                        } catch (e) {}
+                    })();
                 } else if (lesson.fileType === 'pdf') {
                     const gviewUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(safeUrl)}`;
                     const pdfEmbedParams = canDownload ? '#toolbar=1' : '#toolbar=0&navpanes=0&scrollbar=1';
@@ -1664,6 +1791,7 @@
             applyUserSettings(bootUser.settings);
         }
     }
+    checkServerGeminiProxy().catch(() => {});
 
     global.CloudflareLessons = {
         API_URL: CLOUDFLARE_WORKER_URL,
@@ -1692,7 +1820,9 @@
         getCachedLessons: function () { return cachedLessons.slice(); },
         isLoading: function () { return isLoadingLessons; },
         getLastError: function () { return lastFetchError; },
-        // UI Helpers
+        // UI Helpers & Gemini Server Proxy Bridge
+        checkServerGeminiProxy: checkServerGeminiProxy,
+        prepareHtmlForPreview: prepareHtmlForPreview,
         renderLessonsGrid: renderLessonsGrid,
         openPreviewModal: openLessonPreview,
         openEditModal: openEditModal,

@@ -1,4 +1,6 @@
 import express from 'express';
+import http from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
 import dotenv from 'dotenv';
@@ -169,35 +171,149 @@ async function startServer() {
   });
 
   // =========================================================================
-  // SERVER-SIDE GEMINI STATUS CHECK ENDPOINT
+  // SERVER-SIDE GEMINI STATUS CHECK & PROXY ENDPOINTS
   // =========================================================================
   app.get('/api/gemini/status', async (req, res) => {
-    try {
-      const client = getServerAiClient();
-      const testRes = await client.models.generateContent({
-        model: 'gemini-4-hydrogen',
-        contents: 'Reply with OK'
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    if (!apiKey) {
+      return res.json({
+        success: false,
+        ready: false,
+        error: 'GEMINI_API_KEY is not configured on the server.'
       });
+    }
 
-      if (testRes && testRes.text) {
+    if (req.query.probe === '1') {
+      try {
+        const client = getServerAiClient();
+        const testRes = await client.models.generateContent({
+          model: 'gemini-4-hydrogen',
+          contents: 'Reply with OK'
+        });
         return res.json({
-          success: true,
-          ready: true,
+          success: Boolean(testRes?.text),
+          ready: Boolean(testRes?.text),
           model: 'gemini-4-hydrogen'
         });
+      } catch (err: any) {
+        console.error('Server Gemini status check failed:', err);
+        return res.status(500).json({
+          success: false,
+          ready: false,
+          error: err.message || 'Gemini service is unavailable on the server.'
+        });
       }
-      return res.status(502).json({
-        success: false,
-        ready: false,
-        error: 'Model returned an empty response.'
+    }
+
+    return res.json({
+      success: true,
+      ready: true,
+      model: 'gemini-4-hydrogen'
+    });
+  });
+
+  function resolveServerModel(requestedModel: string): string {
+    const clean = String(requestedModel || '').replace(/^models\//, '').trim();
+    const supported = new Set([
+      'gemini-4-hydrogen',
+      'gemini-3.1-flash-lite',
+      'gemini-4-argon',
+      'gemini-4-carbon'
+    ]);
+    if (supported.has(clean)) return clean;
+    return 'gemini-4-hydrogen';
+  }
+
+  app.post('/api/gemini/v1beta/models/:modelAction', async (req, res) => {
+    try {
+      const ai = getServerAiClient();
+      const rawParam = String(req.params.modelAction || '');
+      const colonIdx = rawParam.indexOf(':');
+      const requestedModel = colonIdx >= 0 ? rawParam.slice(0, colonIdx) : rawParam;
+      const action = colonIdx >= 0 ? rawParam.slice(colonIdx + 1) : 'generateContent';
+      const resolvedModel = resolveServerModel(requestedModel);
+
+      const body = req.body || {};
+      const contents = body.contents || [{ role: 'user', parts: [{ text: '' }] }];
+      const config: Record<string, any> = {};
+
+      if (body.systemInstruction) {
+        if (typeof body.systemInstruction === 'string') {
+          config.systemInstruction = body.systemInstruction;
+        } else if (Array.isArray(body.systemInstruction.parts)) {
+          const sysText = body.systemInstruction.parts
+            .map((p: any) => (typeof p?.text === 'string' ? p.text : ''))
+            .filter(Boolean)
+            .join('\n');
+          if (sysText) config.systemInstruction = sysText;
+        }
+      }
+
+      if (body.generationConfig && typeof body.generationConfig === 'object') {
+        const gc = body.generationConfig;
+        if (gc.responseMimeType) config.responseMimeType = gc.responseMimeType;
+        if (gc.responseSchema) config.responseSchema = gc.responseSchema;
+        if (typeof gc.maxOutputTokens === 'number') config.maxOutputTokens = gc.maxOutputTokens;
+      }
+
+      const isStream = action === 'streamGenerateContent' || req.query.alt === 'sse';
+
+      if (isStream) {
+        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        const stream = await ai.models.generateContentStream({
+          model: resolvedModel,
+          contents,
+          config
+        });
+
+        for await (const chunk of stream) {
+          const chunkText = chunk.text || '';
+          const payload = {
+            candidates: [
+              {
+                content: {
+                  parts: chunkText ? [{ text: chunkText }] : []
+                }
+              }
+            ]
+          };
+          res.write(`data: ${JSON.stringify(payload)}\n\n`);
+        }
+        res.end();
+        return;
+      }
+
+      const response = await ai.models.generateContent({
+        model: resolvedModel,
+        contents,
+        config
+      });
+
+      res.json({
+        candidates: [
+          {
+            content: {
+              parts: [{ text: response.text || '' }]
+            }
+          }
+        ]
       });
     } catch (err: any) {
-      console.error('Server Gemini status check failed:', err);
-      return res.status(500).json({
-        success: false,
-        ready: false,
-        error: err.message || 'Gemini service is unavailable on the server.'
-      });
+      console.error('Server Gemini proxy error:', err);
+      const status = typeof err?.status === 'number' ? err.status : 500;
+      if (!res.headersSent) {
+        res.status(status >= 400 && status < 600 ? status : 500).json({
+          error: {
+            message: err?.message || 'Error occurred while contacting Gemini API'
+          }
+        });
+      } else {
+        res.write(`data: ${JSON.stringify({ error: { message: err?.message || 'Stream error' } })}\n\n`);
+        res.end();
+      }
     }
   });
 
@@ -652,7 +768,71 @@ Return STRICT JSON complying with the requested schema. No markdown formatting o
     app.use(vite.middlewares);
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = http.createServer(app);
+  const wss = new WebSocketServer({ server, path: '/api/gemini/live' });
+
+  wss.on('connection', (clientWs) => {
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    if (!apiKey) {
+      clientWs.send(JSON.stringify({ error: { message: 'GEMINI_API_KEY is not configured on the server.' } }));
+      clientWs.close(1011, 'Server key missing');
+      return;
+    }
+
+    const upstreamUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(apiKey)}`;
+    const upstreamWs = new WebSocket(upstreamUrl, {
+      headers: { 'User-Agent': 'aistudio-build' }
+    });
+
+    const pendingMessages: Array<{ data: any; isBinary: boolean }> = [];
+    let upstreamOpen = false;
+
+    upstreamWs.on('open', () => {
+      upstreamOpen = true;
+      while (pendingMessages.length > 0) {
+        const msg = pendingMessages.shift();
+        if (msg && upstreamWs.readyState === WebSocket.OPEN) {
+          upstreamWs.send(msg.data, { binary: msg.isBinary });
+        }
+      }
+    });
+
+    upstreamWs.on('message', (data, isBinary) => {
+      if (clientWs.readyState === WebSocket.OPEN) {
+        clientWs.send(data, { binary: isBinary });
+      }
+    });
+
+    upstreamWs.on('error', (err) => {
+      console.error('Gemini Live upstream WebSocket error:', err);
+      if (clientWs.readyState === WebSocket.OPEN) {
+        clientWs.send(JSON.stringify({ error: { message: err.message || 'Upstream connection error' } }));
+        clientWs.close(1011, 'Upstream error');
+      }
+    });
+
+    upstreamWs.on('close', (code, reason) => {
+      if (clientWs.readyState === WebSocket.OPEN) {
+        clientWs.close(code || 1000, reason?.toString() || '');
+      }
+    });
+
+    clientWs.on('message', (data, isBinary) => {
+      if (upstreamOpen && upstreamWs.readyState === WebSocket.OPEN) {
+        upstreamWs.send(data, { binary: isBinary });
+      } else if (upstreamWs.readyState === WebSocket.CONNECTING) {
+        pendingMessages.push({ data, isBinary });
+      }
+    });
+
+    clientWs.on('close', () => {
+      if (upstreamWs.readyState === WebSocket.OPEN || upstreamWs.readyState === WebSocket.CONNECTING) {
+        upstreamWs.close();
+      }
+    });
+  });
+
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://0.0.0.0:${PORT}`);
   });
 }

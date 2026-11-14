@@ -879,12 +879,36 @@ document.addEventListener('DOMContentLoaded', function () {
             iframe.style.borderRadius = '12px';
             iframe.style.background = '#ffffff';
             iframe.setAttribute('allowfullscreen', 'true');
-            iframe.setAttribute('allow', 'fullscreen; autoplay; clipboard-write; encrypted-media');
+            iframe.setAttribute('allow', 'fullscreen; autoplay; microphone; clipboard-write; encrypted-media');
             if (!canDownload) {
                 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
             }
-            iframe.srcdoc = rawHtml || `<div style="padding:40px; text-align:center; font-family:sans-serif; color:#222;"><h2>${item.title}</h2><p>${item.description || ''}</p></div>`;
-            docViewport.appendChild(iframe);
+            if (rawHtml) {
+                const preparedHtml = (window.CloudflareLessons && typeof window.CloudflareLessons.prepareHtmlForPreview === 'function')
+                    ? window.CloudflareLessons.prepareHtmlForPreview(rawHtml, item.fileUrl)
+                    : rawHtml;
+                iframe.srcdoc = preparedHtml;
+                docViewport.appendChild(iframe);
+            } else if (item.fileUrl && /^https?:\/\//i.test(item.fileUrl)) {
+                iframe.src = item.fileUrl;
+                docViewport.appendChild(iframe);
+                if (window.CloudflareLessons && typeof window.CloudflareLessons.checkServerGeminiProxy === 'function') {
+                    window.CloudflareLessons.checkServerGeminiProxy().then(async (proxyOk) => {
+                        if (!proxyOk) return;
+                        try {
+                            const r = await fetch(item.fileUrl, { mode: 'cors' });
+                            if (!r.ok) return;
+                            const fetchedHtml = await r.text();
+                            if (!fetchedHtml) return;
+                            iframe.removeAttribute('src');
+                            iframe.srcdoc = window.CloudflareLessons.prepareHtmlForPreview(fetchedHtml, item.fileUrl);
+                        } catch (e) {}
+                    });
+                }
+            } else {
+                iframe.srcdoc = `<div style="padding:40px; text-align:center; font-family:sans-serif; color:#222;"><h2>${item.title}</h2><p>${item.description || ''}</p></div>`;
+                docViewport.appendChild(iframe);
+            }
 
             if (canDownload) {
                 if (rawHtml) {
