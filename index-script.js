@@ -179,34 +179,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="grade-card-icon" style="background: ${g.color}18; color: ${g.color || '#007bff'};">
                         <i class="fas ${g.icon || 'fa-school'}"></i>
                     </div>
-                    <div style="flex: 1;">
+                    <div class="grade-card-body">
                         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <h3 style="margin: 0 0 2px; font-size: 1.05rem;">${g.name}</h3>
+                            <h3 style="margin: 0 0 2px; font-size: 1.02rem;">${g.name}</h3>
                             ${isUniv ? '<span style="font-size:0.7rem; background:#7209b7; color:#fff; padding:1px 6px; border-radius:8px; font-weight:700;">بەش و معەدل</span>' : ''}
                         </div>
-                        <p style="margin: 0 0 4px; color: var(--secondary-text); font-size: 0.8rem;">
+                        <p style="margin: 0 0 4px; color: var(--secondary-text); font-size: 0.78rem;">
                             ${isUniv 
                                 ? '<i class="fas fa-graduation-cap" style="color:#7209b7;"></i> ٢٥+ بەش و کۆنمرەکان | مەلزەمەی زانکۆ' 
                                 : `<i class="fas fa-users" style="color:var(--blue-accent);"></i> ${teacherCount} مامۆستا (${dataStore.getLanguageLabel(currentLang)})`}
                         </p>
                         ${subjectsPills ? `
                         <div style="margin-top: 4px; display:flex; flex-wrap:wrap; gap:3px; align-items:center;">
-                            <span style="font-size:0.72rem; color:var(--secondary-text); margin-left:3px;"><i class="fas fa-layer-group"></i> بابەتەکان:</span>
+                            <span style="font-size:0.7rem; color:var(--secondary-text); margin-left:3px;"><i class="fas fa-layer-group"></i> بابەتەکان:</span>
                             ${subjectsPills}
                         </div>
                         ` : ''}
                         ${isUniv ? `
-                        <div style="margin-top: 6px; display:flex; gap:6px;" onclick="event.stopPropagation();">
-                            <a href="university.html" style="font-size:0.75rem; color:#7209b7; text-decoration:none; font-weight:700; background:rgba(114,9,183,0.1); padding:2px 8px; border-radius:6px;">
+                        <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;" onclick="event.stopPropagation();">
+                            <a href="university.html" style="font-size:0.73rem; color:#7209b7; text-decoration:none; font-weight:700; background:rgba(114,9,183,0.1); padding:2px 8px; border-radius:6px;">
                                 <i class="fas fa-calculator"></i> پشکنینا معەدلی
                             </a>
-                            <a href="grade.html?pola=univ" style="font-size:0.75rem; color:var(--blue-accent); text-decoration:none; font-weight:600; background:rgba(0,123,255,0.1); padding:2px 8px; border-radius:6px;">
+                            <a href="grade.html?pola=univ" style="font-size:0.73rem; color:var(--blue-accent); text-decoration:none; font-weight:600; background:rgba(0,123,255,0.1); padding:2px 8px; border-radius:6px;">
                                 <i class="fas fa-book"></i> مەلزەمەکان
                             </a>
                         </div>
                         ` : ''}
                     </div>
-                    <i class="fas fa-chevron-left" style="color: var(--secondary-text); font-size: 0.85rem; margin-right:8px;"></i>
+                    <i class="fas fa-chevron-left grade-card-chevron" style="color: var(--secondary-text); font-size: 0.85rem; margin-right:8px;"></i>
                 </div>
             `;
         }).join('');
