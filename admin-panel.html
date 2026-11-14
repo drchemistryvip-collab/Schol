@@ -129,11 +129,14 @@
         <div style="display:flex; align-items:center; gap: 12px;">
             <i class="fas fa-user-shield" style="color: #e63946; font-size: 1.5rem;"></i>
             <div>
-                <strong style="font-size: 1.05rem;">پەناڵی دەسەڵاتدارێ گشتی (Super Admin)</strong>
-                <span style="font-size:0.8rem; color:#9ca3af; margin-right:10px;">Hussein.zebary.chemistry96@gmail.com</span>
+                <strong style="font-size: 1.05rem;">بەشێ ئەدمینێ گشتی (Super Admin)</strong>
+                <span style="font-size:0.8rem; color:#9ca3af; margin-right:10px;">@hussein23 • م. حسێن ئەکرەم زێباری</span>
             </div>
         </div>
-        <div style="display:flex; gap: 10px; align-items:center;">
+        <div style="display:flex; gap: 10px; align-items:center; flex-wrap:wrap;">
+            <a href="posts.html" class="btn-save" style="background:#ea580c; border-color:#ea580c; color:#ffffff; padding: 6px 14px; font-size: 0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-newspaper"></i> پۆستێن گشتی (بەلاڤکرنا پۆستێ)
+            </a>
             <a href="index.html" class="btn-cancel" style="padding: 6px 14px; font-size: 0.85rem; text-decoration:none; color:#ffffff; border-color:#4b5563;">
                 <i class="fas fa-home"></i> ماڵپەرێ سەرەکی
             </a>
@@ -143,6 +146,36 @@
             <button id="admin-logout-btn" class="btn-cancel" style="background:#dc3545; border-color:#dc3545; color:#ffffff; padding: 6px 14px; font-size: 0.85rem;">
                 <i class="fas fa-sign-out-alt"></i> دەرکەفتن
             </button>
+        </div>
+    </div>
+
+    <!-- IN-PAGE ADMIN LOGIN GATE (No prompt/alert) -->
+    <div id="ap-admin-login-gate" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(15,23,42,0.88); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:16px;">
+        <div style="width:100%; max-width:420px; background:var(--surface-color); color:var(--primary-text); border-radius:20px; border:1px solid var(--border-color); box-shadow:0 24px 65px rgba(0,0,0,0.45); padding:28px 24px; text-align:right;">
+            <div style="text-align:center; margin-bottom:18px;">
+                <div style="width:60px; height:60px; border-radius:16px; background:rgba(230,57,70,0.12); color:#e63946; display:inline-flex; align-items:center; justify-content:center; font-size:1.7rem; margin-bottom:10px;">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h2 style="margin:0 0 6px; font-size:1.3rem;">چوونا ژوور بۆ بەشێ ئەدمینی</h2>
+                <p style="margin:0; font-size:0.86rem; color:var(--secondary-text);">بۆ وەرگرتنا مامۆستایان و پێداچوونا پۆستان، ب یوزەر و پاسوۆردێ ئەدمینی بچۆ ژوور</p>
+            </div>
+            <form id="ap-admin-login-form">
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label for="ap-login-username" style="display:block; font-weight:bold; font-size:0.86rem; margin-bottom:5px;">یوزەرنەیم (Username)</label>
+                    <input type="text" id="ap-login-username" required autocomplete="username" placeholder="یوزەرنەیمێ ئەدمینی بنڤیسە..." style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box; direction:ltr; text-align:right;">
+                </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label for="ap-login-password" style="display:block; font-weight:bold; font-size:0.86rem; margin-bottom:5px;">پاسوۆرد (Password)</label>
+                    <input type="password" id="ap-login-password" required autocomplete="current-password" placeholder="••••••••" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box;">
+                </div>
+                <p id="ap-login-error" style="display:none; color:#dc2626; font-size:0.85rem; font-weight:bold; background:rgba(220,38,38,0.1); padding:9px 12px; border-radius:10px; margin:0 0 12px;"></p>
+                <button type="submit" id="ap-login-submit-btn" class="btn-save" style="width:100%; padding:11px; border-radius:12px; background:#e63946; border-color:#e63946; color:#fff; font-size:0.96rem; justify-content:center; cursor:pointer;">
+                    <i class="fas fa-unlock"></i> چوونا ژوور وەک ئەدمین
+                </button>
+                <a href="index.html" class="btn-cancel" style="width:100%; margin-top:10px; padding:9px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px; box-sizing:border-box;">
+                    <i class="fas fa-arrow-right"></i> زڤرین بۆ ماڵپەرێ سەرەکی
+                </a>
+            </form>
         </div>
     </div>
 
@@ -169,7 +202,7 @@
             <i class="fab fa-google-drive"></i> کۆگای Google Drive و گەڕاندنەوە
         </button>
         <button class="admin-tab" data-view="community-posts-view">
-            <i class="fas fa-newspaper" style="color:#ea580c;"></i> پۆستێن قوتابیان (چاوەڕێ)
+            <i class="fas fa-newspaper" style="color:#ea580c;"></i> پێداچوونا پۆستان (وەرگرتن / ڕەتکرن)
             <span class="count-pill" id="community-pending-badge" style="background:#f59e0b; color:#fff;">0</span>
         </button>
     </div>
@@ -426,10 +459,13 @@
                         <i class="fas fa-newspaper" style="color:#ea580c;"></i> پێداچوونا پۆستێن قوتابیان و بەکارهێنەران
                     </h2>
                     <p style="margin:0; color:var(--secondary-text); font-size:0.88rem;">
-                        هەر پۆستەکێ ژ لایێ قوتابیان ڤە دهێتە فرێکرن ل سەر دۆخێ «چاوەروان بە» دمینیت هەتا ئەدمین وەربگریت.
+                        هەر پۆستەکێ ل چاڤەڕێیێ دا ل ڤێرە دهێتە پێداچوون؛ بۆ بەلاڤکرنا پۆستێن نوو یێن ئەدمینی، بەشێ پۆستێن گشتی بکاربینە.
                     </p>
                 </div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    <a href="posts.html" class="btn-save" style="background:#ea580c; border-color:#ea580c; color:#fff; padding:7px 14px; font-size:0.84rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="fas fa-plus-circle"></i> بەلاڤکرنا پۆستێ د پۆستێن گشتی دا
+                    </a>
                     <button type="button" class="btn-lang-small ap-community-filter-btn active" data-filter="pending">ل چاڤەڕێیێ (چاوەروان)</button>
                     <button type="button" class="btn-lang-small ap-community-filter-btn" data-filter="all">هەمی پۆست</button>
                     <button type="button" id="ap-refresh-community-btn" class="btn-cancel" style="padding:6px 12px; font-size:0.85rem;">
@@ -482,6 +518,7 @@
     <script src="educational-data.js"></script>
     <script src="auth-guard.js"></script>
     <script src="google-drive-integration.js"></script>
+    <script src="cloudflare-lessons.js"></script>
     <script src="admin-panel-script.js"></script>
 </body>
 </html>

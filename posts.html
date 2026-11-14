@@ -221,8 +221,9 @@
                 <button type="button" id="close-admin-unlock-btn" class="posts-icon-close">&times;</button>
             </div>
             <form id="admin-unlock-form">
-                <p style="margin:0 0 12px; font-size:0.86rem; color:var(--secondary-text);">کۆدێ ئەدمینی بنڤیسە بۆ پێداچوونا پۆستان و ڕێکپێدانا وێنەی:</p>
-                <input type="password" id="admin-pass-input" placeholder="تێپەڕەوشەیا ئەدمینی..." required style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box; margin-bottom:10px;">
+                <p style="margin:0 0 12px; font-size:0.86rem; color:var(--secondary-text);">یوزەرنەیم و پاسوۆردێ ئەدمینی بنڤیسە بۆ بەلاڤکرنا پۆستان (وێنە و نڤیسین) و پێداچوونێ:</p>
+                <input type="text" id="admin-username-input" placeholder="یوزەرنەیمێ ئەدمینی..." autocomplete="username" required style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box; margin-bottom:10px; direction:ltr; text-align:right;">
+                <input type="password" id="admin-pass-input" placeholder="پاسوۆردێ ئەدمینی..." autocomplete="current-password" required style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box; margin-bottom:10px;">
                 <div id="admin-unlock-error" class="cp-form-error" style="display:none; margin-bottom:10px;"></div>
                 <button type="submit" class="posts-btn-primary" style="width:100%; justify-content:center; background:#dc2626;">
                     <i class="fas fa-unlock"></i> چالاککرنا مۆدا ئەدمینی

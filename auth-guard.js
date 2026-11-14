@@ -12,7 +12,19 @@ function isSuperAdminEmail(email) {
     return SUPER_ADMIN_EMAILS.some(e => lower === e.toLowerCase());
 }
 
+function isAdminSessionUnlocked() {
+    try {
+        if (localStorage.getItem('parwarda_admin_unlocked') === 'true') return true;
+        const cfUser = JSON.parse(localStorage.getItem('parwarda_cf_user') || 'null');
+        if (cfUser && cfUser.role === 'admin') return true;
+        const stored = JSON.parse(localStorage.getItem('app_logged_in_user') || 'null');
+        if (stored && stored.isAdmin === true) return true;
+    } catch (e) {}
+    return false;
+}
+
 function isSuperAdmin(user) {
+    if (isAdminSessionUnlocked()) return true;
     if (!user) {
         if (typeof window !== 'undefined' && window.EducationalData && window.EducationalData.isCurrentUserSuperAdmin()) {
             return true;
@@ -23,6 +35,7 @@ function isSuperAdmin(user) {
 }
 
 async function checkIsAdmin(user) {
+    if (isAdminSessionUnlocked()) return true;
     if (!user) {
         return isSuperAdmin(null);
     }
@@ -43,6 +56,7 @@ async function checkIsAdmin(user) {
 // Make globally accessible
 window.SUPER_ADMIN_EMAIL = SUPER_ADMIN_EMAIL;
 window.isSuperAdminEmail = isSuperAdminEmail;
+window.isAdminSessionUnlocked = isAdminSessionUnlocked;
 window.isSuperAdmin = isSuperAdmin;
 window.checkIsAdmin = checkIsAdmin;
 
@@ -99,28 +113,36 @@ window.checkUserStatus = checkUserStatus;
     const protectedTeacherPages = ['teacher-dashboard.html'];
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-    // If viewing admin panel, enforce admin authentication
+    // If viewing admin panel, enforce admin authentication cleanly
     if (protectedAdminPages.includes(currentPage)) {
         const content = document.querySelector('body');
-        if (content) content.style.visibility = 'hidden';
 
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            firebase.auth().onAuthStateChanged(async (user) => {
-                const isAdmin = await checkIsAdmin(user);
-                if (isAdmin) {
-                    document.body.classList.add('admin-mode');
-                    if (content) content.style.visibility = 'visible';
-                } else {
-                    alert('تۆ دەسەڵاتی چوونەژوورەوەت نییە بۆ پەناڵی ئەدمین. تکایە وەکو ئەدمین بە ئیمەیڵی فەرمی بچۆ ژوورەوە.');
-                    window.location.replace('login.html?redirect=admin-panel.html');
-                }
-            });
+        if (isAdminSessionUnlocked() || (window.EducationalData && window.EducationalData.isCurrentUserSuperAdmin())) {
+            document.body.classList.add('admin-mode');
+            localStorage.setItem('is_admin_mode_active', 'true');
+            if (content) content.style.visibility = 'visible';
+        } else if (currentPage === 'admin-panel.html') {
+            // Let admin-panel-script.js show its in-page Admin login gate (hussein23 / hussein1996)
+            if (content) content.style.visibility = 'visible';
+        } else {
+            if (content) content.style.visibility = 'hidden';
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().onAuthStateChanged(async (user) => {
+                    const isAdmin = await checkIsAdmin(user);
+                    if (isAdmin) {
+                        document.body.classList.add('admin-mode');
+                        if (content) content.style.visibility = 'visible';
+                    } else {
+                        window.location.replace('login.html?redirect=' + encodeURIComponent(currentPage));
+                    }
+                });
+            }
         }
     } else if (protectedTeacherPages.includes(currentPage)) {
         // Enforce teacher or admin role
         const role = localStorage.getItem('app_learn_user_role');
         const teacher = localStorage.getItem('app_learn_current_teacher');
-        const isAdmin = localStorage.getItem('is_admin_mode_active') === 'true';
+        const isAdmin = isAdminSessionUnlocked() || localStorage.getItem('is_admin_mode_active') === 'true';
 
         if (!role && !teacher && !isAdmin) {
             // Not chosen or logged in
@@ -128,10 +150,14 @@ window.checkUserStatus = checkUserStatus;
         }
     }
 
-    // On all pages, update body class if admin
+    // On all pages, update body class if admin (without wiping unlocked hussein23 admin mode)
+    if (isAdminSessionUnlocked()) {
+        document.body.classList.add('admin-mode');
+        localStorage.setItem('is_admin_mode_active', 'true');
+    }
     if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().onAuthStateChanged(async (user) => {
-            if (user && isSuperAdmin(user)) {
+            if ((user && isSuperAdmin(user)) || isAdminSessionUnlocked()) {
                 document.body.classList.add('admin-mode');
                 localStorage.setItem('is_admin_mode_active', 'true');
             } else {

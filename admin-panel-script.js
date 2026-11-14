@@ -11,16 +11,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const dataStore = window.EducationalData;
     const gradesConfig = window.GRADES_CONFIG;
 
-    // Verify Super Admin Access
-    if (!dataStore.isCurrentUserSuperAdmin()) {
-        const pass = prompt("تکایە تێپەڕەوشەی ئەدمینی گشتی بنڤیسە (یان بە ئیمەیلی م. حسێن ئەکرەم زێباری داخل ببە):");
-        if (pass === "admin123" || pass === "hussein123" || pass === "123456") {
-            localStorage.setItem('is_admin_mode_active', 'true');
-        } else {
-            alert("تۆ دەسەڵاتی ئەدمینت نییە.");
-            window.location.href = "index.html";
-            return;
-        }
+    const loginGate = document.getElementById('ap-admin-login-gate');
+    const loginForm = document.getElementById('ap-admin-login-form');
+    const loginUsernameInput = document.getElementById('ap-login-username');
+    const loginPasswordInput = document.getElementById('ap-login-password');
+    const loginErrorEl = document.getElementById('ap-login-error');
+    const loginSubmitBtn = document.getElementById('ap-login-submit-btn');
+
+    let isAdminPanelInitialized = false;
+    function startAdminPanel() {
+        if (isAdminPanelInitialized) return;
+        isAdminPanelInitialized = true;
+        if (loginGate) loginGate.style.display = 'none';
+        document.body.classList.add('admin-mode');
+        renderApprovals();
+        renderTeachersManagement();
+        renderUserAccounts();
+        loadAiTemplateConfig();
+        loadAdminCommunityPosts();
+    }
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = loginUsernameInput ? loginUsernameInput.value.trim() : '';
+            const password = loginPasswordInput ? loginPasswordInput.value : '';
+            if (loginErrorEl) loginErrorEl.style.display = 'none';
+            if (loginSubmitBtn) {
+                loginSubmitBtn.disabled = true;
+                loginSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> چاڤەڕێ بە...';
+            }
+            try {
+                if (window.CloudflareLessons && typeof window.CloudflareLessons.loginAccount === 'function') {
+                    const loggedUser = await window.CloudflareLessons.loginAccount({ username, password });
+                    if (!loggedUser || loggedUser.role !== 'admin') {
+                        throw new Error('تەنێ ئەدمین دشێت بچیتە د ڤی بەشی دا.');
+                    }
+                } else if (username.toLowerCase() === 'hussein23' && password === 'hussein1996') {
+                    localStorage.setItem('parwarda_admin_unlocked', 'true');
+                    localStorage.setItem('is_admin_mode_active', 'true');
+                    localStorage.setItem('app_learn_user_role', 'super_admin');
+                } else {
+                    throw new Error('یوزەرنەیم یان پاسوۆرد خەلەتە.');
+                }
+                startAdminPanel();
+            } catch (err) {
+                if (loginErrorEl) {
+                    loginErrorEl.textContent = err.message || 'یوزەرنەیم یان پاسوۆرد خەلەتە.';
+                    loginErrorEl.style.display = 'block';
+                }
+            } finally {
+                if (loginSubmitBtn) {
+                    loginSubmitBtn.disabled = false;
+                    loginSubmitBtn.innerHTML = '<i class="fas fa-unlock"></i> چوونا ژوور وەک ئەدمین';
+                }
+            }
+        });
     }
 
     // Navigation Tabs
@@ -43,7 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('admin-logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('parwarda_admin_unlocked');
             localStorage.removeItem('is_admin_mode_active');
+            if (window.CloudflareLessons && typeof window.CloudflareLessons.getCurrentUser === 'function') {
+                const cur = window.CloudflareLessons.getCurrentUser();
+                if (cur && cur.role === 'admin') {
+                    window.CloudflareLessons.logoutUser();
+                }
+            }
             window.location.href = 'index.html';
         });
     }
@@ -1327,12 +1380,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTeachersManagement();
     });
 
-    // Initial render
-    renderApprovals();
-    renderTeachersManagement();
-    renderUserAccounts();
-    loadAiTemplateConfig();
-    loadAdminCommunityPosts();
+    // Verify Super Admin Access on load
+    if (dataStore.isCurrentUserSuperAdmin() || (window.CloudflareLessons && window.CloudflareLessons.isAdminUser())) {
+        startAdminPanel();
+    } else if (loginGate) {
+        loginGate.style.display = 'flex';
+    }
 });
 
 

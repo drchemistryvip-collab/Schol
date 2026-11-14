@@ -403,6 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function activateSuperAdminMode() {
+        localStorage.setItem('parwarda_admin_unlocked', 'true');
         localStorage.setItem('is_admin_mode_active', 'true');
         dataStore.setUserRole('super_admin');
         const adminTeacher = dataStore.getTeacherById('t_hussein') || {
@@ -417,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         dataStore.setCurrentTeacher(adminTeacher);
         updateRoleUI();
-        alert('بەخێربێیت م. حسێن ئەکرەم زێباری! دەسەڵاتی ئەدمینی گشتی چالاک کرا.');
+        showAppToast('بەخێربێیت م. حسێن ئەکرەم زێباری! دەسەڵاتی ئەدمینی گشتی چالاک کرا.', 'success');
         window.location.href = 'admin-panel.html';
     }
 
@@ -1148,6 +1149,76 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const gateAdminLoginBtn = document.getElementById('gate-admin-login-btn');
+    const homeAdminLoginModal = document.getElementById('home-admin-login-modal');
+    const closeHomeAdminModalBtn = document.getElementById('close-home-admin-modal-btn');
+    const homeAdminLoginForm = document.getElementById('home-admin-login-form');
+    const homeAdminUsername = document.getElementById('home-admin-username');
+    const homeAdminPassword = document.getElementById('home-admin-password');
+    const homeAdminError = document.getElementById('home-admin-error');
+    const homeAdminSubmitBtn = document.getElementById('home-admin-submit-btn');
+
+    if (gateAdminLoginBtn) {
+        gateAdminLoginBtn.addEventListener('click', () => {
+            if (dataStore.isCurrentUserSuperAdmin()) {
+                window.location.href = 'admin-panel.html';
+                return;
+            }
+            if (homeAdminError) homeAdminError.style.display = 'none';
+            if (homeAdminUsername) homeAdminUsername.value = '';
+            if (homeAdminPassword) homeAdminPassword.value = '';
+            if (homeAdminLoginModal) homeAdminLoginModal.style.display = 'flex';
+        });
+    }
+
+    if (closeHomeAdminModalBtn && homeAdminLoginModal) {
+        closeHomeAdminModalBtn.addEventListener('click', () => {
+            homeAdminLoginModal.style.display = 'none';
+        });
+        homeAdminLoginModal.addEventListener('click', (e) => {
+            if (e.target === homeAdminLoginModal) homeAdminLoginModal.style.display = 'none';
+        });
+    }
+
+    if (homeAdminLoginForm) {
+        homeAdminLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = homeAdminUsername ? homeAdminUsername.value.trim() : '';
+            const password = homeAdminPassword ? homeAdminPassword.value : '';
+            if (homeAdminError) homeAdminError.style.display = 'none';
+            if (homeAdminSubmitBtn) {
+                homeAdminSubmitBtn.disabled = true;
+                homeAdminSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> چاڤەڕێ بە...';
+            }
+            try {
+                if (window.CloudflareLessons && typeof window.CloudflareLessons.loginAccount === 'function') {
+                    const user = await window.CloudflareLessons.loginAccount({ username, password });
+                    if (!user || user.role !== 'admin') {
+                        throw new Error('تەنێ ئەدمین دشێت بچیتە د ڤی بەشی دا.');
+                    }
+                } else if (username.toLowerCase() === 'hussein23' && password === 'hussein1996') {
+                    localStorage.setItem('parwarda_admin_unlocked', 'true');
+                    localStorage.setItem('is_admin_mode_active', 'true');
+                    dataStore.setUserRole('super_admin');
+                } else {
+                    throw new Error('یوزەرنەیم یان پاسوۆرد خەلەتە.');
+                }
+                if (homeAdminLoginModal) homeAdminLoginModal.style.display = 'none';
+                window.location.href = 'admin-panel.html';
+            } catch (err) {
+                if (homeAdminError) {
+                    homeAdminError.textContent = err.message || 'یوزەرنەیم یان پاسوۆرد خەلەتە.';
+                    homeAdminError.style.display = 'block';
+                }
+            } finally {
+                if (homeAdminSubmitBtn) {
+                    homeAdminSubmitBtn.disabled = false;
+                    homeAdminSubmitBtn.innerHTML = '<i class="fas fa-unlock"></i> چوونا ژوور بۆ بەشێ ئەدمینی';
+                }
+            }
+        });
+    }
+
     function enterAsGuest() {
         const guestUser = {
             uid: 'guest_' + Date.now(),
@@ -1316,6 +1387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         saveUserSession(null);
         saveUserProfile(null);
+        localStorage.removeItem('parwarda_admin_unlocked');
         localStorage.removeItem('is_admin_mode_active');
         dataStore.setUserRole('student');
 

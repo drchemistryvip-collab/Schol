@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adminUnlockModal = document.getElementById('admin-unlock-modal');
     const closeAdminUnlockBtn = document.getElementById('close-admin-unlock-btn');
     const adminUnlockForm = document.getElementById('admin-unlock-form');
+    const adminUsernameInput = document.getElementById('admin-username-input');
     const adminPassInput = document.getElementById('admin-pass-input');
     const adminUnlockError = document.getElementById('admin-unlock-error');
     const adminLoginTrigger = document.getElementById('admin-login-trigger');
@@ -147,9 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isAdmin) {
             return {
                 loggedIn: true,
-                id: (stored && (stored.uid || stored.id)) || 'admin_hussein',
-                name: (profile && profile.name) || (stored && stored.displayName) || 'م. حسێن ئەکرەم (ئەدمین)',
-                username: (profile && profile.username) || 'admin',
+                id: (stored && (stored.uid || stored.id)) || 'admin_hussein23',
+                name: (profile && profile.name) || (stored && stored.displayName) || 'م. حسێن ئەکرەم زێباری (ئەدمین)',
+                username: (profile && profile.username) || 'hussein23',
                 role: 'admin',
                 isAdmin: true
             };
@@ -267,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Admin Unlock / Lock Handlers
     function openAdminUnlock() {
         if (adminUnlockError) adminUnlockError.style.display = 'none';
+        if (adminUsernameInput) adminUsernameInput.value = '';
         if (adminPassInput) adminPassInput.value = '';
         if (adminUnlockModal) adminUnlockModal.style.display = 'flex';
     }
@@ -280,10 +282,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (adminUnlockForm) {
-        adminUnlockForm.addEventListener('submit', (e) => {
+        adminUnlockForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const pass = (adminPassInput ? adminPassInput.value : '').trim();
-            if (pass === 'admin123' || pass === 'hussein123' || pass === '123456') {
+            const username = (adminUsernameInput ? adminUsernameInput.value : '').trim();
+            const pass = adminPassInput ? adminPassInput.value : '';
+            const isValid = window.CloudflareLessons && typeof window.CloudflareLessons.isAdminCredentials === 'function'
+                ? window.CloudflareLessons.isAdminCredentials(username, pass)
+                : (username.toLowerCase() === 'hussein23' && pass === 'hussein1996');
+
+            if (isValid) {
+                if (window.CloudflareLessons && typeof window.CloudflareLessons.loginAccount === 'function') {
+                    try {
+                        await window.CloudflareLessons.loginAccount({ username, password: pass });
+                    } catch (err) {}
+                }
                 localStorage.setItem('parwarda_admin_unlocked', 'true');
                 localStorage.setItem('is_admin_mode_active', 'true');
                 adminUnlockModal.style.display = 'none';
@@ -291,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchPosts();
             } else {
                 if (adminUnlockError) {
-                    adminUnlockError.textContent = 'تێپەڕەوشەیا ئەدمینی خەلەتە!';
+                    adminUnlockError.textContent = 'یوزەرنەیم یان پاسوۆردێ ئەدمینی خەلەتە!';
                     adminUnlockError.style.display = 'block';
                 }
             }
@@ -302,6 +314,12 @@ document.addEventListener('DOMContentLoaded', () => {
         adminLockBtn.addEventListener('click', () => {
             localStorage.removeItem('parwarda_admin_unlocked');
             localStorage.removeItem('is_admin_mode_active');
+            if (window.CloudflareLessons && typeof window.CloudflareLessons.getCurrentUser === 'function') {
+                const cur = window.CloudflareLessons.getCurrentUser();
+                if (cur && cur.role === 'admin') {
+                    window.CloudflareLessons.logoutUser();
+                }
+            }
             notify('مۆدا ئەدمینی هاتە گرتن.', 'info');
             fetchPosts();
         });

@@ -20,6 +20,12 @@
 
     const CLOUDFLARE_WORKER_URL = 'https://parwarda-api.hussein-zebary-chemistry96.workers.dev';
     const CF_USER_STORAGE_KEY = 'parwarda_cf_user';
+    const ADMIN_USERNAME = 'hussein23';
+    const ADMIN_PASSWORD = 'hussein1996';
+
+    function isAdminCredentials(username, password) {
+        return String(username || '').trim().toLowerCase() === ADMIN_USERNAME && String(password || '') === ADMIN_PASSWORD;
+    }
 
     let cachedLessons = [];
     let isLoadingLessons = false;
@@ -98,11 +104,13 @@
         const rawSettings = safeParseMeta(src.settings || root.settings);
         const bookmarks = Array.isArray(rawSettings.bookmarks) ? rawSettings.bookmarks.map(String) : [];
         const idVal = src.id ?? src.user_id ?? src.uid ?? fb.id ?? '';
-        const roleVal = (src.role === 'teacher' || src.role === 'student')
+        const usernameVal = String(src.username || fb.username || '').trim();
+        const rawRole = (src.role === 'teacher' || src.role === 'student' || src.role === 'admin')
             ? src.role
-            : ((fb.role === 'teacher' || fb.role === 'student') ? fb.role : 'student');
-        const fullNameVal = src.full_name || src.fullName || src.name || fb.full_name || src.username || fb.username || 'بەکارهێنەر';
-        const usernameVal = src.username || fb.username || '';
+            : ((fb.role === 'teacher' || fb.role === 'student' || fb.role === 'admin') ? fb.role : 'student');
+        const isOfficialAdminUser = usernameVal.toLowerCase() === ADMIN_USERNAME && (rawRole === 'admin' || localStorage.getItem('parwarda_admin_unlocked') === 'true');
+        const roleVal = isOfficialAdminUser ? 'admin' : rawRole;
+        const fullNameVal = src.full_name || src.fullName || src.name || fb.full_name || usernameVal || 'بەکارهێنەر';
 
         const normalizedSettings = Object.assign({}, rawSettings, {
             bookmarks: bookmarks
@@ -111,7 +119,7 @@
         return {
             id: idVal !== undefined && idVal !== null ? String(idVal) : '',
             full_name: String(fullNameVal),
-            username: String(usernameVal),
+            username: usernameVal,
             role: roleVal,
             settings: normalizedSettings
         };
@@ -135,9 +143,11 @@
             localStorage.removeItem('app_user_profile');
             localStorage.removeItem('app_learn_current_teacher');
             localStorage.removeItem('is_admin_mode_active');
+            localStorage.removeItem('parwarda_admin_unlocked');
             return;
         }
 
+        const isAdminRole = user.role === 'admin';
         let existingProfile = null;
         try {
             existingProfile = JSON.parse(localStorage.getItem('app_user_profile') || 'null');
@@ -149,9 +159,9 @@
             displayName: user.full_name,
             full_name: user.full_name,
             username: user.username,
-            email: '',
+            email: isAdminRole ? 'Hussein.zebary.chemistry96@gmail.com' : '',
             role: user.role,
-            isAdmin: false,
+            isAdmin: isAdminRole,
             cfAuth: true
         }));
 
@@ -160,25 +170,28 @@
             username: user.username,
             role: user.role,
             avatar: (existingProfile && existingProfile.avatar) || '',
-            bio: (existingProfile && existingProfile.bio) || (user.role === 'teacher' ? 'مامۆستا' : 'قوتابی'),
-            teacherId: user.role === 'teacher' ? user.id : '',
-            teacherStatus: user.role === 'teacher' ? 'approved' : '',
+            bio: (existingProfile && existingProfile.bio) || (isAdminRole ? 'ئەدمینێ گشتی' : (user.role === 'teacher' ? 'مامۆستا' : 'قوتابی')),
+            teacherId: isAdminRole ? 't_hussein' : (user.role === 'teacher' ? user.id : ''),
+            teacherStatus: (isAdminRole || user.role === 'teacher') ? 'approved' : '',
             isProfileComplete: true,
             isGuest: false,
             cfAuth: true,
             updatedAt: Date.now()
         }));
 
-        localStorage.setItem('app_learn_user_role', user.role);
-        if (localStorage.getItem('parwarda_admin_unlocked') !== 'true') {
+        localStorage.setItem('app_learn_user_role', isAdminRole ? 'super_admin' : user.role);
+        if (isAdminRole) {
+            localStorage.setItem('parwarda_admin_unlocked', 'true');
+            localStorage.setItem('is_admin_mode_active', 'true');
+        } else if (localStorage.getItem('parwarda_admin_unlocked') !== 'true') {
             if (!(global.EducationalData && typeof global.EducationalData.isCurrentUserSuperAdmin === 'function' && global.EducationalData.isCurrentUserSuperAdmin())) {
                 localStorage.removeItem('is_admin_mode_active');
             }
         }
 
-        if (user.role === 'teacher') {
+        if (user.role === 'teacher' || isAdminRole) {
             const teacherObj = {
-                id: user.id,
+                id: isAdminRole ? 't_hussein' : user.id,
                 name: user.full_name,
                 username: user.username,
                 subject: 'کیمیا (Chemistry)',
@@ -187,7 +200,7 @@
                     : ['10', '11', '12', 'univ'],
                 lang: (user.settings && user.settings.lang) || 'ku_ba',
                 status: 'approved',
-                viewsCount: 0
+                viewsCount: isAdminRole ? 4250 : 0
             };
             if (global.EducationalData && typeof global.EducationalData.setCurrentTeacher === 'function') {
                 global.EducationalData.setCurrentTeacher(teacherObj);
@@ -212,6 +225,8 @@
     }
 
     function logoutUser() {
+        localStorage.removeItem('parwarda_admin_unlocked');
+        localStorage.removeItem('is_admin_mode_active');
         return setCurrentUser(null);
     }
 
@@ -419,6 +434,62 @@
         if (!username || !password) {
             throw new Error('تکایە یوزەرنەیم و پاسوۆردی بنڤیسە.');
         }
+
+        if (username.toLowerCase() === ADMIN_USERNAME) {
+            if (!isAdminCredentials(username, password)) {
+                throw new Error('یوزەرنەیم یان پاسوۆرد خەلەتە.');
+            }
+
+            localStorage.setItem('parwarda_admin_unlocked', 'true');
+            localStorage.setItem('is_admin_mode_active', 'true');
+
+            let serverUserPayload = null;
+            try {
+                const res = await fetch(`${CLOUDFLARE_WORKER_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: ADMIN_USERNAME,
+                        password: password
+                    })
+                });
+                if (res.ok) {
+                    const txt = await res.text();
+                    serverUserPayload = txt ? JSON.parse(txt) : null;
+                }
+            } catch (e) {}
+
+            const prevUser = getCurrentUser();
+            const fallbackSettings = (prevUser && prevUser.username && prevUser.username.toLowerCase() === ADMIN_USERNAME && prevUser.settings)
+                ? prevUser.settings
+                : { bookmarks: [] };
+
+            const adminUser = normalizeUser(serverUserPayload || {
+                id: 'admin_hussein23',
+                full_name: 'م. حسێن ئەکرەم زێباری (ئەدمین)',
+                username: ADMIN_USERNAME,
+                role: 'admin',
+                settings: fallbackSettings
+            }, {
+                id: 'admin_hussein23',
+                full_name: 'م. حسێن ئەکرەم زێباری (ئەدمین)',
+                username: ADMIN_USERNAME,
+                role: 'admin'
+            });
+            adminUser.role = 'admin';
+
+            const savedUser = setCurrentUser(adminUser);
+            if (savedUser && savedUser.settings) {
+                applyUserSettings(savedUser.settings);
+            }
+            return savedUser;
+        }
+
+        localStorage.removeItem('parwarda_admin_unlocked');
+        localStorage.removeItem('is_admin_mode_active');
 
         const res = await fetch(`${CLOUDFLARE_WORKER_URL}/login`, {
             method: 'POST',
@@ -1599,6 +1670,7 @@
         setCurrentUser: setCurrentUser,
         logoutUser: logoutUser,
         isAdminUser: isAdminUser,
+        isAdminCredentials: isAdminCredentials,
         canManageOrDownload: canManageOrDownload,
         registerAccount: registerAccount,
         loginAccount: loginAccount,
