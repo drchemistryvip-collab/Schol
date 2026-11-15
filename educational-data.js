@@ -2706,6 +2706,14 @@ class EducationalDataStore {
             body: JSON.stringify(newQuiz)
         }).catch(err => console.warn('Server quiz sync error:', err));
 
+        // Sync to Cloudflare Worker D1
+        try {
+            const cfUrl = window.API_BASE_URL || 'https://parwarda-api.hussein-zebary-chemistry96.workers.dev';
+            const fd = new FormData();
+            fd.append('meta', JSON.stringify(newQuiz));
+            fetch(cfUrl, { method: 'POST', body: fd }).catch(() => {});
+        } catch (e) {}
+
         // 1. Sync to Firebase Firestore
         if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
             try {
@@ -2809,6 +2817,14 @@ class EducationalDataStore {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(newCard)
         }).catch(err => console.warn('Server flashcard sync error:', err));
+
+        // Sync to Cloudflare Worker D1
+        try {
+            const cfUrl = window.API_BASE_URL || 'https://parwarda-api.hussein-zebary-chemistry96.workers.dev';
+            const fd = new FormData();
+            fd.append('meta', JSON.stringify(newCard));
+            fetch(cfUrl, { method: 'POST', body: fd }).catch(() => {});
+        } catch (e) {}
 
         if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
             try {
