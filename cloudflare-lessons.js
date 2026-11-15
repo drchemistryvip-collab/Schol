@@ -111,8 +111,7 @@
             full_name: String(fullNameVal),
             username: usernameVal,
             role: roleVal,
-            settings: normalizedSettings,
-            token: String(src.token || fb.token || '')
+            settings: normalizedSettings
         };
     }
 
@@ -1807,4 +1806,92 @@
         });
 
         containerEl.querySelectorAll('.cf-edit-btn').forEach(btn => {
-            btn.addEventListen
+            btn.addEventListener('click', () => {
+                const idx = Number(btn.getAttribute('data-cf-idx'));
+                if (lessons[idx]) openEditModal(lessons[idx]);
+            });
+        });
+
+        containerEl.querySelectorAll('.cf-delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = Number(btn.getAttribute('data-cf-idx'));
+                if (lessons[idx]) openDeleteConfirmModal(lessons[idx]);
+            });
+        });
+    }
+
+    const bootUser = getCurrentUser();
+    if (bootUser) {
+        syncUserToAppMirrors(bootUser);
+        if (bootUser.settings) {
+            applyUserSettings(bootUser.settings);
+        }
+    }
+    checkServerGeminiProxy().catch(() => {});
+
+    global.CloudflareLessons = {
+        API_URL: CLOUDFLARE_WORKER_URL,
+        API_BASE_URL: API_BASE_URL,
+        getCurrentUser: getCurrentUser,
+        setCurrentUser: setCurrentUser,
+        logoutUser: logoutUser,
+        isAdminUser: isAdminUser,
+        isAdminCredentials: isAdminCredentials,
+        canManageOrDownload: canManageOrDownload,
+        registerAccount: registerAccount,
+        loginAccount: loginAccount,
+        applyUserSettings: applyUserSettings,
+        saveUserSettingsToServer: saveUserSettingsToServer,
+        getBookmarkedIds: getBookmarkedIds,
+        isBookmarked: isBookmarked,
+        toggleBookmark: toggleBookmark,
+        openAuthModal: openAuthModal,
+        fetchLessons: fetchLessons,
+        uploadLesson: uploadLesson,
+        createPost: uploadLesson,
+        updateLesson: updateLesson,
+        deleteLesson: deleteLesson,
+        getCachedLessons: function () { return cachedLessons.slice(); },
+        isLoading: function () { return isLoadingLessons; },
+        getLastError: function () { return lastFetchError; },
+        checkServerGeminiProxy: checkServerGeminiProxy,
+        prepareHtmlForPreview: prepareHtmlForPreview,
+        attachProxyLoadBridge: attachProxyLoadBridge,
+        renderLessonsGrid: renderLessonsGrid,
+        openPreviewModal: openLessonPreview,
+        openEditModal: openEditModal,
+        openDeleteConfirmModal: openDeleteConfirmModal,
+        getGradeDisplayName: getGradeDisplayName,
+        showToast: showCfToast
+    };
+})(window);
+setInterval(() => {
+  const userKey = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gk');
+  if (!userKey) return;
+
+  document.querySelectorAll('iframe').forEach((iframe) => {
+    try {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'SET_API_KEY', apiKey: userKey }, '*');
+      }
+      const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      if (doc) {
+        ['ak', 'cbk', 'gk', 'gk2'].forEach((id) => {
+          const el = doc.getElementById(id);
+          if (el && !el.value) {
+            el.value = userKey;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        doc.querySelectorAll('input').forEach((inp) => {
+          if (inp.placeholder && inp.placeholder.includes('AIza') && !inp.value) {
+            inp.value = userKey;
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+            inp.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+      }
+    } catch (e) {}
+  });
+}, 500);
