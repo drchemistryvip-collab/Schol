@@ -2225,6 +2225,10 @@ class EducationalDataStore {
         return localStorage.getItem(this.STORAGE_KEY_CURRENT_ROLE) || null;
     }
 
+    getCurrentUserRole() {
+        return this.getUserRole();
+    }
+
     setUserRole(role) {
         localStorage.setItem(this.STORAGE_KEY_CURRENT_ROLE, role);
         window.dispatchEvent(new CustomEvent('userRoleChanged', { detail: { role } }));
