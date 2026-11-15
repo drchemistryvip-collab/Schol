@@ -265,34 +265,70 @@
         /* Grade Checkboxes Grid */
         .grade-checkbox-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
-            margin: 15px 0;
-            max-height: 280px;
+            margin: 14px 0;
+            max-height: 330px;
             overflow-y: auto;
-            padding: 5px;
+            padding: 4px;
+        }
+        @media (min-width: 560px) {
+            .grade-checkbox-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
         }
         .grade-check-item {
-            background: rgba(0,0,0,0.02);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 10px;
+            background: var(--surface-color);
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 10px;
             display: flex;
             align-items: center;
             gap: 8px;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--primary-text);
+            transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
+            min-height: 44px;
+            box-sizing: border-box;
         }
         .grade-check-item:hover {
-            background: rgba(0,123,255,0.05);
+            background: rgba(37, 99, 235, 0.06);
             border-color: var(--blue-accent);
+        }
+        .grade-check-item:has(input:checked) {
+            border-color: var(--blue-accent);
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--blue-accent);
         }
         .grade-check-item input[type="checkbox"] {
             width: 18px;
             height: 18px;
             accent-color: var(--blue-accent);
             cursor: pointer;
+            flex-shrink: 0;
+        }
+        .secondary-tools-accordion {
+            margin-top: 22px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            background: var(--surface-color);
+            padding: 12px 16px;
+        }
+        .secondary-tools-accordion > summary {
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.96rem;
+            color: var(--primary-text);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            list-style: none;
+            min-height: 44px;
+        }
+        .secondary-tools-accordion > summary::-webkit-details-marker {
+            display: none;
         }
 
         /* Language Radio items */
@@ -425,105 +461,92 @@
             </button>
         </div>
 
-        <!-- Role & Auth Status Bar (Personalized in user's name) -->
+        <!-- Role & Auth Status Bar (Compact Header + Collapsible Menu Drawer) -->
         <div class="role-status-bar" id="role-status-bar">
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                <!-- Personalized User Profile Card -->
-                <div id="personalized-user-card" style="display:flex; align-items:center; gap:10px; cursor:pointer;" title="کلیک بکە بۆ دەستکاریکردنی پرۆفایل">
-                    <img id="top-user-avatar" src="" style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid var(--blue-accent); box-shadow:0 2px 8px rgba(0,0,0,0.12); display:block; background:#e9ecef;">
-                    <div style="text-align:right;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <strong id="top-user-name" style="font-size:0.95rem; color:var(--primary-text);">بەکارهێنەر</strong>
-                            <span class="role-badge-pill" id="home-role-badge">
-                                <i class="fas fa-user-graduate"></i> <span id="home-role-text">قوتابی</span>
-                            </span>
+            <div style="display:flex; align-items:center; justify-content:space-between; width:100%; gap:12px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <!-- Personalized User Profile Card -->
+                    <div id="personalized-user-card" style="display:flex; align-items:center; gap:10px; cursor:pointer;" title="کلیک بکە بۆ دەستکاریکردنی پرۆفایل">
+                        <img id="top-user-avatar" src="" style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid var(--blue-accent); box-shadow:0 2px 8px rgba(0,0,0,0.12); display:block; background:#e9ecef;">
+                        <div style="text-align:right;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <strong id="top-user-name" style="font-size:0.95rem; color:var(--primary-text);">بەکارهێنەر</strong>
+                                <span class="role-badge-pill" id="home-role-badge">
+                                    <i class="fas fa-user-graduate"></i> <span id="home-role-text">قوتابی</span>
+                                </span>
+                            </div>
+                            <div id="top-user-bio" style="font-size:0.78rem; color:var(--secondary-text); max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:none;"></div>
                         </div>
-                        <div id="top-user-bio" style="font-size:0.78rem; color:var(--secondary-text); max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:none;"></div>
+                    </div>
+                    <span id="home-lang-indicator" style="font-size:0.8rem; background:rgba(0,123,255,0.1); color:var(--blue-accent); padding:2px 8px; border-radius:10px;">باهدینی</span>
+                </div>
+
+                <button type="button" id="home-menu-toggle-btn" class="theme-toggle-button" title="لیستا کاران و پۆلێن من" aria-expanded="false" aria-controls="home-actions-drawer" style="width:42px; height:42px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <!-- Collapsible Actions + Followed Grades Drawer (Hidden by default) -->
+            <div id="home-actions-drawer" style="display:none; width:100%; margin-top:12px; padding-top:12px; border-top:1px solid var(--border-color); flex-direction:column; gap:12px;">
+                <div class="role-status-actions">
+                    <button id="pending-teacher-verify-btn" class="btn-save" style="display:none; background:#f59e0b; color:#fff; padding:6px 12px; font-size:0.8rem; border-radius:10px; align-items:center; gap:5px; cursor:pointer;">
+                        <i class="fas fa-paper-plane"></i> نامە بۆ ئەدمینی (واتس ئاپ / تلگرام)
+                    </button>
+                    <button id="edit-my-profile-btn" class="btn-cancel" style="padding: 6px 12px; font-size: 0.8rem; display:inline-flex; align-items:center; gap:5px;" title="دەستکاریکردنی پرۆفایل">
+                        <i class="fas fa-user-edit"></i> پرۆفایلی من
+                    </button>
+                    <button id="btn-top-signout" class="btn-cancel" style="display:inline-flex; background:rgba(220,53,69,0.1); color:#dc3545; border:1px solid rgba(220,53,69,0.25); padding:6px 12px; font-size:0.8rem; border-radius:10px; align-items:center; gap:5px; cursor:pointer;" title="تسجیل خروج / دەرچوون">
+                        <i class="fas fa-sign-out-alt"></i> دەرکەفتن (Sign Out)
+                    </button>
+                    <button id="open-settings-btn" class="btn-cancel" style="padding: 6px 12px; font-size: 0.8rem; display:inline-flex; align-items:center; gap:5px;">
+                        <i class="fas fa-sliders-h"></i> ڕێکخستن
+                    </button>
+                    <a href="teacher-dashboard.html" id="home-teacher-link" class="btn-save" style="padding: 7px 14px; font-size: 0.82rem; text-decoration:none; display:none; white-space:nowrap;">
+                        <i class="fas fa-chalkboard-teacher"></i> پەناڵی مامۆستایان
+                    </a>
+                    <a href="admin-panel.html" id="home-admin-link" class="btn-save" style="background:#e63946; padding: 7px 14px; font-size: 0.82rem; text-decoration:none; display:none; white-space:nowrap;">
+                        <i class="fas fa-shield-alt"></i> بەشێ ئەدمینی
+                    </a>
+                </div>
+
+                <!-- Followed Grades Indicator Banner (Inside Menu Drawer) -->
+                <div class="followed-banner" id="followed-grades-banner" style="display:none; margin:0;">
+                    <div>
+                        <strong style="color:var(--blue-accent); font-size:0.95rem;">
+                            <i class="fas fa-check-circle"></i> پۆلێن من یێن هەلبژارتی:
+                        </strong>
+                        <span id="followed-grades-names" style="margin-right:6px; font-weight:bold;"></span>
+                        <div style="font-size:0.8rem; color:var(--secondary-text); margin-top:2px;">
+                            تنێ ئەو پۆل دهێنە نیشاندان یێن تە هەلبژارتین. بۆ زێدەکرنا پۆلێن دی بچۆ ناڤ زەبتێ.
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button id="edit-followed-grades-btn" class="btn-save" style="padding:8px 14px; font-size:0.84rem; min-height:40px; border-radius:10px; display:inline-flex; align-items:center; gap:6px;">
+                            <i class="fas fa-plus-circle"></i> زێدەکرن / گۆڕین د زەبتێ دا
+                        </button>
+                        <button id="show-all-grades-toggle" class="btn-cancel" style="padding:8px 12px; font-size:0.82rem; min-height:40px; border-radius:10px;">
+                            هەموو پۆلەکان
+                        </button>
                     </div>
                 </div>
-                <span id="home-lang-indicator" style="font-size:0.8rem; background:rgba(0,123,255,0.1); color:var(--blue-accent); padding:2px 8px; border-radius:10px;">باهدینی</span>
-            </div>
-            <div class="role-status-actions">
-                <button id="pending-teacher-verify-btn" class="btn-save" style="display:none; background:#f59e0b; color:#fff; padding:6px 12px; font-size:0.8rem; border-radius:10px; align-items:center; gap:5px; cursor:pointer;">
-                    <i class="fas fa-paper-plane"></i> نامە بۆ ئەدمینی (واتس ئاپ / تلگرام)
-                </button>
-                <button id="edit-my-profile-btn" class="btn-cancel" style="padding: 6px 12px; font-size: 0.8rem; display:inline-flex; align-items:center; gap:5px;" title="دەستکاریکردنی پرۆفایل">
-                    <i class="fas fa-user-edit"></i> پرۆفایلی من
-                </button>
-                <button id="btn-top-signout" class="btn-cancel" style="display:inline-flex; background:rgba(220,53,69,0.1); color:#dc3545; border:1px solid rgba(220,53,69,0.25); padding:6px 12px; font-size:0.8rem; border-radius:10px; align-items:center; gap:5px; cursor:pointer;" title="تسجیل خروج / دەرچوون">
-                    <i class="fas fa-sign-out-alt"></i> دەرکەفتن (Sign Out)
-                </button>
-                <button id="open-settings-btn" class="btn-cancel" style="padding: 6px 12px; font-size: 0.8rem; display:inline-flex; align-items:center; gap:5px;">
-                    <i class="fas fa-sliders-h"></i> ڕێکخستن
-                </button>
-                <a href="teacher-dashboard.html" id="home-teacher-link" class="btn-save" style="padding: 7px 14px; font-size: 0.82rem; text-decoration:none; display:none; white-space:nowrap;">
-                    <i class="fas fa-chalkboard-teacher"></i> پەناڵی مامۆستایان
-                </a>
-                <a href="admin-panel.html" id="home-admin-link" class="btn-save" style="background:#e63946; padding: 7px 14px; font-size: 0.82rem; text-decoration:none; display:none; white-space:nowrap;">
-                    <i class="fas fa-shield-alt"></i> بەشێ ئەدمینی
-                </a>
-            </div>
-        </div>
-
-        <!-- Followed Grades Indicator Banner (When student has custom picked grades) -->
-        <div class="followed-banner" id="followed-grades-banner" style="display:none;">
-            <div>
-                <strong style="color:var(--blue-accent); font-size:0.95rem;">
-                    <i class="fas fa-check-circle"></i> پۆلێن دیارکری یێن تە:
-                </strong>
-                <span id="followed-grades-names" style="margin-right:6px; font-weight:bold;"></span>
-                <div style="font-size:0.8rem; color:var(--secondary-text); margin-top:2px;">
-                    تەنێ ئەو پۆلانە نیشان دەدرێن کە تۆ دیاریت کردوون.
-                </div>
-            </div>
-            <div style="display:flex; gap:8px;">
-                <button id="edit-followed-grades-btn" class="btn-save" style="padding:6px 14px; font-size:0.8rem;">
-                    <i class="fas fa-cog"></i> گۆڕین لە ڕێکخستن
-                </button>
-                <button id="show-all-grades-toggle" class="btn-cancel" style="padding:6px 12px; font-size:0.8rem;">
-                    هەموو پۆلەکان
-                </button>
-            </div>
-        </div>
-
-        <!-- University Admission Highlight Banner -->
-        <div style="background: linear-gradient(135deg, rgba(114, 9, 183, 0.08), rgba(67, 97, 238, 0.12)); border: 1.5px solid rgba(114, 9, 183, 0.25); border-radius: 16px; padding: 18px 20px; margin-top: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; text-align: right; box-shadow: 0 4px 16px var(--shadow-color);">
-            <div style="display:flex; align-items:center; gap:14px;">
-                <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, #7209b7, #4361ee); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; box-shadow:0 4px 12px rgba(114,9,183,0.3);">
-                    <i class="fas fa-university"></i>
-                </div>
-                <div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:var(--primary-text);">ڕێبەری زانکۆ و کۆنمرەی وەرگرتن (معەدل)</h3>
-                        <span style="font-size:0.75rem; background:#7209b7; color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">نوێ</span>
-                    </div>
-                    <p style="margin:3px 0 0; font-size:0.83rem; color:var(--secondary-text);">
-                        سەرجەم بەش و کۆلێژەکانی کوردستان، پشکنینا نمرەی پۆلا ١٢ و مەلزەمەکانی زانکۆ
-                    </p>
-                </div>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <a href="university.html" class="btn-save" style="background:linear-gradient(135deg, #7209b7, #4361ee); text-decoration:none; padding:9px 18px; border-radius:10px; font-size:0.88rem; font-weight:700; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(114,9,183,0.25);">
-                    <i class="fas fa-calculator"></i> پشکنینا نمرە و بەشەکان
-                </a>
             </div>
         </div>
 
         <!-- Grade Selection Section Title -->
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:25px; text-align:right;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:16px; text-align:right;">
             <div>
-                <h2 style="margin:0 0 4px; font-size:1.35rem;">
-                    <i class="fas fa-layer-group" style="color:var(--blue-accent);"></i> هەلبژارتنا قۆناغا خواندنێ
+                <h2 id="grades-section-title" style="margin:0 0 4px; font-size:1.35rem;">
+                    <i class="fas fa-layer-group" style="color:var(--blue-accent);"></i> پۆلێن من یێن خواندنێ
                 </h2>
-                <p style="margin:0; color:var(--secondary-text); font-size:0.85rem;">
-                    ژ باخچەی ساوایان هەتا پۆلا دوازدێ و زانکۆ و پەیمانگەکان
+                <p id="grades-section-subtitle" style="margin:0; color:var(--secondary-text); font-size:0.86rem;">
+                    پۆلا خۆ ڤەکە داکو بابەت و مامۆستا و وانەیێن وێ ببینی
                 </p>
             </div>
-            <span style="font-size:0.85rem; color:var(--secondary-text);" id="total-visible-grades-count">١٤ قۆناغێن خواندنێ و زانکۆ</span>
+            <span style="font-size:0.85rem; color:var(--secondary-text);" id="total-visible-grades-count"></span>
         </div>
 
-        <!-- Filter Pills for Grades -->
-        <div class="grade-filters">
+        <!-- Filter Pills for Grades (Visible when browsing all grades) -->
+        <div class="grade-filters" id="grade-level-filters" style="display:none;">
             <button class="g-filter-btn active" data-filter="all">هەمی پۆل</button>
             <button class="g-filter-btn" data-filter="kindergarten">باخچە</button>
             <button class="g-filter-btn" data-filter="primary">سەرەتایی (١ تا ٦)</button>
@@ -532,13 +555,42 @@
             <button class="g-filter-btn" data-filter="university" style="border-color: rgba(114, 9, 183, 0.4);"><i class="fas fa-university" style="color:#7209b7;"></i> زانکۆ و پەیمانگەکان</button>
         </div>
 
-        <!-- ALL GRADES GRID (Filtered by student followed preferences) -->
+        <!-- ALL GRADES GRID (Filtered strictly by student followed preferences) -->
         <div class="grades-grid" id="grades-grid-container">
             <!-- Dynamically populated from GRADES_CONFIG -->
         </div>
 
+        <!-- SECONDARY TOOLS ACCORDION (Tucked cleanly below so selected grades remain the focus) -->
+        <details id="secondary-tools-accordion" class="secondary-tools-accordion">
+            <summary>
+                <span><i class="fas fa-th-large" style="color:var(--blue-accent); margin-left:8px;"></i> بەش و ئامرازێن دی یێن فێربوونێ (ڕێبەری زانکۆ، پەرتووک، پۆست، حاسیبە...)</span>
+                <i class="fas fa-chevron-down" style="color:var(--secondary-text); font-size:0.85rem;"></i>
+            </summary>
+            <div style="padding-top:16px;">
+                <!-- University Admission Highlight Banner -->
+                <div style="background: linear-gradient(135deg, rgba(114, 9, 183, 0.08), rgba(67, 97, 238, 0.12)); border: 1.5px solid rgba(114, 9, 183, 0.25); border-radius: 16px; padding: 18px 20px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; text-align: right;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(135deg, #7209b7, #4361ee); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+                            <i class="fas fa-university"></i>
+                        </div>
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:var(--primary-text);">ڕێبەری زانکۆ و کۆنمرەی وەرگرتن (معەدل)</h3>
+                            </div>
+                            <p style="margin:3px 0 0; font-size:0.83rem; color:var(--secondary-text);">
+                                سەرجەم بەش و کۆلێژەکانی کوردستان، پشکنینا نمرەی پۆلا ١٢ و مەلزەمەکانی زانکۆ
+                            </p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <a href="university.html" class="btn-save" style="background:linear-gradient(135deg, #7209b7, #4361ee); text-decoration:none; padding:9px 18px; border-radius:10px; font-size:0.88rem; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                            <i class="fas fa-calculator"></i> پشکنینا نمرە و بەشەکان
+                        </a>
+                    </div>
+                </div>
+
         <!-- CLOUDFLARE WORKER LESSONS, POSTS & QUESTIONS LIBRARY -->
-        <section id="cf-home-lessons-section" style="margin: 28px 0 26px; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 18px; padding: 20px; box-shadow: 0 6px 22px var(--shadow-color); text-align: right;">
+        <section id="cf-home-lessons-section" style="margin: 18px 0 22px; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 18px; padding: 20px; text-align: right;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px; border-bottom:1px solid var(--border-color); padding-bottom:14px;">
                 <div>
                     <h2 style="margin:0 0 4px; font-size:1.25rem; display:flex; align-items:center; gap:8px;">
@@ -667,6 +719,8 @@
                 <p data-translate-key="support_card_desc">ل گەل ماموستایێ خۆ باخڤە</p>
             </a>
         </main>
+            </div>
+        </details>
 
         <!-- Footer -->
         <footer class="contact-footer">
@@ -722,34 +776,37 @@
     </div>
 
     <!-- 2. STUDENT GRADE SELECTION ONBOARDING MODAL -->
-    <div id="student-grades-modal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 520px; text-align:right;">
-            <div style="text-align:center; margin-bottom:15px;">
-                <div style="width:60px; height:60px; border-radius:50%; background:rgba(40,167,69,0.15); color:#28a745; display:inline-flex; align-items:center; justify-content:center; font-size:1.8rem; margin-bottom:10px;">
+    <div id="student-grades-modal" class="modal-overlay" style="z-index:999999;">
+        <div class="modal-content" style="max-width: 560px; text-align:right; border-radius: 22px;">
+            <div style="text-align:center; margin-bottom:14px;">
+                <div style="width:58px; height:58px; border-radius:16px; background:rgba(37,99,235,0.12); color:var(--blue-accent); display:inline-flex; align-items:center; justify-content:center; font-size:1.65rem; margin-bottom:10px;">
                     <i class="fas fa-graduation-cap"></i>
                 </div>
-                <h2 style="margin:0 0 6px; font-size:1.35rem;">بەخێربێی قوتابیێ هێژا!</h2>
-                <p style="margin:0; color:var(--secondary-text); font-size:0.88rem;">
-                    ئەو پۆلێن تۆ دخوێنی یان تە دڤێت لە سەرەکی ببینیت هەڵبژێرە، تەنێ ئەو پۆلانە نیشان دەدرێن.
+                <h2 style="margin:0 0 6px; font-size:1.35rem; font-weight:800;">بەخێربێی! پۆلێن خۆ هەلبژێرە</h2>
+                <p style="margin:0; color:var(--secondary-text); font-size:0.88rem; line-height:1.5;">
+                    ئەو پۆلێن تە دڤێت ل لاپەڕێ سەرەکی بهێن هەلبژێرە — پاشان تنێ ئەو پۆل دێ ل سەرەکی دەرکەڤن و هەرگاڤ دشێی د زەبتێ دا پۆلێن دی زێدە بکەی.
                 </p>
             </div>
 
             <!-- Quick Presets -->
-            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">
-                <button type="button" class="btn-lang-small preset-grades-btn" data-preset="high">ئامادەیی (١٠، ١١، ١٢)</button>
-                <button type="button" class="btn-lang-small preset-grades-btn" data-preset="middle">ناوەندی (٧، ٨، ٩)</button>
-                <button type="button" class="btn-lang-small preset-grades-btn" data-preset="primary">سەرەتایی (١ تا ٦)</button>
-                <button type="button" class="btn-lang-small preset-grades-btn" data-preset="all">هەموو پۆلەکان</button>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
+                <button type="button" class="btn-lang-small preset-grades-btn" data-preset="high" style="width:auto; border:1px solid var(--border-color); font-size:0.8rem;">ئامادەیی (١٠، ١١، ١٢)</button>
+                <button type="button" class="btn-lang-small preset-grades-btn" data-preset="middle" style="width:auto; border:1px solid var(--border-color); font-size:0.8rem;">ناوەندی (٧، ٨، ٩)</button>
+                <button type="button" class="btn-lang-small preset-grades-btn" data-preset="primary" style="width:auto; border:1px solid var(--border-color); font-size:0.8rem;">سەرەتایی (١ تا ٦)</button>
+                <button type="button" class="btn-lang-small preset-grades-btn" data-preset="all" style="width:auto; border:1px solid var(--border-color); font-size:0.8rem;">هەموو پۆلەکان</button>
             </div>
 
-            <!-- Checkbox list of all 13 grades -->
+            <!-- Checkbox list of all grades -->
             <div class="grade-checkbox-grid" id="onboard-grades-grid">
                 <!-- Injected dynamically -->
             </div>
 
-            <div class="form-actions" style="margin-top:20px;">
-                <button type="button" id="save-student-grades-btn" class="btn-save" style="width:100%; padding:12px; font-size:1rem;">
-                    <i class="fas fa-check"></i> تۆمارکردن و بینینی پۆلەکان
+            <div class="form-actions" style="margin-top:16px; flex-direction:column; gap:10px;">
+                <button type="button" id="save-student-grades-btn" class="btn-save" style="width:100%; padding:13px; font-size:1rem; font-weight:700; border-radius:12px;">
+                    <i class="fas fa-check-circle"></i> پاشکەوتکرن و نیشاندانا پۆلێن من
+                </button>
+                <button type="button" id="onboard-open-auth-btn" class="btn-cancel" style="width:100%; padding:9px; font-size:0.84rem; border-radius:10px; background:transparent; border:1px solid var(--border-color); color:var(--secondary-text);">
+                    <i class="fas fa-user-lock"></i> هەژمارت هەیە یان مامۆستا / ئەدمینی؟ چوونا ژوور
                 </button>
             </div>
         </div>

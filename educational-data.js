@@ -1939,6 +1939,100 @@ const DEFAULT_MALZAMAS = [
     }
 ];
 
+// Default Sample Flashcards across subjects & languages
+const DEFAULT_FLASHCARDS = [
+    {
+        id: 'fc_101',
+        teacherId: 't_hussein',
+        teacherName: 'م. حسێن ئەکرەم زێباری',
+        grade: '12',
+        subject: 'کیمیا',
+        chapter: 'بەشی ١ - ترش و تفتەکان',
+        front: 'پێناسەیا ترشێ برۆنشتد - لۆری چیە؟',
+        back: 'هەر ماددەیەکە (گەرد یان ئایۆن) کو دکاریت پڕۆتۆنەکێ (H⁺) ببەخشیت بۆ ماددەیەکێ دی د کارلێکەکێ دا.',
+        hint: 'پڕۆتۆن بەخش (H⁺ Donor)',
+        lang: 'ku_ba',
+        type: 'flashcard',
+        status: 'approved',
+        createdAt: 1700031000000
+    },
+    {
+        id: 'fc_102',
+        teacherId: 't_hussein',
+        teacherName: 'م. حسێن ئەکرەم زێباری',
+        grade: '12',
+        subject: 'کیمیا',
+        chapter: 'بەشی ١ - هاوسەنگیا ئایۆنی',
+        front: 'یاسایا پەیوەندی د ناڤبەرا pH و pOH ل پلا گەرمیا ٢٥°C چەندە؟',
+        back: 'pH + pOH = 14\nهەروەسا [H₃O⁺] × [OH⁻] = 1.0 × 10⁻¹⁴',
+        hint: 'کۆمکرنا وان دگەهیتە ١٤',
+        lang: 'ku_ba',
+        type: 'flashcard',
+        status: 'approved',
+        createdAt: 1700031100000
+    },
+    {
+        id: 'fc_103',
+        teacherId: 't_karwan',
+        teacherName: 'م. کاروان سالار',
+        grade: '12',
+        subject: 'فیزیا',
+        chapter: 'بەشی ١ - جوولەیا خولانەوە',
+        front: 'یاسایا دوویێ یا نیوتنی بۆ جوولەیا خولانەوە چیە؟',
+        back: 'τ = I · α\nتۆرک (Torque) یەکسانە ب زەبرا نەگۆڕینێ (I) لێکدای لەزاتیا گۆشەیی (α).',
+        hint: 'هەڤبەرا F = m·a یە',
+        lang: 'ku_ba',
+        type: 'flashcard',
+        status: 'approved',
+        createdAt: 1700031200000
+    },
+    {
+        id: 'fc_104',
+        teacherId: 't_lana',
+        teacherName: 'م. لانا رێبەر',
+        grade: '12',
+        subject: 'بیرکاری',
+        chapter: 'تەواوکاری و داتاشراو',
+        front: 'داتاشراوێ نەخشەیا sin(ax) چیە؟',
+        back: 'd/dx [sin(ax)] = a · cos(ax)',
+        hint: 'ژ بیر نەکە ل داتاشراوێ گۆشێ لێک بدەی',
+        lang: 'ku_ba',
+        type: 'flashcard',
+        status: 'approved',
+        createdAt: 1700031300000
+    },
+    {
+        id: 'fc_105',
+        teacherId: 't_sara',
+        teacherName: 'م. سارا ئەحمەد',
+        grade: '12',
+        subject: 'زیندەوەر',
+        chapter: 'بەشی ١ - کۆئەندامێ بەرگریێ',
+        front: 'فرمانا خانەیێن T یێن هاریکار (Helper T cells) چیە؟',
+        back: 'چالاککرنا خانەیێن B بۆ بەرهەمئینانا دژەتەنان و چالاککرنا خانەیێن T یێن کوژەر.',
+        hint: 'سەرکردەیا بەرگریێ نە',
+        lang: 'ku_ba',
+        type: 'flashcard',
+        status: 'approved',
+        createdAt: 1700031400000
+    },
+    {
+        id: 'fc_106',
+        teacherId: 't_hevi',
+        teacherName: 'م. هێڤی زاخۆیی (English Sunrise)',
+        grade: '12',
+        subject: 'ئینگلێزی',
+        chapter: 'Sunrise 12 - Passive Voice',
+        front: 'How do we form Past Simple Passive?',
+        back: 'Subject + was / were + Past Participle (V3)\nExample: The letter was written yesterday.',
+        hint: 'was/were + V3',
+        lang: 'en',
+        type: 'flashcard',
+        status: 'approved',
+        createdAt: 1700031500000
+    }
+];
+
 // Master Storage Class
 class EducationalDataStore {
     constructor() {
@@ -1946,6 +2040,7 @@ class EducationalDataStore {
         this.STORAGE_KEY_VIDEOS = 'app_learn_videos_v5';
         this.STORAGE_KEY_QUIZZES = 'app_learn_quizzes_v5';
         this.STORAGE_KEY_MALZAMAS = 'app_learn_malzamas_v5';
+        this.STORAGE_KEY_FLASHCARDS = 'app_learn_flashcards_v5';
         this.STORAGE_KEY_CURRENT_ROLE = 'app_learn_user_role';
         this.STORAGE_KEY_CURRENT_TEACHER = 'app_learn_current_teacher';
         this.STORAGE_KEY_STUDENT_GRADES = 'app_learn_student_grades';
@@ -1985,6 +2080,7 @@ class EducationalDataStore {
         seedStorage(this.STORAGE_KEY_VIDEOS, DEFAULT_VIDEOS);
         seedStorage(this.STORAGE_KEY_QUIZZES, DEFAULT_QUIZZES);
         seedStorage(this.STORAGE_KEY_MALZAMAS, DEFAULT_MALZAMAS);
+        seedStorage(this.STORAGE_KEY_FLASHCARDS, DEFAULT_FLASHCARDS);
     }
 
     async initFirestoreSync() {
@@ -2009,9 +2105,11 @@ class EducationalDataStore {
                     const videos = items.filter(i => i.type === 'video');
                     const quizzes = items.filter(i => i.type === 'quiz');
                     const malzamas = items.filter(i => i.type === 'malzama');
+                    const flashcards = items.filter(i => i.type === 'flashcard');
                     if (videos.length) this.mergeLocalWithRemote(this.STORAGE_KEY_VIDEOS, videos);
                     if (quizzes.length) this.mergeLocalWithRemote(this.STORAGE_KEY_QUIZZES, quizzes);
                     if (malzamas.length) this.mergeLocalWithRemote(this.STORAGE_KEY_MALZAMAS, malzamas);
+                    if (flashcards.length) this.mergeLocalWithRemote(this.STORAGE_KEY_FLASHCARDS, flashcards);
                 }
             }, err => console.log('Firestore content sync note:', err.message));
         } catch (e) {
@@ -2188,6 +2286,59 @@ class EducationalDataStore {
         return false;
     }
 
+    // ==========================================
+    // TEACHER PINNING (پین کرن داکو بهێتە ئەولی)
+    // ==========================================
+    getPinnedTeacherIds() {
+        try {
+            const raw = localStorage.getItem(this.STORAGE_KEY_PINNED_TEACHERS);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed.map(String) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    isTeacherPinned(teacherId) {
+        if (!teacherId) return false;
+        return this.getPinnedTeacherIds().includes(String(teacherId));
+    }
+
+    togglePinTeacher(teacherId) {
+        if (!teacherId) return { pinned: false, pinnedIds: [] };
+        const idStr = String(teacherId);
+        let pinnedIds = this.getPinnedTeacherIds();
+        let pinned = false;
+        if (pinnedIds.includes(idStr)) {
+            pinnedIds = pinnedIds.filter(id => id !== idStr);
+            pinned = false;
+        } else {
+            pinnedIds = [idStr, ...pinnedIds.filter(id => id !== idStr)];
+            pinned = true;
+        }
+        try {
+            localStorage.setItem(this.STORAGE_KEY_PINNED_TEACHERS, JSON.stringify(pinnedIds));
+        } catch (e) {}
+        try {
+            window.dispatchEvent(new CustomEvent('teachersPinChanged', { detail: { teacherId: idStr, pinned, pinnedIds } }));
+        } catch (e) {}
+        return { pinned, pinnedIds };
+    }
+
+    sortTeachersWithPins(teachersList) {
+        const pinnedIds = this.getPinnedTeacherIds();
+        return [...(teachersList || [])].sort((a, b) => {
+            const aIdx = pinnedIds.indexOf(String(a.id));
+            const bIdx = pinnedIds.indexOf(String(b.id));
+            const aPinned = aIdx !== -1;
+            const bPinned = bIdx !== -1;
+            if (aPinned && !bPinned) return -1;
+            if (!aPinned && bPinned) return 1;
+            if (aPinned && bPinned) return aIdx - bIdx;
+            return (b.viewsCount || 0) - (a.viewsCount || 0);
+        });
+    }
+
     // Teacher Management
     getAllTeachers(filterLang = null) {
         try {
@@ -2198,7 +2349,7 @@ class EducationalDataStore {
             if (filterLang) {
                 list = list.filter(t => (t.lang || 'ku_ba') === filterLang);
             }
-            return list.sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
+            return this.sortTeachersWithPins(list);
         } catch (e) {
             return DEFAULT_TEACHERS;
         }
@@ -2337,7 +2488,7 @@ class EducationalDataStore {
     }
 
     // Get Teachers for Grade STRICTLY filtered by selected Language & Optional Subject
-    // Sorted by most watched / views descending!
+    // Pinned teachers always come FIRST, then sorted by views descending!
     getTeachersForGrade(gradeId, customLang = null, subjectKey = null) {
         const targetLang = customLang || this.getActiveLanguage();
         let allTeachers = this.getAllTeachers().filter(t => (t.lang || 'ku_ba') === targetLang && t.status !== 'pending' && t.status !== 'rejected');
@@ -2345,6 +2496,7 @@ class EducationalDataStore {
         const videos = this.getAllVideos(true, null, false, targetLang);
         const quizzes = this.getAllQuizzes(true, null, false, targetLang);
         const malzamas = this.getAllMalzamas(true, null, false, targetLang);
+        const flashcards = this.getAllFlashcards(true, null, false, targetLang);
 
         const gradeTeachersMap = new Map();
 
@@ -2371,6 +2523,7 @@ class EducationalDataStore {
         videos.forEach(checkContent);
         quizzes.forEach(checkContent);
         malzamas.forEach(checkContent);
+        flashcards.forEach(checkContent);
 
         // Fallback: If a specific subject was picked and no teachers mapped directly to this grade,
         // match ANY teacher in this language that teaches this subject
@@ -2387,8 +2540,8 @@ class EducationalDataStore {
             allTeachers.slice(0, 3).forEach(t => gradeTeachersMap.set(t.id, t));
         }
 
-        // Return sorted by student views descending
-        return Array.from(gradeTeachersMap.values()).sort((a, b) => (b.viewsCount || 0) - (a.viewsCount || 0));
+        // Return pinned teachers first, then sorted by student views descending
+        return this.sortTeachersWithPins(Array.from(gradeTeachersMap.values()));
     }
 
     // ==========================================
@@ -2485,20 +2638,22 @@ class EducationalDataStore {
         const activeLang = quizData.lang || this.getActiveLanguage();
 
         const newQuiz = {
-            id: quizData.id || 'q_' + Date.now(),
-            teacherId: quizData.teacherId,
-            teacherName: quizData.teacherName,
-            grade: String(quizData.grade),
+            id: quizData.id || ('q_' + Date.now() + '_' + Math.floor(Math.random() * 10000)),
+            teacherId: quizData.teacherId || 't_hussein',
+            teacherName: quizData.teacherName || 'ئەدمین',
+            grade: String(quizData.grade || '12'),
             subject: quizData.subject || 'کیمیا',
             chapter: quizData.chapter || '',
+            title: String(quizData.title || quizData.question || 'پرسیار').slice(0, 250),
             question: quizData.question,
             options: quizData.options,
             correctIndex: quizData.correctIndex,
             explanation: quizData.explanation || '',
+            difficulty: quizData.difficulty || 'ناوەند',
             lang: activeLang,
             type: 'quiz',
             status: isSuperAdmin ? 'approved' : (quizData.status || 'pending'),
-            createdAt: Date.now()
+            createdAt: quizData.createdAt || Date.now()
         };
 
         const existingIdx = quizzes.findIndex(q => q.id === newQuiz.id);
@@ -2516,6 +2671,7 @@ class EducationalDataStore {
                 const firestoreDb = (typeof db !== 'undefined' && db) ? db : firebase.firestore();
                 firestoreDb.collection('educational_content').doc(newQuiz.id).set({
                     ...newQuiz,
+                    title: String(newQuiz.title || newQuiz.question || 'Quiz').slice(0, 250),
                     type: 'quiz'
                 }, { merge: true }).catch(err => console.warn('Firestore quiz sync:', err));
             } catch (e) {}
@@ -2528,7 +2684,124 @@ class EducationalDataStore {
             });
         }
 
+        try {
+            window.dispatchEvent(new CustomEvent('educational-content-changed', {
+                detail: { id: newQuiz.id, type: 'quiz', status: newQuiz.status }
+            }));
+        } catch (e) {}
+
         return newQuiz;
+    }
+
+    saveQuizzesBatch(quizzesArray) {
+        if (!Array.isArray(quizzesArray) || quizzesArray.length === 0) return [];
+        const saved = [];
+        const baseTs = Date.now();
+        quizzesArray.forEach((item, idx) => {
+            if (!item || !item.question) return;
+            const res = this.saveQuiz({
+                ...item,
+                id: item.id || `q_${baseTs}_${idx}_${Math.floor(Math.random() * 1000)}`,
+                createdAt: baseTs + idx
+            });
+            saved.push(res);
+        });
+        return saved;
+    }
+
+    // ==========================================
+    // FLASHCARDS CRUD & BATCH SAVE
+    // ==========================================
+    getAllFlashcards(onlyApproved = false, teacherId = null, includeAdminPending = false, filterLang = null) {
+        try {
+            let cards = JSON.parse(localStorage.getItem(this.STORAGE_KEY_FLASHCARDS) || '[]');
+            if (filterLang) {
+                cards = cards.filter(c => (c.lang || 'ku_ba') === filterLang);
+            }
+            if (onlyApproved) {
+                cards = cards.filter(c => c.status === 'approved');
+            } else if (teacherId) {
+                cards = cards.filter(c => c.teacherId === teacherId);
+            }
+            return cards.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        } catch (e) {
+            return DEFAULT_FLASHCARDS;
+        }
+    }
+
+    saveFlashcard(cardData) {
+        const cards = JSON.parse(localStorage.getItem(this.STORAGE_KEY_FLASHCARDS) || '[]');
+        const isSuperAdmin = this.isCurrentUserSuperAdmin();
+        const activeLang = cardData.lang || this.getActiveLanguage();
+        const frontText = String(cardData.front || '').trim();
+        const backText = String(cardData.back || '').trim();
+
+        const newCard = {
+            id: cardData.id || ('fc_' + Date.now() + '_' + Math.floor(Math.random() * 10000)),
+            teacherId: cardData.teacherId || 't_hussein',
+            teacherName: cardData.teacherName || 'ئەدمین',
+            grade: String(cardData.grade || '12'),
+            subject: cardData.subject || 'کیمیا',
+            chapter: cardData.chapter || '',
+            title: String(cardData.title || frontText || 'فلاش کارت').slice(0, 250),
+            front: frontText,
+            back: backText,
+            hint: String(cardData.hint || '').trim(),
+            lang: activeLang,
+            type: 'flashcard',
+            status: isSuperAdmin ? 'approved' : (cardData.status || 'pending'),
+            createdAt: cardData.createdAt || Date.now()
+        };
+
+        const existingIdx = cards.findIndex(c => c.id === newCard.id);
+        if (existingIdx >= 0) {
+            cards[existingIdx] = newCard;
+        } else {
+            cards.unshift(newCard);
+        }
+
+        localStorage.setItem(this.STORAGE_KEY_FLASHCARDS, JSON.stringify(cards));
+
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            try {
+                const firestoreDb = (typeof db !== 'undefined' && db) ? db : firebase.firestore();
+                firestoreDb.collection('educational_content').doc(newCard.id).set({
+                    ...newCard,
+                    title: String(newCard.title || newCard.front || 'Flashcard').slice(0, 250),
+                    type: 'flashcard'
+                }, { merge: true }).catch(err => console.warn('Firestore flashcard sync:', err));
+            } catch (e) {}
+        }
+
+        if (window.GoogleDriveService && window.GoogleDriveService.getAccessToken()) {
+            window.GoogleDriveService.backupEducationalItem(newCard).catch(err => {
+                console.warn('Google Drive auto-backup error for flashcard:', err);
+            });
+        }
+
+        try {
+            window.dispatchEvent(new CustomEvent('educational-content-changed', {
+                detail: { id: newCard.id, type: 'flashcard', status: newCard.status }
+            }));
+        } catch (e) {}
+
+        return newCard;
+    }
+
+    saveFlashcardsBatch(cardsArray) {
+        if (!Array.isArray(cardsArray) || cardsArray.length === 0) return [];
+        const saved = [];
+        const baseTs = Date.now();
+        cardsArray.forEach((item, idx) => {
+            if (!item || !item.front || !item.back) return;
+            const res = this.saveFlashcard({
+                ...item,
+                id: item.id || `fc_${baseTs}_${idx}_${Math.floor(Math.random() * 1000)}`,
+                createdAt: baseTs + idx
+            });
+            saved.push(res);
+        });
+        return saved;
     }
 
     getAllMalzamas(onlyApproved = false, teacherId = null, includeAdminPending = false, filterLang = null) {
@@ -2658,6 +2931,7 @@ class EducationalDataStore {
         if (type === 'video') storageKey = this.STORAGE_KEY_VIDEOS;
         else if (type === 'quiz') storageKey = this.STORAGE_KEY_QUIZZES;
         else if (type === 'malzama') storageKey = this.STORAGE_KEY_MALZAMAS;
+        else if (type === 'flashcard') storageKey = this.STORAGE_KEY_FLASHCARDS;
 
         if (!storageKey) return false;
 
@@ -2669,6 +2943,11 @@ class EducationalDataStore {
             if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
                 firebase.firestore().collection('educational_content').doc(id).delete().catch(() => {});
             }
+            try {
+                window.dispatchEvent(new CustomEvent('educational-content-changed', {
+                    detail: { id, type, status: 'deleted' }
+                }));
+            } catch (e) {}
             return true;
         } catch (e) {
             return false;
@@ -2683,6 +2962,7 @@ class EducationalDataStore {
         const vids = this.getAllVideos(false, null, true);
         const qzs = this.getAllQuizzes(false, null, true);
         const mlzs = this.getAllMalzamas(false, null, true);
+        const fcs = this.getAllFlashcards(false, null, true);
         let count = 0;
         for (const v of vids) {
             try {
@@ -2702,12 +2982,15 @@ class EducationalDataStore {
                 count++;
             } catch (e) { console.warn(e); }
         }
+        for (const fc of fcs) {
+            try {
+                await window.GoogleDriveService.backupEducationalItem(fc);
+                count++;
+            } catch (e) { console.warn(e); }
+        }
         return count;
     }
 
-    // ==========================================
-    // ADMIN APPROVAL WORKFLOW
-    // ==========================================
     // ==========================================
     // ADMIN APPROVAL WORKFLOW
     // ==========================================
@@ -2721,11 +3004,15 @@ class EducationalDataStore {
         const malzamas = JSON.parse(localStorage.getItem(this.STORAGE_KEY_MALZAMAS) || '[]')
             .filter(m => m.status === 'pending')
             .map(m => ({ ...m, type: 'malzama' }));
+        const flashcards = JSON.parse(localStorage.getItem(this.STORAGE_KEY_FLASHCARDS) || '[]')
+            .filter(c => c.status === 'pending')
+            .map(c => ({ ...c, type: 'flashcard' }));
 
-        const allPending = [...videos, ...quizzes, ...malzamas].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        const allPending = [...videos, ...quizzes, ...malzamas, ...flashcards].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         allPending.videos = videos;
         allPending.quizzes = quizzes;
         allPending.malzamas = malzamas;
+        allPending.flashcards = flashcards;
         allPending.totalPending = allPending.length;
         return allPending;
     }
@@ -2740,6 +3027,7 @@ class EducationalDataStore {
         if (type === 'video') storageKey = this.STORAGE_KEY_VIDEOS;
         else if (type === 'quiz') storageKey = this.STORAGE_KEY_QUIZZES;
         else if (type === 'malzama') storageKey = this.STORAGE_KEY_MALZAMAS;
+        else if (type === 'flashcard') storageKey = this.STORAGE_KEY_FLASHCARDS;
 
         if (!storageKey) return false;
 
@@ -2782,6 +3070,7 @@ class EducationalDataStore {
         if (type === 'video') storageKey = this.STORAGE_KEY_VIDEOS;
         else if (type === 'quiz') storageKey = this.STORAGE_KEY_QUIZZES;
         else if (type === 'malzama') storageKey = this.STORAGE_KEY_MALZAMAS;
+        else if (type === 'flashcard') storageKey = this.STORAGE_KEY_FLASHCARDS;
 
         if (!storageKey) return false;
 
@@ -2833,6 +3122,10 @@ class EducationalDataStore {
         return this.saveMalzama(malzamaData);
     }
 
+    submitFlashcard(cardData) {
+        return this.saveFlashcard(cardData);
+    }
+
     getYoutubeId(url) {
         if (!url) return '';
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -2877,6 +3170,376 @@ class EducationalDataStore {
         }).sort((a, b) => b.minScoreGeneral - a.minScoreGeneral);
     }
 }
+
+// =========================================================================
+// CODE / FILE CONVERTER FOR FLASHCARDS & QUIZZES (JSON / JS / HTML / CSV / TXT)
+// =========================================================================
+window.StudyCodeParser = {
+    extractBalancedJsonBlocks(text) {
+        const blocks = [];
+        const src = String(text || '');
+        for (let i = 0; i < src.length; i++) {
+            const ch = src[i];
+            if (ch !== '[' && ch !== '{') continue;
+            const closeCh = ch === '[' ? ']' : '}';
+            let depth = 0;
+            let inStr = false;
+            let quote = '';
+            let escaped = false;
+            for (let j = i; j < src.length; j++) {
+                const c = src[j];
+                if (inStr) {
+                    if (escaped) escaped = false;
+                    else if (c === '\\') escaped = true;
+                    else if (c === quote) inStr = false;
+                } else {
+                    if (c === '"' || c === "'" || c === '`') {
+                        inStr = true;
+                        quote = c;
+                    } else if (c === ch) {
+                        depth++;
+                    } else if (c === closeCh) {
+                        depth--;
+                        if (depth === 0) {
+                            const candidate = src.slice(i, j + 1);
+                            if (candidate.length >= 12) blocks.push(candidate);
+                            i = j;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return blocks;
+    },
+
+    tryEvalOrJsonParse(block) {
+        try {
+            return JSON.parse(block);
+        } catch (_) {}
+        try {
+            const cleaned = block
+                .replace(/\/\/[^\n\r]*/g, '')
+                .replace(/\/\*[\s\S]*?\*\//g, '');
+            const fn = new Function('"use strict"; return (' + cleaned + ');');
+            return fn();
+        } catch (_) {
+            return null;
+        }
+    },
+
+    collectCandidateArrays(root) {
+        const arrays = [];
+        if (!root) return arrays;
+        if (Array.isArray(root)) arrays.push(root);
+        else if (typeof root === 'object') {
+            ['flashcards', 'cards', 'items', 'questions', 'quizzes', 'quiz', 'data', 'deck', 'list'].forEach(k => {
+                if (Array.isArray(root[k])) arrays.push(root[k]);
+            });
+            Object.values(root).forEach(v => {
+                if (Array.isArray(v)) arrays.push(v);
+            });
+        }
+        return arrays;
+    },
+
+    normalizeFlashcardObj(obj, defaultChapter = '') {
+        if (!obj || typeof obj !== 'object') return null;
+        const front = String(
+            obj.front ?? obj.question ?? obj.term ?? obj.q ?? obj.prompt ?? obj.title ?? obj.word ?? obj.concept ?? ''
+        ).trim();
+        const back = String(
+            obj.back ?? obj.answer ?? obj.definition ?? obj.a ?? obj.meaning ?? obj.explanation ?? obj.translation ?? obj.solution ?? ''
+        ).trim();
+        if (!front || !back) return null;
+        const hint = String(obj.hint ?? obj.clue ?? obj.tip ?? obj.note ?? '').trim();
+        const chapter = String(obj.chapter ?? obj.unit ?? obj.topic ?? defaultChapter ?? '').trim();
+        return { front, back, hint, chapter };
+    },
+
+    normalizeQuizObj(obj, defaultChapter = '') {
+        if (!obj || typeof obj !== 'object') return null;
+        const question = String(obj.question ?? obj.q ?? obj.prompt ?? obj.title ?? obj.text ?? '').trim();
+        let options = obj.options ?? obj.choices ?? obj.answers ?? obj.variants ?? obj.opts;
+        if (!Array.isArray(options) && (obj.a || obj.A || obj.optionA)) {
+            options = [obj.a ?? obj.A ?? obj.optionA, obj.b ?? obj.B ?? obj.optionB, obj.c ?? obj.C ?? obj.optionC, obj.d ?? obj.D ?? obj.optionD].filter(Boolean);
+        }
+        if (!question || !Array.isArray(options) || options.length < 2) return null;
+        const cleanOpts = options.map(o => String(o ?? '').trim()).filter(Boolean).slice(0, 4);
+        if (cleanOpts.length < 2) return null;
+        while (cleanOpts.length < 4) cleanOpts.push(`بژاردە ${cleanOpts.length + 1}`);
+
+        let correctIndex = 0;
+        if (typeof obj.correctIndex === 'number') correctIndex = obj.correctIndex;
+        else if (typeof obj.correct_index === 'number') correctIndex = obj.correct_index;
+        else if (typeof obj.answerIndex === 'number') correctIndex = obj.answerIndex;
+        else if (typeof obj.correct === 'number') correctIndex = obj.correct;
+        else if (typeof obj.answer === 'number') correctIndex = obj.answer;
+        else {
+            const ansStr = String(obj.correct ?? obj.answer ?? obj.correctAnswer ?? '').trim();
+            const upper = ansStr.toUpperCase();
+            if (['A', 'B', 'C', 'D'].includes(upper)) correctIndex = ['A', 'B', 'C', 'D'].indexOf(upper);
+            else if (['1', '2', '3', '4'].includes(ansStr)) correctIndex = Number(ansStr) - 1;
+            else if (ansStr) {
+                const matchIdx = cleanOpts.findIndex(o => o.toLowerCase() === ansStr.toLowerCase());
+                if (matchIdx >= 0) correctIndex = matchIdx;
+            }
+        }
+        if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= cleanOpts.length) correctIndex = 0;
+
+        return {
+            question,
+            options: cleanOpts,
+            correctIndex,
+            explanation: String(obj.explanation ?? obj.reason ?? obj.hint ?? obj.feedback ?? '').trim(),
+            chapter: String(obj.chapter ?? obj.unit ?? obj.topic ?? defaultChapter ?? '').trim(),
+            difficulty: String(obj.difficulty ?? 'ناوەند').trim()
+        };
+    },
+
+    parseHtmlDomFlashcards(rawHtml, defaultChapter = '') {
+        if (!rawHtml || !rawHtml.includes('<')) return [];
+        try {
+            const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+            const out = [];
+
+            // 1. Definition lists <dt> / <dd>
+            const dts = doc.querySelectorAll('dt');
+            dts.forEach(dt => {
+                const dd = dt.nextElementSibling;
+                if (dd && dd.tagName.toLowerCase() === 'dd') {
+                    const front = dt.textContent.trim();
+                    const back = dd.textContent.trim();
+                    if (front && back) out.push({ front, back, hint: '', chapter: defaultChapter });
+                }
+            });
+
+            // 2. Cards with data-front / data-back or .flashcard / .card
+            doc.querySelectorAll('[data-front][data-back]').forEach(el => {
+                const front = el.getAttribute('data-front')?.trim() || '';
+                const back = el.getAttribute('data-back')?.trim() || '';
+                const hint = el.getAttribute('data-hint')?.trim() || '';
+                if (front && back) out.push({ front, back, hint, chapter: defaultChapter });
+            });
+
+            if (out.length === 0) {
+                doc.querySelectorAll('.flashcard, .flip-card, .card, .study-card').forEach(card => {
+                    const fEl = card.querySelector('.front, .flashcard-front, .card-front, .question, .term, h3, h4');
+                    const bEl = card.querySelector('.back, .flashcard-back, .card-back, .answer, .definition, p');
+                    const front = fEl ? fEl.textContent.trim() : '';
+                    const back = bEl && bEl !== fEl ? bEl.textContent.trim() : '';
+                    if (front && back) out.push({ front, back, hint: '', chapter: defaultChapter });
+                });
+            }
+
+            // 3. Table rows <tr><td>front</td><td>back</td></tr>
+            if (out.length === 0) {
+                doc.querySelectorAll('tr').forEach(tr => {
+                    const cells = tr.querySelectorAll('td');
+                    if (cells.length >= 2) {
+                        const front = cells[0].textContent.trim();
+                        const back = cells[1].textContent.trim();
+                        const hint = cells[2] ? cells[2].textContent.trim() : '';
+                        if (front && back) out.push({ front, back, hint, chapter: defaultChapter });
+                    }
+                });
+            }
+            return out;
+        } catch (_) {
+            return [];
+        }
+    },
+
+    parseCodeToFlashcards(rawText, defaultChapter = '') {
+        const text = String(rawText || '').trim();
+        if (!text) return [];
+        const results = [];
+        const seen = new Set();
+        const pushCard = (c) => {
+            if (!c || !c.front || !c.back) return;
+            const key = c.front + '||' + c.back;
+            if (seen.has(key)) return;
+            seen.add(key);
+            results.push(c);
+        };
+
+        // 1. JSON / JS object or array extraction
+        const trimmed = text.replace(/^```[a-zA-Z]*\s*/m, '').replace(/```\s*$/m, '').trim();
+        const directParsed = this.tryEvalOrJsonParse(trimmed);
+        if (directParsed) {
+            this.collectCandidateArrays(directParsed).forEach(arr => {
+                arr.forEach(item => pushCard(this.normalizeFlashcardObj(item, defaultChapter)));
+            });
+        }
+
+        if (results.length === 0) {
+            const blocks = this.extractBalancedJsonBlocks(text);
+            blocks.forEach(b => {
+                const parsed = this.tryEvalOrJsonParse(b);
+                if (parsed) {
+                    this.collectCandidateArrays(parsed).forEach(arr => {
+                        arr.forEach(item => pushCard(this.normalizeFlashcardObj(item, defaultChapter)));
+                    });
+                }
+            });
+        }
+
+        // 2. HTML DOM parsing
+        if (results.length === 0 && text.includes('<')) {
+            this.parseHtmlDomFlashcards(text, defaultChapter).forEach(pushCard);
+        }
+
+        // 3. Q: / A: blocks
+        if (results.length === 0) {
+            const qaBlocks = text.split(/\n\s*\n/);
+            qaBlocks.forEach(blk => {
+                const qMatch = blk.match(/^(?:Q|پ|پرسیار|Front|Term)\s*[:：\-]\s*(.+)$/im);
+                const aMatch = blk.match(/^(?:A|و|وەڵام|بەرسڤ|Back|Def(?:inition)?)\s*[:：\-]\s*(.+)$/im);
+                if (qMatch && aMatch) {
+                    const hMatch = blk.match(/^(?:Hint|تێبینی|Clue)\s*[:：\-]\s*(.+)$/im);
+                    pushCard({
+                        front: qMatch[1].trim(),
+                        back: aMatch[1].trim(),
+                        hint: hMatch ? hMatch[1].trim() : '',
+                        chapter: defaultChapter
+                    });
+                }
+            });
+        }
+
+        // 4. CSV / TSV / Pipe / Double-colon delimited lines
+        if (results.length === 0) {
+            const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            lines.forEach((line, idx) => {
+                if (line.startsWith('<') || line.startsWith('//') || line.startsWith('#')) return;
+                let parts = null;
+                if (line.includes('::')) parts = line.split('::');
+                else if (line.includes('|')) parts = line.split('|');
+                else if (line.includes('->')) parts = line.split('->');
+                else if (line.includes('\t')) parts = line.split('\t');
+                else if (line.includes(',') && line.split(',').length <= 4) parts = line.split(',');
+                if (parts && parts.length >= 2) {
+                    const f = parts[0].replace(/^["']|["']$/g, '').trim();
+                    const b = parts[1].replace(/^["']|["']$/g, '').trim();
+                    const h = (parts[2] || '').replace(/^["']|["']$/g, '').trim();
+                    if (idx === 0 && /^(front|question|term|پرسیار)$/i.test(f)) return;
+                    if (f && b) pushCard({ front: f, back: b, hint: h, chapter: defaultChapter });
+                }
+            });
+        }
+
+        return results;
+    },
+
+    parseCodeToQuizzes(rawText, defaultChapter = '') {
+        const text = String(rawText || '').trim();
+        if (!text) return [];
+        const results = [];
+        const seen = new Set();
+        const pushQuiz = (q) => {
+            if (!q || !q.question || !Array.isArray(q.options) || q.options.length < 2) return;
+            if (seen.has(q.question)) return;
+            seen.add(q.question);
+            results.push(q);
+        };
+
+        // 1. JSON / JS array extraction
+        const trimmed = text.replace(/^```[a-zA-Z]*\s*/m, '').replace(/```\s*$/m, '').trim();
+        const directParsed = this.tryEvalOrJsonParse(trimmed);
+        if (directParsed) {
+            this.collectCandidateArrays(directParsed).forEach(arr => {
+                arr.forEach(item => pushQuiz(this.normalizeQuizObj(item, defaultChapter)));
+            });
+        }
+
+        if (results.length === 0) {
+            const blocks = this.extractBalancedJsonBlocks(text);
+            blocks.forEach(b => {
+                const parsed = this.tryEvalOrJsonParse(b);
+                if (parsed) {
+                    this.collectCandidateArrays(parsed).forEach(arr => {
+                        arr.forEach(item => pushQuiz(this.normalizeQuizObj(item, defaultChapter)));
+                    });
+                }
+            });
+        }
+
+        // 2. HTML DOM quizzes (.quiz-item / .question-block / [data-question])
+        if (results.length === 0 && text.includes('<')) {
+            try {
+                const doc = new DOMParser().parseFromString(text, 'text/html');
+                doc.querySelectorAll('.quiz-item, .question-card, .question-block, [data-question]').forEach(el => {
+                    const qText =
+                        el.getAttribute('data-question') ||
+                        (el.querySelector('.question-text, .question, h3, h4, p')?.textContent || '');
+                    const optEls = el.querySelectorAll('.option, .choice, li, button[data-option]');
+                    const opts = Array.from(optEls).map(o => o.textContent.trim()).filter(Boolean).slice(0, 4);
+                    if (qText.trim() && opts.length >= 2) {
+                        const ansAttr = el.getAttribute('data-correct') ?? el.getAttribute('data-answer') ?? '0';
+                        let idx = Number(ansAttr);
+                        if (!Number.isInteger(idx) || idx < 0 || idx >= opts.length) idx = 0;
+                        while (opts.length < 4) opts.push(`بژاردە ${opts.length + 1}`);
+                        pushQuiz({
+                            question: qText.trim(),
+                            options: opts,
+                            correctIndex: idx,
+                            explanation: el.getAttribute('data-explanation') || '',
+                            chapter: defaultChapter,
+                            difficulty: 'ناوەند'
+                        });
+                    }
+                });
+            } catch (_) {}
+        }
+
+        // 3. Text quiz blocks (1. Question \n A) ... B) ... C) ... D) ... Answer: B)
+        if (results.length === 0) {
+            const chunks = text.split(/(?=^\s*(?:\d+[\.\)]|Q\d*[:\.]))/m).filter(c => c.trim());
+            chunks.forEach(chunk => {
+                const lines = chunk.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                if (lines.length < 3) return;
+                const qLine = lines[0].replace(/^\s*(?:\d+[\.\)]|Q\d*[:\.])\s*/i, '').trim();
+                const opts = [];
+                let correctIndex = 0;
+                let explanation = '';
+                lines.slice(1).forEach(line => {
+                    const optMatch = line.match(/^([A-Da-d1-4أ-د])[\)\.\:\-]\s*(.+)$/);
+                    if (optMatch && opts.length < 4) {
+                        let optText = optMatch[2].trim();
+                        if (optText.includes('*') || optText.includes('✓')) {
+                            correctIndex = opts.length;
+                            optText = optText.replace(/[\*✓]/g, '').trim();
+                        }
+                        opts.push(optText);
+                    } else {
+                        const ansMatch = line.match(/^(?:Answer|Correct|Ans|وەڵام|بەرسڤ)\s*[:：\-]\s*([A-Da-d1-4])/i);
+                        if (ansMatch) {
+                            const tok = ansMatch[1].toUpperCase();
+                            if (['A', 'B', 'C', 'D'].includes(tok)) correctIndex = ['A', 'B', 'C', 'D'].indexOf(tok);
+                            else if (['1', '2', '3', '4'].includes(tok)) correctIndex = Number(tok) - 1;
+                        }
+                        const expMatch = line.match(/^(?:Explanation|ڕوونکردنەوە|شەرح)\s*[:：\-]\s*(.+)$/i);
+                        if (expMatch) explanation = expMatch[1].trim();
+                    }
+                });
+                if (qLine && opts.length >= 2) {
+                    while (opts.length < 4) opts.push(`بژاردە ${opts.length + 1}`);
+                    if (correctIndex < 0 || correctIndex >= 4) correctIndex = 0;
+                    pushQuiz({
+                        question: qLine,
+                        options: opts,
+                        correctIndex,
+                        explanation,
+                        chapter: defaultChapter,
+                        difficulty: 'ناوەند'
+                    });
+                }
+            });
+        }
+
+        return results;
+    }
+};
 
 // Global Singleton Export
 window.CURRICULUM_SUBJECTS = CURRICULUM_SUBJECTS;

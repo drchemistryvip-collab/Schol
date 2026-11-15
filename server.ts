@@ -528,6 +528,213 @@ Return STRICT JSON complying with the requested schema. No markdown formatting o
   });
 
   // =========================================================================
+  // GEMINI STUDY STUDIO (FLASHCARDS & MCQS - AI GENERATE OR CODE CONVERSION)
+  // =========================================================================
+  app.post('/api/gemini/generate-study-items', async (req, res) => {
+    try {
+      const ai = getServerAiClient(req.headers);
+      const {
+        mode = 'flashcards', // 'flashcards' | 'quizzes'
+        action = 'generate', // 'generate' | 'convert_code'
+        subject = 'کیمیا',
+        grade = '12',
+        chapter = 'بەشی ١',
+        lang = 'ku_ba',
+        count = 10,
+        topicNotes = '',
+        sourceCode = '',
+        fileData = '',
+        fileType = '',
+        fileName = ''
+      } = req.body || {};
+
+      const targetMode = mode === 'quizzes' ? 'quizzes' : 'flashcards';
+      const targetAction = action === 'convert_code' ? 'convert_code' : 'generate';
+      const numItems = Math.min(Math.max(Number(count) || 10, 1), 60);
+      const dialectName =
+        lang === 'ku_so'
+          ? 'Kurdish Sorani (کوردی سۆرانی)'
+          : lang === 'ar'
+          ? 'Arabic (العربية)'
+          : lang === 'en'
+          ? 'English'
+          : 'Kurdish Badini (کوردی بادینی / بهديني)';
+
+      const promptParts: any[] = [];
+
+      if (fileData && typeof fileData === 'string') {
+        const detectedMime = fileType || (fileData.match(/^data:([^;]+);base64,/)?.[1] || '');
+        if (detectedMime && (detectedMime.startsWith('image/') || detectedMime === 'application/pdf')) {
+          const cleanBase64 = fileData.replace(/^data:[^;]+;base64,/, '');
+          if (cleanBase64) {
+            promptParts.push({
+              inlineData: {
+                mimeType: detectedMime,
+                data: cleanBase64
+              }
+            });
+          }
+        }
+      }
+
+      const trimmedCode = String(sourceCode || '').slice(0, 120000);
+      if (targetAction === 'convert_code' && !trimmedCode && promptParts.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'تکایە کۆد یان فایلێ بنڤیسە بۆ گۆڕینێ'
+        });
+      }
+
+      const taskInstruction =
+        targetAction === 'convert_code'
+          ? `Analyze and extract/convert ALL educational items found inside the provided code/file (${fileName || 'uploaded code'}) into clean ${
+              targetMode === 'flashcards' ? 'flashcards (front, back, hint, chapter)' : 'multiple-choice questions (4 options, correctIndex, explanation, chapter, difficulty)'
+            }. Preserve the exact scientific/educational accuracy and convert into ${dialectName} if text is mixed or preserve the original ${dialectName} terms cleanly. If the code contains an interactive quiz/flashcard script, HTML DOM cards, JS arrays, JSON objects, or notes, extract every item (up to ${Math.max(numItems, 50)} items).`
+          : `Create ${numItems} high-yield, exam-focused ${
+              targetMode === 'flashcards'
+                ? 'study flashcards (front question/term/concept, back concise accurate answer/formula/definition, optional short memory hint, chapter)'
+                : 'multiple-choice questions with 4 distinct choices, 0-based correctIndex (0..3), and a clear explanation'
+            } for Kurdistan KRG curriculum in ${dialectName}.`;
+
+      const promptText = `
+You are an expert curriculum designer for Kurdistan schools.
+Context:
+- Grade: ${grade}
+- Subject: ${subject}
+- Chapter: ${chapter || 'وانەیا سەرەکی'}
+- Target Language: ${dialectName}
+- Requested Output Mode: ${targetMode}
+
+${topicNotes ? `Teacher/Admin Notes or Study Content:\n"""\n${String(topicNotes).slice(0, 30000)}\n"""\n` : ''}
+${trimmedCode ? `Source Code / File Content to Convert (${fileName || 'code'}):\n\`\`\`\n${trimmedCode}\n\`\`\`\n` : ''}
+
+Task:
+${taskInstruction}
+
+Return STRICT JSON matching the schema. Do not include markdown fences.
+`;
+
+      promptParts.push({ text: promptText });
+
+      const responseSchema =
+        targetMode === 'flashcards'
+          ? {
+              type: Type.OBJECT,
+              properties: {
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      front: { type: Type.STRING },
+                      back: { type: Type.STRING },
+                      hint: { type: Type.STRING },
+                      chapter: { type: Type.STRING }
+                    },
+                    required: ['front', 'back']
+                  }
+                }
+              },
+              required: ['items']
+            }
+          : {
+              type: Type.OBJECT,
+              properties: {
+                items: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      question: { type: Type.STRING },
+                      options: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                      },
+                      correctIndex: { type: Type.INTEGER },
+                      explanation: { type: Type.STRING },
+                      chapter: { type: Type.STRING },
+                      difficulty: { type: Type.STRING }
+                    },
+                    required: ['question', 'options', 'correctIndex', 'explanation']
+                  }
+                }
+              },
+              required: ['items']
+            };
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-4-hydrogen',
+        contents: { parts: promptParts },
+        config: {
+          systemInstruction:
+            targetMode === 'flashcards'
+              ? 'You extract and create accurate, concise study flashcards as strict JSON.'
+              : 'You extract and create accurate 4-option multiple-choice questions as strict JSON.',
+          responseMimeType: 'application/json',
+          responseSchema
+        }
+      });
+
+      const rawText = (response.text || '{}')
+        .replace(/^```json\s*/i, '')
+        .replace(/```\s*$/, '')
+        .trim();
+
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(rawText);
+      } catch (e) {
+        console.error('Failed to parse study-items JSON:', e, rawText);
+        throw new Error('Gemini output could not be parsed as JSON');
+      }
+
+      const rawItems = Array.isArray(parsed.items) ? parsed.items : [];
+      const items =
+        targetMode === 'flashcards'
+          ? rawItems
+              .map((it: any) => ({
+                front: String(it?.front || '').trim(),
+                back: String(it?.back || '').trim(),
+                hint: String(it?.hint || '').trim(),
+                chapter: String(it?.chapter || chapter || '').trim()
+              }))
+              .filter((it: any) => it.front && it.back)
+          : rawItems
+              .map((it: any) => {
+                const opts = Array.isArray(it?.options)
+                  ? it.options.map((o: any) => String(o ?? '').trim()).filter(Boolean).slice(0, 4)
+                  : [];
+                while (opts.length < 4) opts.push(`بژاردە ${opts.length + 1}`);
+                const idxRaw = Number(it?.correctIndex);
+                const correctIndex = Number.isInteger(idxRaw) && idxRaw >= 0 && idxRaw < 4 ? idxRaw : 0;
+                return {
+                  question: String(it?.question || '').trim(),
+                  options: opts,
+                  correctIndex,
+                  explanation: String(it?.explanation || '').trim(),
+                  chapter: String(it?.chapter || chapter || '').trim(),
+                  difficulty: String(it?.difficulty || 'ناوەند').trim()
+                };
+              })
+              .filter((it: any) => it.question && it.options.length >= 2);
+
+      res.json({
+        success: true,
+        mode: targetMode,
+        action: targetAction,
+        items
+      });
+    } catch (err: any) {
+      console.error('Error in /api/gemini/generate-study-items:', err);
+      const status = typeof err?.status === 'number' ? err.status : 500;
+      res.status(status >= 400 && status < 600 ? status : 500).json({
+        success: false,
+        error: err?.message || 'Error occurred while contacting Gemini API'
+      });
+    }
+  });
+
+  // =========================================================================
   // COMMUNITY POSTS, MODERATION, COMMENTS & IMAGE PERMISSIONS API
   // =========================================================================
   if (!fs.existsSync(COMMUNITY_UPLOADS_DIR)) {

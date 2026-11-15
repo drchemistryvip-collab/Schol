@@ -209,11 +209,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const allMlzs = dataStore.getAllMalzamas(false, currentTeacher.id, isSuperAdmin);
         const myMlzs = allMlzs.filter(m => m.teacherId === currentTeacher.id);
 
+        const allFcs = typeof dataStore.getAllFlashcards === 'function'
+            ? dataStore.getAllFlashcards(false, currentTeacher.id, isSuperAdmin)
+            : [];
+        const myFcs = allFcs.filter(c => c.teacherId === currentTeacher.id);
+
         statViews.textContent = (currentTeacher.viewsCount || 0).toLocaleString();
         statVideos.textContent = myVids.length;
         statQuizzes.textContent = myQzs.length;
         statMalzamas.textContent = myMlzs.length;
-        totalMyItems.textContent = myVids.length + myQzs.length + myMlzs.length;
+        totalMyItems.textContent = myVids.length + myQzs.length + myMlzs.length + myFcs.length;
 
         renderMySubmissions();
     }
@@ -876,8 +881,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const vids = dataStore.getAllVideos(false, currentTeacher.id, isAdmin).filter(v => v.teacherId === currentTeacher.id).map(v => ({ ...v, type: 'video' }));
         const qzs = dataStore.getAllQuizzes(false, currentTeacher.id, isAdmin).filter(q => q.teacherId === currentTeacher.id).map(q => ({ ...q, type: 'quiz' }));
         const mlzs = dataStore.getAllMalzamas(false, currentTeacher.id, isAdmin).filter(m => m.teacherId === currentTeacher.id).map(m => ({ ...m, type: 'malzama' }));
+        const fcs = (typeof dataStore.getAllFlashcards === 'function' ? dataStore.getAllFlashcards(false, currentTeacher.id, isAdmin) : [])
+            .filter(c => c.teacherId === currentTeacher.id)
+            .map(c => ({ ...c, type: 'flashcard' }));
 
-        let items = [...vids, ...qzs, ...mlzs].sort((a, b) => b.createdAt - a.createdAt);
+        let items = [...vids, ...qzs, ...mlzs, ...fcs].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
         if (currentFilter !== 'all') {
             items = items.filter(i => i.status === currentFilter);
@@ -911,6 +919,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 typeIcon = 'fa-question-circle';
                 typeName = 'پرسیار';
                 itemDetails = `<strong>${item.question}</strong>`;
+            } else if (item.type === 'flashcard') {
+                typeIcon = 'fa-clone';
+                typeName = 'فلاش کارت';
+                itemDetails = `<strong>${item.front || ''}</strong> — ${item.back || ''}`;
             } else {
                 typeName = item.fileType ? item.fileType.toUpperCase() : 'مەلزەمە';
                 typeIcon = item.fileType === 'pptx' ? 'fa-file-powerpoint' : (item.fileType === 'html' ? 'fa-file-code' : (item.fileType === 'image' ? 'fa-file-image' : 'fa-file-pdf'));
@@ -2135,6 +2147,401 @@ document.addEventListener('DOMContentLoaded', function () {
             updateDriveAuthUI(state);
         });
     }
+
+    // ==========================================
+    // 9. TEACHER FLASHCARDS & SMART QUIZ STUDIO (AI + CODE CONVERTER)
+    // ==========================================
+    function initTeacherStudyTools() {
+        const usableGrades = (gradesConfig || []).filter(g => g.id !== 'univ');
+        const fcGradeEl = document.getElementById('fc-grade');
+        const fcSubjectEl = document.getElementById('fc-subject');
+        const fcLangEl = document.getElementById('fc-lang');
+        const fcChapterEl = document.getElementById('fc-chapter');
+        if (fcGradeEl) {
+            fcGradeEl.innerHTML = usableGrades.map(g => `<option value="${g.id}" ${g.id === '12' ? 'selected' : ''}>${g.name}</option>`).join('');
+        }
+
+        function escHtml(s) {
+            return String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function setInlineStatus(el, msg, kind = 'info') {
+            if (!el) return;
+            el.style.display = 'block';
+            el.textContent = msg;
+            if (kind === 'error') {
+                el.style.background = 'rgba(239,68,68,0.14)';
+                el.style.color = '#ef4444';
+                el.style.border = '1px solid rgba(239,68,68,0.35)';
+            } else if (kind === 'success') {
+                el.style.background = 'rgba(16,185,129,0.14)';
+                el.style.color = '#10b981';
+                el.style.border = '1px solid rgba(16,185,129,0.35)';
+            } else {
+                el.style.background = 'rgba(14,165,233,0.12)';
+                el.style.color = '#0ea5e9';
+                el.style.border = '1px solid rgba(14,165,233,0.3)';
+            }
+        }
+
+        // --- A. Teacher Flashcards Studio ---
+        let fcDrafts = [];
+        let fcCodeFileName = '';
+        const fcStatusEl = document.getElementById('fc-studio-status');
+        const fcPreviewWrap = document.getElementById('fc-studio-preview-wrap');
+        const fcPreviewList = document.getElementById('fc-studio-preview');
+        const fcCountEl = document.getElementById('fc-studio-count');
+        const fcCodeFile = document.getElementById('fc-code-file');
+        const fcCodeInput = document.getElementById('fc-code-input');
+        const fcAiNotes = document.getElementById('fc-ai-notes');
+        const fcAiCount = document.getElementById('fc-ai-count');
+        const fcAiGenBtn = document.getElementById('fc-ai-generate-btn');
+        const fcCodeParseBtn = document.getElementById('fc-code-parse-btn');
+        const fcCodeAiBtn = document.getElementById('fc-code-ai-btn');
+        const fcSubmitBatchBtn = document.getElementById('fc-studio-submit-btn');
+        const addFlashcardForm = document.getElementById('add-flashcard-form');
+
+        function renderFcDrafts() {
+            if (!fcPreviewWrap || !fcPreviewList || !fcCountEl) return;
+            fcPreviewWrap.style.display = fcDrafts.length > 0 ? 'block' : 'none';
+            fcCountEl.textContent = `${fcDrafts.length} فلاش کارت ئامادە نە`;
+            fcPreviewList.innerHTML = fcDrafts.map((c, idx) => `
+                <div style="padding:10px; border:1px solid var(--border-color); border-radius:10px; background:var(--bg-color); display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="font-size:0.82rem; color:#0ea5e9;">#${idx + 1}</strong>
+                        <button type="button" class="btn-cancel td-fc-del-btn" data-idx="${idx}" style="padding:2px 9px; font-size:0.75rem; color:#ef4444;">ژێبرن</button>
+                    </div>
+                    <input type="text" class="td-fc-front" data-idx="${idx}" value="${escHtml(c.front)}" placeholder="ڕووێ پێشێ" style="padding:7px; border-radius:7px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;">
+                    <input type="text" class="td-fc-back" data-idx="${idx}" value="${escHtml(c.back)}" placeholder="ڕووێ پشتێ" style="padding:7px; border-radius:7px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;">
+                </div>
+            `).join('');
+
+            fcPreviewList.querySelectorAll('.td-fc-front').forEach(el => {
+                el.addEventListener('input', () => {
+                    const i = Number(el.getAttribute('data-idx'));
+                    if (fcDrafts[i]) fcDrafts[i].front = el.value;
+                });
+            });
+            fcPreviewList.querySelectorAll('.td-fc-back').forEach(el => {
+                el.addEventListener('input', () => {
+                    const i = Number(el.getAttribute('data-idx'));
+                    if (fcDrafts[i]) fcDrafts[i].back = el.value;
+                });
+            });
+            fcPreviewList.querySelectorAll('.td-fc-del-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    fcDrafts.splice(Number(btn.getAttribute('data-idx')), 1);
+                    renderFcDrafts();
+                });
+            });
+        }
+
+        if (fcCodeFile) {
+            fcCodeFile.addEventListener('change', () => {
+                const file = fcCodeFile.files && fcCodeFile.files[0];
+                if (!file) return;
+                fcCodeFileName = file.name;
+                const r = new FileReader();
+                r.onload = () => {
+                    if (fcCodeInput) fcCodeInput.value = String(r.result || '');
+                    setInlineStatus(fcStatusEl, `فایلێ (${file.name}) هاتە خوێندن. نوکە بگۆڕە!`, 'info');
+                };
+                r.readAsText(file, 'utf-8');
+            });
+        }
+
+        async function runFcAi(actionType, triggerBtn) {
+            const orig = triggerBtn ? triggerBtn.innerHTML : '';
+            if (triggerBtn) {
+                triggerBtn.disabled = true;
+                triggerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> چاڤەڕێ بە...';
+            }
+            try {
+                setInlineStatus(fcStatusEl, 'AI دکاردا یە بۆ چێکرنا فلاش کارتان...', 'info');
+                const resp = await fetch('/api/gemini/generate-study-items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: 'flashcards',
+                        action: actionType,
+                        grade: fcGradeEl ? fcGradeEl.value : '12',
+                        subject: fcSubjectEl ? fcSubjectEl.value : (currentTeacher.subject || 'کیمیا'),
+                        chapter: fcChapterEl ? fcChapterEl.value.trim() : '',
+                        lang: fcLangEl ? fcLangEl.value : 'ku_ba',
+                        count: fcAiCount ? Number(fcAiCount.value) : 10,
+                        topicNotes: fcAiNotes ? fcAiNotes.value.trim() : '',
+                        sourceCode: actionType === 'convert_code' && fcCodeInput ? fcCodeInput.value : '',
+                        fileName: fcCodeFileName
+                    })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success) throw new Error(data.error || 'سەرنەکەفت د چێکرنێ دا');
+                const items = Array.isArray(data.items) ? data.items : [];
+                if (items.length === 0) throw new Error('چ فلاش کارت نەهاتنە دەرهێنان.');
+                fcDrafts = [...fcDrafts, ...items];
+                renderFcDrafts();
+                setInlineStatus(fcStatusEl, `${items.length} فلاش کارت هاتنە ئامادەکرن! ✅`, 'success');
+            } catch (err) {
+                setInlineStatus(fcStatusEl, err.message || 'هەڵەیەک چێبوو.', 'error');
+            } finally {
+                if (triggerBtn) {
+                    triggerBtn.disabled = false;
+                    triggerBtn.innerHTML = orig;
+                }
+            }
+        }
+
+        if (fcAiGenBtn) fcAiGenBtn.addEventListener('click', () => runFcAi('generate', fcAiGenBtn));
+        if (fcCodeAiBtn) {
+            fcCodeAiBtn.addEventListener('click', () => {
+                if (!fcCodeInput || !fcCodeInput.value.trim()) {
+                    setInlineStatus(fcStatusEl, 'بەراهیێ فایلێ کۆدێ ئەپلود بکە یان کۆدێ بنڤیسە.', 'error');
+                    return;
+                }
+                runFcAi('convert_code', fcCodeAiBtn);
+            });
+        }
+        if (fcCodeParseBtn) {
+            fcCodeParseBtn.addEventListener('click', () => {
+                const raw = fcCodeInput ? fcCodeInput.value.trim() : '';
+                if (!raw) {
+                    setInlineStatus(fcStatusEl, 'تکایە کۆدەکێ بنڤیسە یان فایلەکێ ئەپلود بکە.', 'error');
+                    return;
+                }
+                const ch = fcChapterEl ? fcChapterEl.value.trim() : '';
+                const parsed = window.StudyCodeParser ? window.StudyCodeParser.parseCodeToFlashcards(raw, ch) : [];
+                if (!parsed.length) {
+                    setInlineStatus(fcStatusEl, 'کۆد ڕاستەوخۆ نەهاتە ناسین — کلیک لسەر "گۆڕین ب AI" بکە!', 'error');
+                    return;
+                }
+                fcDrafts = [...fcDrafts, ...parsed];
+                renderFcDrafts();
+                setInlineStatus(fcStatusEl, `${parsed.length} فلاش کارت ژ کۆدێ هاتنە گۆڕین! ✅`, 'success');
+            });
+        }
+        if (fcSubmitBatchBtn) {
+            fcSubmitBatchBtn.addEventListener('click', () => {
+                const grade = fcGradeEl ? fcGradeEl.value : '12';
+                const subject = fcSubjectEl ? fcSubjectEl.value : (currentTeacher.subject || 'کیمیا');
+                const lang = fcLangEl ? fcLangEl.value : 'ku_ba';
+                const ch = fcChapterEl ? fcChapterEl.value.trim() : '';
+                const valid = fcDrafts.filter(c => String(c.front || '').trim() && String(c.back || '').trim()).map(c => ({
+                    teacherId: currentTeacher.id,
+                    teacherName: currentTeacher.name,
+                    grade,
+                    subject,
+                    chapter: c.chapter || ch,
+                    front: String(c.front).trim(),
+                    back: String(c.back).trim(),
+                    hint: String(c.hint || '').trim(),
+                    lang,
+                    status: isSuperAdmin ? 'approved' : 'pending'
+                }));
+                if (!valid.length) {
+                    setInlineStatus(fcStatusEl, 'چ فلاش کارتێن دروست نینن.', 'error');
+                    return;
+                }
+                const saved = dataStore.saveFlashcardsBatch(valid);
+                fcDrafts = [];
+                renderFcDrafts();
+                refreshTeacherProfileUI();
+                showSubmissionToast(
+                    `${saved.length} فلاش کارت هاتنە تۆمارکرن! ✅`,
+                    isSuperAdmin ? 'ب سەرکەفتوویی د بابەتی دا هاتنە بەلاڤکرن.' : 'هاتنە هنارتن بۆ ئەدمینی دا پەسەند بکەت.'
+                );
+            });
+        }
+        if (addFlashcardForm) {
+            addFlashcardForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const front = (document.getElementById('fc-front') || {}).value?.trim() || '';
+                const back = (document.getElementById('fc-back') || {}).value?.trim() || '';
+                const hint = (document.getElementById('fc-hint') || {}).value?.trim() || '';
+                if (!front || !back) return;
+                dataStore.submitFlashcard({
+                    teacherId: currentTeacher.id,
+                    teacherName: currentTeacher.name,
+                    grade: fcGradeEl ? fcGradeEl.value : '12',
+                    subject: fcSubjectEl ? fcSubjectEl.value : (currentTeacher.subject || 'کیمیا'),
+                    chapter: fcChapterEl ? fcChapterEl.value.trim() : '',
+                    front,
+                    back,
+                    hint,
+                    lang: fcLangEl ? fcLangEl.value : 'ku_ba',
+                    status: isSuperAdmin ? 'approved' : 'pending'
+                });
+                addFlashcardForm.reset();
+                refreshTeacherProfileUI();
+                showSubmissionToast('فلاش کارت ب سەرکەفتوویی هاتە تۆمارکرن! ✅', isSuperAdmin ? 'د بابەتی دا هاتە بەلاڤکرن.' : 'نێردرا بۆ پەسەندکرنا ئەدمینی.');
+            });
+        }
+
+        // --- B. Teacher Smart Quiz Converter (AI + Code File Upload) ---
+        let tdQuizDrafts = [];
+        let tdQuizCodeFileName = '';
+        const qStatusEl = document.getElementById('td-quiz-studio-status');
+        const qPreviewWrap = document.getElementById('td-quiz-studio-preview-wrap');
+        const qPreviewList = document.getElementById('td-quiz-studio-preview');
+        const qCountLabel = document.getElementById('td-quiz-studio-count');
+        const qAiCount = document.getElementById('td-quiz-ai-count');
+        const qAiNotes = document.getElementById('td-quiz-ai-notes');
+        const qAiBtn = document.getElementById('td-quiz-ai-gen-btn');
+        const qCodeFile = document.getElementById('td-quiz-code-file');
+        const qCodeInput = document.getElementById('td-quiz-code-input');
+        const qCodeParseBtn = document.getElementById('td-quiz-code-parse-btn');
+        const qCodeAiBtn = document.getElementById('td-quiz-code-ai-btn');
+        const qSubmitBatchBtn = document.getElementById('td-quiz-studio-submit-btn');
+
+        function renderTdQuizDrafts() {
+            if (!qPreviewWrap || !qPreviewList || !qCountLabel) return;
+            qPreviewWrap.style.display = tdQuizDrafts.length > 0 ? 'block' : 'none';
+            qCountLabel.textContent = `${tdQuizDrafts.length} پرسیار ئامادە نە`;
+            qPreviewList.innerHTML = tdQuizDrafts.map((q, idx) => `
+                <div style="padding:10px; border:1px solid var(--border-color); border-radius:10px; background:var(--bg-color); display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="font-size:0.82rem; color:#7c3aed;">پرسیار #${idx + 1}</strong>
+                        <button type="button" class="btn-cancel td-qz-del-btn" data-idx="${idx}" style="padding:2px 9px; font-size:0.75rem; color:#ef4444;">ژێبرن</button>
+                    </div>
+                    <div style="font-weight:700; font-size:0.9rem;">${escHtml(q.question)}</div>
+                    <div style="font-size:0.8rem; color:var(--secondary-text);">
+                        ${(q.options || []).map((o, oi) => `<span style="margin-left:10px; ${oi === Number(q.correctIndex) ? 'color:#10b981; font-weight:700;' : ''}">${oi === Number(q.correctIndex) ? '✓ ' : ''}${escHtml(o)}</span>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+            qPreviewList.querySelectorAll('.td-qz-del-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tdQuizDrafts.splice(Number(btn.getAttribute('data-idx')), 1);
+                    renderTdQuizDrafts();
+                });
+            });
+        }
+
+        if (qCodeFile) {
+            qCodeFile.addEventListener('change', () => {
+                const file = qCodeFile.files && qCodeFile.files[0];
+                if (!file) return;
+                tdQuizCodeFileName = file.name;
+                const r = new FileReader();
+                r.onload = () => {
+                    if (qCodeInput) qCodeInput.value = String(r.result || '');
+                    setInlineStatus(qStatusEl, `فایلێ (${file.name}) هاتە خوێندن!`, 'info');
+                };
+                r.readAsText(file, 'utf-8');
+            });
+        }
+
+        async function runQuizAi(actionType, triggerBtn) {
+            const orig = triggerBtn ? triggerBtn.innerHTML : '';
+            if (triggerBtn) {
+                triggerBtn.disabled = true;
+                triggerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> چاڤەڕێ بە...';
+            }
+            try {
+                const quizSubEl = document.getElementById('quiz-subject');
+                setInlineStatus(qStatusEl, 'AI دکاردا یە بۆ ئامادەکرنا پرسیاران...', 'info');
+                const resp = await fetch('/api/gemini/generate-study-items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: 'quizzes',
+                        action: actionType,
+                        grade: quizGradeSelect ? quizGradeSelect.value : '12',
+                        subject: quizSubEl ? quizSubEl.value : (currentTeacher.subject || 'کیمیا'),
+                        chapter: (document.getElementById('quiz-chapter') || {}).value?.trim() || '',
+                        lang: quizLangSelect ? quizLangSelect.value : 'ku_ba',
+                        count: qAiCount ? Number(qAiCount.value) : 10,
+                        topicNotes: qAiNotes ? qAiNotes.value.trim() : '',
+                        sourceCode: actionType === 'convert_code' && qCodeInput ? qCodeInput.value : '',
+                        fileName: tdQuizCodeFileName
+                    })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success) throw new Error(data.error || 'سەرنەکەفت د چێکرنێ دا');
+                const items = Array.isArray(data.items) ? data.items : [];
+                if (!items.length) throw new Error('چ پرسیار نەهاتنە دەرهێنان.');
+                tdQuizDrafts = [...tdQuizDrafts, ...items];
+                renderTdQuizDrafts();
+                setInlineStatus(qStatusEl, `${items.length} پرسیار هاتنە ئامادەکرن! ✅`, 'success');
+            } catch (err) {
+                setInlineStatus(qStatusEl, err.message || 'هەڵەیەک چێبوو.', 'error');
+            } finally {
+                if (triggerBtn) {
+                    triggerBtn.disabled = false;
+                    triggerBtn.innerHTML = orig;
+                }
+            }
+        }
+
+        if (qAiBtn) qAiBtn.addEventListener('click', () => runQuizAi('generate', qAiBtn));
+        if (qCodeAiBtn) {
+            qCodeAiBtn.addEventListener('click', () => {
+                if (!qCodeInput || !qCodeInput.value.trim()) {
+                    setInlineStatus(qStatusEl, 'بەراهیێ فایلێ کۆدێ ئەپلود بکە یان کۆدێ بنڤیسە.', 'error');
+                    return;
+                }
+                runQuizAi('convert_code', qCodeAiBtn);
+            });
+        }
+        if (qCodeParseBtn) {
+            qCodeParseBtn.addEventListener('click', () => {
+                const raw = qCodeInput ? qCodeInput.value.trim() : '';
+                if (!raw) {
+                    setInlineStatus(qStatusEl, 'تکایە کۆدەکێ بنڤیسە یان فایلەکێ ئەپلود بکە.', 'error');
+                    return;
+                }
+                const ch = (document.getElementById('quiz-chapter') || {}).value?.trim() || '';
+                const parsed = window.StudyCodeParser ? window.StudyCodeParser.parseCodeToQuizzes(raw, ch) : [];
+                if (!parsed.length) {
+                    setInlineStatus(qStatusEl, 'کۆد ڕاستەوخۆ نەهاتە ناسین — کلیک لسەر "گۆڕین ب AI" بکە!', 'error');
+                    return;
+                }
+                tdQuizDrafts = [...tdQuizDrafts, ...parsed];
+                renderTdQuizDrafts();
+                setInlineStatus(qStatusEl, `${parsed.length} پرسیار ژ کۆدێ هاتنە گۆڕین! ✅`, 'success');
+            });
+        }
+        if (qSubmitBatchBtn) {
+            qSubmitBatchBtn.addEventListener('click', () => {
+                const quizSubEl = document.getElementById('quiz-subject');
+                const grade = quizGradeSelect ? quizGradeSelect.value : '12';
+                const subject = quizSubEl ? quizSubEl.value : (currentTeacher.subject || 'کیمیا');
+                const lang = quizLangSelect ? quizLangSelect.value : 'ku_ba';
+                const ch = (document.getElementById('quiz-chapter') || {}).value?.trim() || '';
+                const valid = tdQuizDrafts.filter(q => String(q.question || '').trim() && Array.isArray(q.options) && q.options.length >= 2).map(q => ({
+                    teacherId: currentTeacher.id,
+                    teacherName: currentTeacher.name,
+                    grade,
+                    subject,
+                    chapter: q.chapter || ch,
+                    question: String(q.question).trim(),
+                    options: q.options.map(o => String(o).trim()),
+                    correctIndex: Number(q.correctIndex) || 0,
+                    explanation: String(q.explanation || '').trim(),
+                    difficulty: q.difficulty || 'ناوەند',
+                    lang,
+                    status: isSuperAdmin ? 'approved' : 'pending'
+                }));
+                if (!valid.length) {
+                    setInlineStatus(qStatusEl, 'چ پرسیارێن دروست نینن.', 'error');
+                    return;
+                }
+                const saved = dataStore.saveQuizzesBatch(valid);
+                tdQuizDrafts = [];
+                renderTdQuizDrafts();
+                refreshTeacherProfileUI();
+                showSubmissionToast(
+                    `${saved.length} پرسیارێن هەلبژارتن هاتنە تۆمارکرن! ✅`,
+                    isSuperAdmin ? 'ب سەرکەفتوویی د بابەتی دا هاتنە بەلاڤکرن.' : 'هاتنە هنارتن بۆ ئەدمینی دا پەسەند بکەت.'
+                );
+            });
+        }
+    }
+
+    initTeacherStudyTools();
 
     // Initial Load
     refreshTeacherProfileUI();

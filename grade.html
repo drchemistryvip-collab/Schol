@@ -3,208 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="grade-page-title">قۆناغا خواندنێ | بابەت، مامۆستا، مەلزەمە و ڤیدیۆ</title>
+    <title id="grade-page-title">پۆلا خواندنێ | بابەت، مامۆستا، مەلزەمە و AI</title>
     <script src="/user-key-bridge.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
     <style>
         :root {
-            --blue-accent: #007bff;
-            --purple-accent: #8a2be2;
+            --blue-accent: #2563eb;
+            --purple-accent: #7209b7;
         }
         [data-theme="dark"] {
-            --primary-bg: #121212;
-            --surface-color: #1e1e1e;
-            --primary-text: #e0e0e0;
-            --secondary-text: #a0a0a0;
-            --border-color: #333333;
-            --shadow-color: rgba(0, 0, 0, 0.5);
-            --bg-color: #121212;
+            --background-color: #0b0f19;
+            --primary-bg: #0b0f19;
+            --surface-color: #131b2e;
+            --surface-alt: #1a243d;
+            --primary-text: #f1f5f9;
+            --secondary-text: #94a3b8;
+            --border-color: #243047;
+            --shadow-color: rgba(0, 0, 0, 0.45);
         }
         [data-theme="light"] {
-            --primary-bg: #f8f9fa;
+            --background-color: #f6f8fb;
+            --primary-bg: #f6f8fb;
             --surface-color: #ffffff;
-            --primary-text: #212529;
-            --secondary-text: #6c757d;
-            --border-color: #dee2e6;
-            --shadow-color: rgba(0, 0, 0, 0.05);
-            --bg-color: #f8f9fa;
+            --surface-alt: #f1f5f9;
+            --primary-text: #0f172a;
+            --secondary-text: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(15, 23, 42, 0.06);
+        }
+        * {
+            box-sizing: border-box;
         }
         body {
+            display: block;
             background-color: var(--primary-bg);
             color: var(--primary-text);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Noto Kufi Arabic', system-ui, -apple-system, sans-serif;
             margin: 0;
-            padding: 15px;
+            padding: 14px;
             direction: rtl;
         }
         .grade-wrapper {
             max-width: 1080px;
             margin: 0 auto;
-        }
-        .grade-banner {
-            background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-top: 5px solid var(--blue-accent);
-            border-radius: 16px;
-            padding: 22px;
-            margin-bottom: 18px;
-            text-align: center;
-            box-shadow: 0 4px 20px var(--shadow-color);
-            position: relative;
-        }
-        .grade-icon-bubble {
-            width: 66px;
-            height: 66px;
-            border-radius: 50%;
-            background: rgba(0, 123, 255, 0.1);
-            color: var(--blue-accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.85rem;
-            margin: 0 auto 12px;
+            width: 100%;
         }
 
-        /* Language Filter Bar */
-        .lang-filter-bar {
+        /* Top Bar */
+        .grade-topbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 12px;
-            background-color: var(--surface-color);
+            gap: 10px;
+            background: var(--surface-color);
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 12px 18px;
-            margin-bottom: 18px;
-            box-shadow: 0 4px 12px var(--shadow-color);
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 10px var(--shadow-color);
         }
-        .lang-pills-group {
+        .grade-topbar-start,
+        .grade-topbar-end {
             display: flex;
+            align-items: center;
             gap: 8px;
             flex-wrap: wrap;
         }
+        .nav-chip-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 40px;
+            padding: 7px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--surface-alt);
+            color: var(--primary-text);
+            text-decoration: none;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+            white-space: nowrap;
+        }
+        .nav-chip-btn:hover {
+            border-color: var(--blue-accent);
+        }
+
+        /* Compact Grade Header */
+        .grade-hero-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px var(--shadow-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+        .grade-hero-main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .grade-icon-bubble {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--blue-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .lang-pills-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
         .lang-pill {
-            padding: 6px 16px;
-            border-radius: 20px;
+            min-height: 38px;
+            padding: 6px 14px;
+            border-radius: 10px;
             border: 1px solid var(--border-color);
             background: transparent;
             color: var(--primary-text);
             font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .lang-pill:hover {
             border-color: var(--blue-accent);
-            background: rgba(0,123,255,0.06);
         }
         .lang-pill.active {
             background: var(--blue-accent);
             color: #ffffff;
             border-color: var(--blue-accent);
-            font-weight: bold;
         }
 
-        /* STEPPER WORKFLOW BAR (١. بابەت -> ٢. مامۆستا -> ٣. مەلزەمە و ڤیدیۆ) */
-        .stepper-workflow {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        /* Subjects View */
+        .section-surface {
             background: var(--surface-color);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 14px 20px;
-            margin-bottom: 22px;
-            box-shadow: 0 4px 14px var(--shadow-color);
-            gap: 8px;
-            overflow-x: auto;
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px var(--shadow-color);
         }
-        .step-badge {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 14px;
-            border-radius: 12px;
-            background: transparent;
-            border: 1px solid transparent;
-            transition: all 0.25s;
-            cursor: pointer;
-            flex: 1;
-            min-width: 170px;
-        }
-        .step-badge.active {
-            background: rgba(0, 123, 255, 0.09);
-            border-color: rgba(0, 123, 255, 0.35);
-        }
-        .step-badge.completed {
-            background: rgba(40, 167, 69, 0.08);
-            border-color: rgba(40, 167, 69, 0.3);
-        }
-        .step-badge.disabled {
-            opacity: 0.55;
-            cursor: default;
-        }
-        .step-num {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: var(--border-color);
-            color: var(--primary-text);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.95rem;
-            flex-shrink: 0;
-            transition: all 0.25s;
-        }
-        .step-badge.active .step-num {
-            background: var(--blue-accent);
-            color: #ffffff;
-            box-shadow: 0 0 12px rgba(0, 123, 255, 0.45);
-        }
-        .step-badge.completed .step-num {
-            background: #28a745;
-            color: #ffffff;
-        }
-        .step-info {
-            display: flex;
-            flex-direction: column;
-            text-align: right;
-        }
-        .step-info strong {
-            font-size: 0.92rem;
-            line-height: 1.2;
-        }
-        .step-sub {
-            font-size: 0.75rem;
-            color: var(--secondary-text);
-            margin-top: 3px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 180px;
-        }
-        .step-connector {
-            color: var(--secondary-text);
-            font-size: 0.9rem;
-            opacity: 0.5;
-            padding: 0 4px;
-        }
-
-        /* STEP 1: SUBJECTS CONTAINER */
-        .step-section-card {
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 22px;
-            margin-bottom: 22px;
-            box-shadow: 0 4px 16px var(--shadow-color);
-            transition: all 0.25s;
-        }
-        .step-section-header {
+        .section-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -214,270 +171,430 @@
             padding-bottom: 14px;
             border-bottom: 1px solid var(--border-color);
         }
-        .step-title-group h2 {
-            margin: 0 0 4px;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .step-title-group p {
-            margin: 0;
-            color: var(--secondary-text);
-            font-size: 0.88rem;
-        }
-
-        /* Subjects Grid */
         .subjects-cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        @media (min-width: 640px) {
+            .subjects-cards-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        @media (min-width: 960px) {
+            .subjects-cards-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 14px;
+            }
         }
         .subject-card-box {
             background: var(--surface-color);
-            border: 2px solid var(--border-color);
-            border-radius: 14px;
-            padding: 16px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px 14px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            user-select: none;
+            gap: 6px;
+            font-family: inherit;
+            color: inherit;
+            width: 100%;
         }
         .subject-card-box:hover {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
             border-color: var(--blue-accent);
-            box-shadow: 0 8px 24px rgba(0, 123, 255, 0.15);
-        }
-        .subject-card-box.active {
-            border-color: var(--blue-accent);
-            background: rgba(0, 123, 255, 0.05);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25), 0 8px 20px rgba(0, 123, 255, 0.15);
+            box-shadow: 0 8px 20px var(--shadow-color);
         }
         .subject-icon-circle {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
+            width: 54px;
+            height: 54px;
+            border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.55rem;
+            font-size: 1.45rem;
             color: #ffffff;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
-            transition: transform 0.2s;
-        }
-        .subject-card-box:hover .subject-icon-circle {
-            transform: scale(1.08);
+            margin-bottom: 4px;
         }
         .subject-card-name {
             font-size: 1.05rem;
             font-weight: 700;
-            margin: 0 0 3px;
+            margin: 0;
             color: var(--primary-text);
         }
-        .subject-card-en {
-            font-size: 0.75rem;
+        .subject-card-meta {
+            font-size: 0.78rem;
             color: var(--secondary-text);
-            margin-bottom: 8px;
         }
-        .subject-card-count {
-            display: inline-block;
-            font-size: 0.76rem;
-            background: rgba(0, 123, 255, 0.1);
-            color: var(--blue-accent);
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-        .subject-active-dot {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: var(--blue-accent);
-            color: #ffffff;
-            font-size: 0.7rem;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .subject-card-box.active .subject-active-dot {
+
+        /* Subject Workspace View (ONLY 5 Requested Sections) */
+        .subject-workspace-header {
             display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-bottom: 16px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
         }
-
-        /* Step 2 Prompt Card (When no subject is picked yet) */
-        .step-prompt-box {
-            text-align: center;
-            padding: 35px 20px;
-            border: 2px dashed var(--border-color);
-            border-radius: 14px;
-            background: rgba(0, 123, 255, 0.02);
-            color: var(--secondary-text);
+        .subject-title-lockup {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        .step-prompt-box i {
-            font-size: 2.5rem;
-            color: var(--blue-accent);
-            margin-bottom: 10px;
-            opacity: 0.8;
-            animation: bouncePrompt 2s infinite;
-        }
-        @keyframes bouncePrompt {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-
-        /* Teachers Cards */
-        .teachers-grid {
+        .subject-tabs-5 {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 20px;
         }
-        .teacher-card-interactive {
-            background: var(--surface-color);
-            border: 2px solid var(--border-color);
-            border-radius: 14px;
-            padding: 16px;
+        @media (min-width: 640px) {
+            .subject-tabs-5 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        @media (min-width: 1024px) {
+            .subject-tabs-5 {
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+            }
+        }
+        /* Flashcards 3D Flip Workspace */
+        .flashcard-scene {
+            perspective: 1200px;
+            width: 100%;
+            max-width: 680px;
+            margin: 0 auto 16px;
+        }
+        .flashcard-card-3d {
+            position: relative;
+            width: 100%;
+            min-height: 270px;
+            transform-style: preserve-3d;
+            transition: transform 0.52s cubic-bezier(0.22, 0.85, 0.36, 1);
             cursor: pointer;
-            transition: all 0.22s;
+        }
+        .flashcard-card-3d.is-flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 20px;
+            padding: 24px 22px;
+            border: 1.5px solid var(--border-color);
+            background: var(--surface-alt);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            position: relative;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+        }
+        .flashcard-face-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(145deg, rgba(37, 99, 235, 0.14), rgba(16, 185, 129, 0.1));
+            border-color: rgba(37, 99, 235, 0.45);
+        }
+        .flashcard-progress-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.2);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .flashcard-progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #2563eb, #10b981);
+            transition: width 0.3s ease;
+        }
+        .subject-tab-btn {
+            min-height: 46px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: var(--surface-alt);
+            color: var(--primary-text);
+            font-family: inherit;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .subject-tab-btn:hover {
+            border-color: var(--blue-accent);
+        }
+        .subject-tab-btn.active {
+            background: var(--blue-accent);
+            border-color: var(--blue-accent);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+        }
+        .subject-tab-count {
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.2);
+            color: inherit;
+        }
+        .subject-tab-btn.active .subject-tab-count {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+        }
+
+        /* Teachers Grid & Pinning */
+        .teachers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 14px;
+        }
+        .teacher-card-interactive {
+            background: var(--surface-color);
+            border: 1.5px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
         }
         .teacher-card-interactive:hover {
             border-color: var(--blue-accent);
-            transform: translateY(-3px);
+            transform: translateY(-2px);
             box-shadow: 0 8px 20px var(--shadow-color);
         }
-        .teacher-card-interactive.active-selected {
-            border-color: #28a745;
-            background: rgba(40, 167, 69, 0.04);
-            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25);
+        .teacher-card-interactive.pinned-card {
+            border-color: #f59e0b;
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.06), var(--surface-color));
         }
         .t-avatar {
-            width: 60px;
-            height: 60px;
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--blue-accent);
             flex-shrink: 0;
         }
-        .rank-badge {
-            background: linear-gradient(135deg, #ffd700, #ff8c00);
-            color: #000000;
-            font-size: 0.72rem;
-            font-weight: 800;
-            padding: 2px 8px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .teacher-meta-pill {
+        .btn-pin-teacher {
+            min-height: 36px;
+            padding: 5px 11px;
+            border-radius: 9px;
+            border: 1px solid var(--border-color);
+            background: var(--surface-alt);
+            color: var(--primary-text);
+            font-family: inherit;
             font-size: 0.78rem;
-            padding: 4px 8px;
-            background: var(--primary-bg);
-            border-radius: 6px;
-            color: var(--secondary-text);
+            font-weight: 700;
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 5px;
-        }
-
-        /* Content Portal */
-        .content-tabs-bar {
-            display: flex;
-            gap: 10px;
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-        .c-tab {
-            padding: 10px 20px;
-            background: transparent;
-            border: none;
-            border-bottom: 3px solid transparent;
-            color: var(--secondary-text);
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
             transition: all 0.2s;
             white-space: nowrap;
         }
-        .c-tab:hover {
-            color: var(--primary-text);
+        .btn-pin-teacher:hover {
+            border-color: #f59e0b;
+            color: #d97706;
         }
-        .c-tab.active {
-            color: var(--blue-accent);
-            border-bottom-color: var(--blue-accent);
-        }
-        .c-badge {
-            background: rgba(0, 123, 255, 0.12);
-            color: var(--blue-accent);
-            font-size: 0.75rem;
-            padding: 2px 7px;
-            border-radius: 10px;
+        .btn-pin-teacher.pinned {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: #ffffff;
         }
 
-        /* Cards inside Portal */
+        /* Content Grids & Cards */
         .portal-items-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 14px;
         }
         .content-card-box {
             background: var(--surface-color);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 15px;
-            transition: all 0.2s;
+            border-radius: 14px;
+            padding: 16px;
             text-align: right;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            gap: 10px;
+            transition: border-color 0.2s, transform 0.2s;
         }
         .content-card-box:hover {
             border-color: var(--blue-accent);
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px var(--shadow-color);
         }
         .format-tag {
-            font-size: 0.75rem;
-            font-weight: bold;
-            padding: 3px 8px;
-            border-radius: 6px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 7px;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
         }
         .format-tag.pptx { background: rgba(216, 59, 1, 0.12); color: #d83b01; }
-        .format-tag.html { background: rgba(0, 180, 216, 0.12); color: #0077b6; }
-        .format-tag.image { background: rgba(157, 78, 221, 0.12); color: #7b2cbf; }
-        .format-tag.pdf { background: rgba(40, 167, 69, 0.12); color: #28a745; }
+        .format-tag.html { background: rgba(2, 132, 199, 0.14); color: #0284c7; }
+        .format-tag.image { background: rgba(124, 58, 237, 0.14); color: #7c3aed; }
+        .format-tag.pdf { background: rgba(16, 185, 129, 0.14); color: #059669; }
 
-        /* Modal Overlays */
+        .btn-action-primary {
+            background: var(--blue-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            min-height: 40px;
+            padding: 8px 15px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .btn-action-primary:hover {
+            opacity: 0.92;
+        }
+        .btn-action-secondary {
+            background: var(--surface-alt);
+            color: var(--primary-text);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            min-height: 40px;
+            padding: 8px 14px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: border-color 0.2s;
+        }
+        .btn-action-secondary:hover {
+            border-color: var(--blue-accent);
+        }
+
+        /* Ask AI Chat */
+        .ai-chat-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .ai-chat-messages {
+            min-height: 260px;
+            max-height: 440px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            background: var(--primary-bg);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ai-msg {
+            max-width: 88%;
+            padding: 11px 14px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            line-height: 1.65;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .ai-msg.user {
+            align-self: flex-start;
+            background: var(--blue-accent);
+            color: #ffffff;
+            border-bottom-right-radius: 4px;
+        }
+        .ai-msg.assistant {
+            align-self: flex-end;
+            background: var(--surface-color);
+            color: var(--primary-text);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 4px;
+        }
+        .ai-msg.error {
+            align-self: stretch;
+            max-width: 100%;
+            background: rgba(239, 68, 68, 0.12);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+        .ai-starter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .ai-chip-btn {
+            padding: 7px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--surface-alt);
+            color: var(--primary-text);
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .ai-chip-btn:hover {
+            border-color: var(--blue-accent);
+        }
+        .ai-input-row {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        .ai-input-row textarea {
+            flex: 1;
+            min-height: 46px;
+            max-height: 130px;
+            padding: 11px 14px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: var(--primary-bg);
+            color: var(--primary-text);
+            font-family: inherit;
+            font-size: 0.92rem;
+            resize: vertical;
+        }
+        .ai-input-row textarea:focus {
+            outline: none;
+            border-color: var(--blue-accent);
+        }
+
+        /* Modals */
         .video-player-modal, .doc-viewer-modal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 9999;
-            padding: 15px;
+            padding: 14px;
         }
         .video-player-modal.open, .doc-viewer-modal.open {
             display: flex;
@@ -487,8 +604,7 @@
             border-radius: 16px;
             overflow: hidden;
             width: 100%;
-            max-width: 900px;
-            position: relative;
+            max-width: 920px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             max-height: 92vh;
             display: flex;
@@ -501,15 +617,14 @@
         }
         .player-iframe-container iframe {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
             border: 0;
         }
         .close-player-btn, .close-doc-btn {
-            background: rgba(0,0,0,0.4);
-            color: #ffffff;
+            background: rgba(148, 163, 184, 0.25);
+            color: var(--primary-text);
             border: none;
             width: 36px;
             height: 36px;
@@ -518,349 +633,296 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            transition: background 0.2s;
+            font-size: 1.1rem;
         }
         .close-player-btn:hover, .close-doc-btn:hover {
             background: #e63946;
-        }
-
-        .btn-action-primary {
-            background: var(--blue-accent);
             color: #ffffff;
-            border: none;
-            border-radius: 10px;
-            padding: 8px 16px;
-            font-family: inherit;
-            font-size: 0.86rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: background 0.2s;
-            text-decoration: none;
-        }
-        .btn-action-primary:hover {
-            opacity: 0.9;
-        }
-        .btn-action-secondary {
-            background: transparent;
-            color: var(--primary-text);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 8px 16px;
-            font-family: inherit;
-            font-size: 0.86rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        .btn-action-secondary:hover {
-            border-color: var(--blue-accent);
-            background: rgba(0, 123, 255, 0.05);
         }
     </style>
 </head>
 <body>
     <div class="grade-wrapper">
-        <!-- Controls Top -->
-        <div class="page-controls" style="margin-bottom: 16px;">
-            <a href="index.html" class="theme-toggle-button" title="زڤرین بۆ سەرەکی" style="text-decoration:none;">
-                <i class="fas fa-home"></i> <span style="font-size:0.85rem; margin-right:4px;">سەرەکی</span>
-            </a>
-            <div id="role-pill" class="theme-toggle-button" style="width:auto; padding: 0 15px; font-size:0.85rem; gap:6px;">
-                <i class="fas fa-user-graduate"></i> <span id="current-user-role-label">قوتابی</span>
+        <!-- Compact Top Bar -->
+        <header class="grade-topbar">
+            <div class="grade-topbar-start">
+                <a href="index.html" class="nav-chip-btn">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>پۆلێن من</span>
+                </a>
+                <a href="teacher-dashboard.html" id="teacher-panel-link" class="nav-chip-btn" style="display:none;">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>پەناڵی مامۆستا</span>
+                </a>
             </div>
-            <a href="teacher-dashboard.html" id="teacher-panel-link" class="theme-toggle-button" title="پەناڵی مامۆستایان" style="width:auto; padding: 0 15px; font-size:0.85rem; gap:6px; text-decoration:none; display:none;">
-                <i class="fas fa-chalkboard-teacher"></i> پەناڵی مامۆستا
-            </a>
-            <button id="theme-toggle-btn" class="theme-toggle-button" title="Guhertina Temayê">
-                <i class="fas fa-moon"></i>
-            </button>
-        </div>
+            <div class="grade-topbar-end">
+                <div class="lang-pills-group" id="grade-lang-pills">
+                    <button type="button" class="lang-pill active" data-lang="ku_ba">باهدینی</button>
+                    <button type="button" class="lang-pill" data-lang="ku_so">سۆرانی</button>
+                    <button type="button" class="lang-pill" data-lang="ar">عەرەبی</button>
+                    <button type="button" class="lang-pill" data-lang="en">ئینگلیزی</button>
+                </div>
+                <button type="button" id="theme-toggle-btn" class="nav-chip-btn" title="گۆڕینی ڕووکار">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
 
-        <!-- Grade Banner -->
-        <div class="grade-banner" id="grade-banner-box">
-            <div class="grade-icon-bubble" id="grade-icon-bubble">
-                <i class="fas fa-school" id="grade-icon"></i>
-            </div>
-            <h1 id="grade-title" style="margin: 0 0 6px; font-size: 1.85rem;">پۆلا ١٢ (دوازدێ)</h1>
-            <p id="grade-subtitle" style="margin: 0; color: var(--secondary-text); font-size: 0.95rem;">
-                سیستەمێ خواندنێ ب ٣ قۆناغان: ١. بابەتان هەڵبژێرە ⬅️ ٢. مامۆستایان ببینە ⬅️ ٣. مەلزەمە و وانەکان بخوێنە
-            </p>
-        </div>
-
-        <!-- Language Filter Bar (Badini, Sorani, Arabic, English) -->
-        <div class="lang-filter-bar">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <i class="fas fa-language" style="color:var(--blue-accent); font-size:1.15rem;"></i>
-                <span style="font-size:0.92rem; font-weight:bold;">زمانی وانەکان و مامۆستایان:</span>
-                <span id="active-lang-text" style="color:var(--blue-accent); font-size:0.88rem; font-weight:600;">(باهدینی)</span>
-            </div>
-            <div class="lang-pills-group" id="grade-lang-pills">
-                <button class="lang-pill active" data-lang="ku_ba">باهدینی</button>
-                <button class="lang-pill" data-lang="ku_so">سۆرانی</button>
-                <button class="lang-pill" data-lang="ar">عەرەبی</button>
-                <button class="lang-pill" data-lang="en">ئینگلیزی</button>
-            </div>
-        </div>
-
-        <!-- WORKFLOW STEPPER BAR (١. بابەت -> ٢. مامۆستا -> ٣. مەلزەمە و ڤیدیۆ) -->
-        <div class="stepper-workflow">
-            <div class="step-badge active" id="step-nav-1">
-                <div class="step-num">١</div>
-                <div class="step-info">
-                    <strong>١. هەڵبژارتنا بابەتی</strong>
-                    <span class="step-sub" id="step-1-label">کیمیا، فیزیا، زیندەوەر...</span>
+        <!-- Grade Header -->
+        <section class="grade-hero-card" id="grade-banner-box">
+            <div class="grade-hero-main">
+                <div class="grade-icon-bubble" id="grade-icon-bubble">
+                    <i class="fas fa-school" id="grade-icon"></i>
+                </div>
+                <div style="text-align:right;">
+                    <h1 id="grade-title" style="margin:0 0 4px; font-size:1.45rem; font-weight:800;">پۆلا ١٢ (دوازدێ)</h1>
+                    <p id="grade-subtitle" style="margin:0; color:var(--secondary-text); font-size:0.86rem;">
+                        بابەتێ خۆ هەلبژێرە داکو مامۆستا، مەلزەمە، شەرحکرنا AI، هەلبژارتن و پرسیارکرنا ژ AI ببینی
+                    </p>
                 </div>
             </div>
-            <div class="step-connector"><i class="fas fa-chevron-left"></i></div>
-            <div class="step-badge disabled" id="step-nav-2">
-                <div class="step-num">٢</div>
-                <div class="step-info">
-                    <strong>٢. مامۆستایێن بابەتی</strong>
-                    <span class="step-sub" id="step-2-label">تەنێ مامۆستایێن ڤی بابەتی</span>
-                </div>
+            <div style="font-size:0.82rem; color:var(--secondary-text);" id="grade-user-role-wrap">
+                <i class="fas fa-user-graduate" style="color:var(--blue-accent);"></i>
+                <span id="current-user-role-label">قوتابی</span>
             </div>
-            <div class="step-connector"><i class="fas fa-chevron-left"></i></div>
-            <div class="step-badge disabled" id="step-nav-3">
-                <div class="step-num">٣</div>
-                <div class="step-info">
-                    <strong>٣. مەلزەمە، ڤیدیۆ و پرسیار</strong>
-                    <span class="step-sub" id="step-3-label">ناوەڕۆکی مامۆستایێ دیارکری</span>
-                </div>
-            </div>
-        </div>
+        </section>
 
-        <!-- ======================================================== -->
-        <!-- CLOUDFLARE SERVER LESSONS FOR THIS GRADE (Auto GET Load) -->
-        <!-- ======================================================== -->
-        <section class="step-section-card" id="cf-grade-lessons-section" style="margin-bottom:20px;">
-            <div class="step-section-header">
-                <div class="step-title-group">
-                    <h2>
-                        <i class="fas fa-cloud-download-alt" style="color:var(--blue-accent);"></i> وانە و فایلێن بارکری یێن ڤێ پۆلێ (سێرڤەر)
+        <!-- VIEW 1: SUBJECTS GRID (Shown immediately on entering grade) -->
+        <section class="section-surface" id="subjects-view">
+            <div class="section-header-row">
+                <div>
+                    <h2 style="margin:0 0 4px; font-size:1.25rem;">
+                        <i class="fas fa-layer-group" style="color:var(--blue-accent);"></i> بابەتێن ڤێ پۆلێ
                     </h2>
-                    <p id="cf-grade-lessons-status">بارکرنا وانەیان ژ سێرڤەرێ Cloudflare...</p>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span id="cf-grade-lessons-count" style="background:rgba(0,123,255,0.12); color:var(--blue-accent); font-weight:bold; font-size:0.85rem; padding:6px 14px; border-radius:20px; border:1px solid rgba(0,123,255,0.25);">0 فایل</span>
-                    <button type="button" id="cf-grade-refresh-btn" class="btn-action-secondary" style="padding:6px 12px; font-size:0.82rem;">
-                        <i class="fas fa-sync-alt"></i> نوێکرن
-                    </button>
+                    <p style="margin:0; color:var(--secondary-text); font-size:0.85rem;">
+                        ل سەر هەر بابەتەکی داگرە داکو ٥ بەشێن فێربوونێ بۆ تە ڤەبن
+                    </p>
                 </div>
             </div>
+            <div class="subjects-cards-grid" id="grade-subjects-grid"></div>
+        </section>
 
-            <details id="cf-grade-compose-details" style="display:none; margin-bottom:14px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:12px; padding:10px 14px;">
-                <summary style="cursor:pointer; font-weight:700; font-size:0.9rem; color:var(--blue-accent); display:flex; align-items:center; justify-content:space-between; list-style:none;">
-                    <span><i class="fas fa-plus-circle"></i> وانە یان فایلەکا نوو بۆ ڤێ پۆلێ بەلاڤ بکە (تەنێ مامۆستا / ئەدمین)</span>
-                    <span id="cf-grade-author-pill" style="font-size:0.76rem; color:var(--secondary-text); font-weight:600;">پێتڤی ب هەژمارا مامۆستایی یە</span>
-                </summary>
-                <form id="cf-grade-compose-form" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
-                    <div style="display:grid; grid-template-columns:1fr auto; gap:8px;">
-                        <input type="text" id="cf-grade-post-title" placeholder="ناڤونیشانێ وانێ یان فایلێ..." required style="padding:9px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:inherit; font-size:0.88rem;">
-                        <label style="padding:9px 12px; border-radius:9px; border:1px dashed var(--blue-accent); color:var(--blue-accent); cursor:pointer; font-size:0.82rem; font-weight:700; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">
-                            <i class="fas fa-paperclip"></i> <span id="cf-grade-file-label">فایل</span>
-                            <input type="file" id="cf-grade-post-file" accept=".pdf,.png,.jpg,.jpeg,.webp,.pptx,.ppt,.html,.htm" style="display:none;">
-                        </label>
+        <!-- VIEW 2: SUBJECT WORKSPACE (Contains ONLY the 5 requested sections) -->
+        <section class="section-surface" id="subject-workspace-view" style="display:none;">
+            <div class="subject-workspace-header">
+                <div class="subject-title-lockup">
+                    <div id="active-subject-icon-box" class="subject-icon-circle" style="width:48px; height:48px; margin:0; background:var(--blue-accent);">
+                        <i class="fas fa-flask" id="active-subject-icon"></i>
                     </div>
-                    <textarea id="cf-grade-post-content" rows="2" placeholder="کورتەیا وانێ یان تێبینیێ بنڤیسە..." style="padding:9px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:inherit; font-size:0.88rem;"></textarea>
-                    <div style="display:flex; justify-content:flex-end;">
-                        <button type="submit" id="cf-grade-compose-submit" class="btn-action-primary" style="padding:8px 18px; font-size:0.86rem;">
-                            <i class="fas fa-paper-plane"></i> بەلاڤکرن لسەر سێرڤەری
+                    <div>
+                        <h2 id="active-subject-title" style="margin:0 0 2px; font-size:1.3rem;">کیمیا</h2>
+                        <span id="active-subject-sub" style="font-size:0.82rem; color:var(--secondary-text);">پۆلا ١٢ • باهدینی</span>
+                    </div>
+                </div>
+                <button type="button" id="btn-back-to-subjects" class="btn-action-secondary">
+                    <i class="fas fa-arrow-right"></i> زڤرین بۆ بابەتان
+                </button>
+            </div>
+
+            <!-- SUBJECT WORKSPACE TABS -->
+            <div class="subject-tabs-5" role="tablist" id="subject-tabs-bar">
+                <button type="button" class="subject-tab-btn active" data-tab="teachers" role="tab">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>مامۆستایێن بابەتی</span>
+                    <span class="subject-tab-count" id="count-teachers">0</span>
+                </button>
+                <button type="button" class="subject-tab-btn" data-tab="malzama" role="tab">
+                    <i class="fas fa-file-alt"></i>
+                    <span>مەلزەمە</span>
+                    <span class="subject-tab-count" id="count-malzama">0</span>
+                </button>
+                <button type="button" class="subject-tab-btn" data-tab="ai-explain" role="tab">
+                    <i class="fas fa-code"></i>
+                    <span>شەرحکرن ب AI</span>
+                    <span class="subject-tab-count" id="count-ai-explain">0</span>
+                </button>
+                <button type="button" class="subject-tab-btn" data-tab="flashcards" role="tab">
+                    <i class="fas fa-clone"></i>
+                    <span>فلاش کارت</span>
+                    <span class="subject-tab-count" id="count-flashcards">0</span>
+                </button>
+                <button type="button" class="subject-tab-btn" data-tab="quizzes" role="tab">
+                    <i class="fas fa-check-double"></i>
+                    <span>بەشێ هەلبژارتن</span>
+                    <span class="subject-tab-count" id="count-quizzes">0</span>
+                </button>
+                <button type="button" class="subject-tab-btn" data-tab="ask-ai" role="tab">
+                    <i class="fas fa-robot"></i>
+                    <span>پرسیارکرن ژ AI</span>
+                </button>
+            </div>
+
+            <!-- SECTION 1: TEACHERS OF THIS SUBJECT (With Pin-to-Top) -->
+            <div id="panel-teachers" class="subject-panel">
+                <!-- List view -->
+                <div id="teachers-list-view">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                        <p style="margin:0; font-size:0.86rem; color:var(--secondary-text);">
+                            مامۆستایێن بدلێ خۆ <strong>پین بکە (📌)</strong> داکو هەموو گاڤ ل پێشیا هەمییان بهێن.
+                        </p>
+                        <button type="button" id="toggle-all-langs-teachers-btn" class="btn-action-secondary" style="min-height:36px; padding:5px 12px; font-size:0.8rem;">
+                            <i class="fas fa-globe"></i> نیشاندانا هەموو شێوەزاران
                         </button>
                     </div>
-                </form>
-            </details>
-
-            <div id="cf-grade-lessons-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(235px, 1fr)); gap:14px;"></div>
-        </section>
-
-        <!-- ======================================================== -->
-        <!-- STEP 1: SUBJECTS SECTION (ئێکسەر بابەت بهێن) -->
-        <!-- ======================================================== -->
-        <section class="step-section-card" id="step-1-section">
-            <div class="step-section-header">
-                <div class="step-title-group">
-                    <h2>
-                        <i class="fas fa-layer-group" style="color:var(--blue-accent);"></i> بابەتێن خواندنێ یێن ڤێ پۆلێ
-                    </h2>
-                    <p id="subjects-guide-text">
-                        تکایە سەرەتا کلیک ل سەر هەر بابەتەکی بکە (کیمیا، فیزیا، زیندەوەر، بیرکاری...) دا مامۆستایێن وی بابەتی دەربکەڤن:
-                    </p>
+                    <div class="teachers-grid" id="grade-teachers-list"></div>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span id="active-subject-badge" style="background:rgba(0,123,255,0.12); color:var(--blue-accent); font-weight:bold; font-size:0.85rem; padding:6px 14px; border-radius:20px; border:1px solid rgba(0,123,255,0.25);">
-                        سەرەتا بابەتێک هەڵبژێرە
-                    </span>
-                    <button id="reset-subject-filter-btn" class="btn-action-secondary" style="padding:5px 12px; font-size:0.8rem; display:none;">
-                        <i class="fas fa-undo"></i> نیشاندانی هەموو
-                    </button>
-                </div>
-            </div>
 
-            <!-- Subject Cards Grid (کیمیا، فیزیا، زیندەوەر، بیرکاری، عەرەبی، کوردی، ئاین، ئینگلێزی، کۆمپیوتەر...) -->
-            <div class="subjects-cards-grid" id="grade-subjects-grid">
-                <!-- Dynamically populated by grade.js -->
-            </div>
-        </section>
-
-        <!-- ======================================================== -->
-        <!-- STEP 2: TEACHERS SECTION (دیڤدا مامۆستا بهێن) -->
-        <!-- ======================================================== -->
-        <section class="step-section-card" id="step-2-section">
-            <div class="step-section-header">
-                <div class="step-title-group">
-                    <h2 id="teachers-section-heading">
-                        <i class="fas fa-chalkboard-teacher" style="color:var(--blue-accent);"></i> مامۆستایێن بابەتی
-                    </h2>
-                    <p id="teachers-section-sub">
-                        مامۆستایێن تایبەتمەند ب بابەتی، ڕێزبەندی ل دوویف زۆرترین بینەر
-                    </p>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button id="btn-back-to-subjects" class="btn-action-secondary" style="display:none;">
-                        <i class="fas fa-arrow-right"></i> گۆڕینی بابەت
-                    </button>
-                    <span style="color:var(--secondary-text); font-size:0.82rem;" id="sorted-hint">
-                        <i class="fas fa-sort-amount-down"></i> زۆرترین بینەر لەسەرەوەیە
-                    </span>
-                </div>
-            </div>
-
-            <!-- Prompt shown when NO subject has been selected yet -->
-            <div class="step-prompt-box" id="teachers-waiting-prompt">
-                <i class="fas fa-hand-point-up"></i>
-                <h3 style="margin:5px 0 8px; font-size:1.15rem; color:var(--primary-text);">تکایە سەرەتا یەکێک لە بابەتەکانی سەرەوە هەڵبژێرە</h3>
-                <p style="margin:0 0 16px; font-size:0.88rem;">
-                    کلیک ل سەر کیمیا، فیزیا، زیندەوەر، بیرکاری، عەرەبی، کوردی، ئاین، ئینگلێزی یان کۆمپیوتەر بکە تا مامۆستایانی دەربکەون.
-                </p>
-                <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;" id="quick-subject-triggers">
-                    <!-- Populated dynamically -->
-                </div>
-                <div style="margin-top:14px;">
-                    <button id="btn-browse-all-teachers" class="btn-action-secondary" style="font-size:0.82rem;">
-                        یان بینینی هەموو مامۆستایانی پۆل بەبێ فلتەر
-                    </button>
-                </div>
-            </div>
-
-            <!-- Teachers List Container (Visible when subject is picked) -->
-            <div class="teachers-grid" id="grade-teachers-list" style="display:none;">
-                <!-- Dynamically populated by grade.js -->
-            </div>
-        </section>
-
-        <!-- ======================================================== -->
-        <!-- STEP 3: CONTENT PORTAL (دیڤدا مەلزەمە، ڤیدیۆ و پرسیار) -->
-        <!-- ======================================================== -->
-        <section class="step-section-card" id="teacher-content-portal" style="display:none;">
-            <!-- Active Teacher Profile Header -->
-            <div style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, rgba(0,123,255,0.08), rgba(40,167,69,0.06)); border:1px solid rgba(0,123,255,0.2); border-radius:14px; padding:18px; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-                <div style="display:flex; align-items:center; gap:16px;">
-                    <img id="active-teacher-avatar" src="" alt="Avatar" style="width:65px; height:65px; border-radius:50%; object-fit:cover; border:3px solid var(--blue-accent);">
-                    <div>
-                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-                            <h3 id="active-teacher-name" style="margin:0; font-size:1.25rem;">مامۆستا</h3>
-                            <span id="active-teacher-badge" class="rank-badge"><i class="fas fa-fire"></i> مامۆستای هەڵبژێردراو</span>
+                <!-- Teacher Detail Drawer (Opens when clicking a teacher card) -->
+                <div id="teacher-detail-view" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:16px; border:1px solid var(--border-color); border-radius:14px; background:var(--surface-alt); margin-bottom:16px;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <img id="detail-teacher-avatar" src="" alt="" class="t-avatar" style="width:64px; height:64px;">
+                            <div>
+                                <h3 id="detail-teacher-name" style="margin:0 0 4px; font-size:1.15rem;">مامۆستا</h3>
+                                <p id="detail-teacher-bio" style="margin:0; font-size:0.83rem; color:var(--secondary-text);"></p>
+                            </div>
                         </div>
-                        <p id="active-teacher-subject" style="margin:0 0 3px; color:var(--blue-accent); font-weight:bold; font-size:0.9rem;">کیمیا</p>
-                        <p id="active-teacher-bio" style="margin:0; color:var(--secondary-text); font-size:0.82rem;">مامۆستایێ شارەزا</p>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <button type="button" id="detail-teacher-pin-btn" class="btn-pin-teacher">
+                                <i class="fas fa-thumbtack"></i> <span>پین کرن</span>
+                            </button>
+                            <button type="button" id="close-teacher-detail-btn" class="btn-action-secondary">
+                                <i class="fas fa-arrow-right"></i> زڤرین بۆ لیستا مامۆستایان
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="teacher-detail-sections" style="display:flex; flex-direction:column; gap:18px;"></div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: MALZAMA (Non-HTML Study Files) -->
+            <div id="panel-malzama" class="subject-panel" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                    <span style="font-size:0.86rem; color:var(--secondary-text);">پەڕاو، PDF، پاوەرپۆینت و وێنەیێن ڤی بابەتی</span>
+                    <select id="malzama-teacher-filter" style="padding:7px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-alt); color:var(--primary-text); font-family:inherit; font-size:0.84rem;">
+                        <option value="all">هەموو مامۆستایان</option>
+                    </select>
+                </div>
+                <div class="portal-items-grid" id="malzama-container"></div>
+            </div>
+
+            <!-- SECTION 3: AI EXPLANATION (HTML Files Live Here) -->
+            <div id="panel-ai-explain" class="subject-panel" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                    <span style="font-size:0.86rem; color:var(--secondary-text);">فایلێن HTML یێن ئینتەرئەکتیڤ و شەرحکرن ب AI</span>
+                    <details id="cf-html-upload-details" style="display:none;">
+                        <summary class="btn-action-primary" style="cursor:pointer; list-style:none;">
+                            <i class="fas fa-upload"></i> بارکرنا فایلێ HTML
+                        </summary>
+                        <form id="cf-html-upload-form" style="margin-top:10px; padding:14px; border:1px solid var(--border-color); border-radius:12px; background:var(--surface-alt); display:flex; flex-direction:column; gap:10px; min-width:260px;">
+                            <input type="text" id="cf-html-title" placeholder="ناڤونیشانێ وانەیا HTML..." required style="padding:8px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;">
+                            <input type="file" id="cf-html-file" accept=".html,.htm" required style="font-size:0.82rem;">
+                            <button type="submit" id="cf-html-submit-btn" class="btn-action-primary">بەلاڤکرنا فایلێ HTML</button>
+                        </form>
+                    </details>
+                </div>
+                <div class="portal-items-grid" id="ai-explain-container"></div>
+            </div>
+
+            <!-- SECTION 4: FLASHCARDS (بەشێ فلاش کارتان) -->
+            <div id="panel-flashcards" class="subject-panel" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; padding:10px 14px; border-radius:12px; background:var(--surface-alt); border:1px solid var(--border-color);">
+                    <div id="flashcard-progress-text" style="font-size:0.86rem; font-weight:700;">
+                        ٠ فلاش کارت
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <select id="flashcard-teacher-filter" style="padding:7px 10px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; font-size:0.82rem;">
+                            <option value="all">هەموو مامۆستایان</option>
+                        </select>
+                        <button type="button" id="flashcard-shuffle-btn" class="btn-action-secondary" style="min-height:36px; padding:5px 11px; font-size:0.8rem;">
+                            <i class="fas fa-random"></i> تێکەلکرن
+                        </button>
+                        <button type="button" id="flashcard-view-toggle-btn" class="btn-action-secondary" style="min-height:36px; padding:5px 11px; font-size:0.8rem;">
+                            <i class="fas fa-th-large"></i> هەموو کارت
+                        </button>
+                        <button type="button" id="flashcard-reset-btn" class="btn-action-secondary" style="min-height:36px; padding:5px 11px; font-size:0.8rem;">
+                            <i class="fas fa-redo"></i> سفرکرن
+                        </button>
+                        <a id="flashcard-studio-link" href="admin-panel.html" class="btn-action-primary" style="display:none; min-height:36px; padding:5px 12px; font-size:0.8rem; text-decoration:none;">
+                            <i class="fas fa-magic"></i> چێکرنا فلاش کارتان
+                        </a>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="text-align:center; padding:6px 14px; background:var(--surface-color); border-radius:10px; border:1px solid var(--border-color);">
-                        <span id="active-teacher-views" style="font-weight:bold; font-size:1.1rem; color:var(--blue-accent);">0</span>
-                        <div style="font-size:0.75rem; color:var(--secondary-text);">بینەری وانەکان</div>
+
+                <div class="flashcard-progress-track">
+                    <div id="flashcard-progress-fill" class="flashcard-progress-fill"></div>
+                </div>
+
+                <div id="flashcard-stage-wrap"></div>
+                <div id="flashcard-grid-view" class="portal-items-grid" style="display:none;"></div>
+            </div>
+
+            <!-- SECTION 5: QUIZZES (بەشێ هەلبژارتن) -->
+            <div id="panel-quizzes" class="subject-panel" style="display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding:10px 14px; border-radius:12px; background:var(--surface-alt); border:1px solid var(--border-color);">
+                    <div id="quiz-score-summary" style="font-size:0.88rem; font-weight:700;">
+                        پرسیاران هەلبژێرە داکو ئەنجامێ خۆ ببینی
                     </div>
-                    <button id="close-teacher-portal-btn" class="btn-action-secondary" title="داخستن و گەڕانەوە">
-                        <i class="fas fa-times"></i> گەڕانەوە بۆ مامۆستایان
+                    <button type="button" id="reset-quizzes-btn" class="btn-action-secondary" style="min-height:36px; padding:5px 12px; font-size:0.8rem;">
+                        <i class="fas fa-redo"></i> دووبارە دەستپێبکە
                     </button>
                 </div>
+                <div class="portal-items-grid" id="quizzes-container"></div>
             </div>
 
-            <!-- Content Tabs Bar -->
-            <div class="content-tabs-bar">
-                <button class="c-tab active" data-tab="malzama">
-                    <i class="fas fa-file-alt" style="color:#28a745;"></i> مەلزەمە و پەڕاوەکان
-                    <span class="c-badge" id="count-malzama">0</span>
-                </button>
-                <button class="c-tab" data-tab="videos">
-                    <i class="fas fa-play-circle" style="color:#e63946;"></i> وانێن ڤیدیۆیی
-                    <span class="c-badge" id="count-videos">0</span>
-                </button>
-                <button class="c-tab" data-tab="quizzes">
-                    <i class="fas fa-question-circle" style="color:#8a2be2;"></i> پرسیارێن هەڵبژارتن
-                    <span class="c-badge" id="count-quizzes">0</span>
-                </button>
-            </div>
+            <!-- SECTION 5: ASK AI (بەشێ پرسیارکرن ژ AI) -->
+            <div id="panel-ask-ai" class="subject-panel" style="display:none;">
+                <div class="ai-chat-shell">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <span id="ask-ai-context-label" style="font-size:0.86rem; color:var(--secondary-text);">
+                            هەر پرسیارەکا تە دەربارەی ڤی بابەتی هەبیت بێژە AI
+                        </span>
+                        <button type="button" id="ask-ai-clear-btn" class="btn-action-secondary" style="min-height:36px; padding:5px 12px; font-size:0.8rem;">
+                            <i class="fas fa-trash-alt"></i> پاقژکرن
+                        </button>
+                    </div>
 
-            <!-- Tab Panels -->
-            <div id="panel-malzama" class="content-panel">
-                <div class="portal-items-grid" id="malzama-container">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
+                    <div class="ai-starter-chips" id="ask-ai-starter-chips"></div>
 
-            <div id="panel-videos" class="content-panel" style="display:none;">
-                <div class="portal-items-grid" id="videos-container">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
+                    <div class="ai-chat-messages" id="ask-ai-messages"></div>
 
-            <div id="panel-quizzes" class="content-panel" style="display:none;">
-                <div class="portal-items-grid" id="quizzes-container">
-                    <!-- Populated dynamically -->
+                    <form id="ask-ai-form" class="ai-input-row">
+                        <textarea id="ask-ai-input" rows="2" placeholder="پرسیارا خۆ ل ڤێرە بنڤیسە..." required></textarea>
+                        <button type="submit" id="ask-ai-send-btn" class="btn-action-primary" style="min-height:46px; padding:0 18px; white-space:nowrap;">
+                            <i class="fas fa-paper-plane"></i> هنارتن
+                        </button>
+                    </form>
                 </div>
             </div>
         </section>
-
-        <!-- Back to Home Footer -->
-        <footer style="text-align:center; margin:35px 0 20px;">
-            <a href="index.html" class="btn-action-secondary" style="padding:10px 24px; font-size:0.9rem;">
-                <i class="fas fa-arrow-right"></i> گەڕانەوە بۆ هەڵبژاردنی هەموو پۆلەکان
-            </a>
-        </footer>
     </div>
 
-    <!-- UNIVERSAL DOCUMENT VIEWER MODAL (PowerPoint PPTX, HTML, Image, PDF) -->
+    <!-- UNIVERSAL DOCUMENT VIEWER MODAL (HTML, PDF, PPTX, Image) -->
     <div id="doc-viewer-modal" class="doc-viewer-modal">
         <div class="doc-content-box">
-            <!-- Modal Header -->
-            <div style="display:flex; justify-content:space-between; align-items:center; padding: 14px 20px; border-bottom: 1px solid var(--border-color); background:var(--surface-color); flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 14px 18px; border-bottom: 1px solid var(--border-color); background:var(--surface-color); flex-wrap:wrap; gap:10px;">
                 <div style="display:flex; align-items:center; gap: 10px;">
                     <span id="doc-modal-format-badge" class="format-tag pdf">PDF</span>
                     <div>
-                        <h4 id="doc-modal-title" style="margin: 0; font-size: 1.1rem; color:var(--primary-text);">ناو و ناونیشانی پەڕاو</h4>
+                        <h4 id="doc-modal-title" style="margin: 0; font-size: 1.05rem; color:var(--primary-text);">پەڕاو</h4>
                         <div style="display:flex; gap: 10px; font-size:0.8rem; color:var(--secondary-text); margin-top:2px;">
-                            <span id="doc-modal-teacher-info"><i class="fas fa-chalkboard-teacher"></i> م. حسێن</span>
-                            <span id="doc-modal-size-info"><i class="fas fa-weight-hanging"></i> 2.4 MB</span>
+                            <span id="doc-modal-teacher-info"><i class="fas fa-chalkboard-teacher"></i> مامۆستا</span>
+                            <span id="doc-modal-size-info"></span>
                         </div>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap: 8px;">
-                    <button id="doc-modal-fullscreen-btn" class="btn-action-secondary" style="padding: 6px 14px; font-size: 0.85rem;" title="ڤەکرن ل شاشەیا تەواو / پەڕەیەکێ نوو">
+                <div style="display:flex; align-items:center; gap: 8px; flex-wrap:wrap;">
+                    <button type="button" id="doc-modal-fullscreen-btn" class="btn-action-secondary" style="min-height:36px; padding: 6px 12px; font-size: 0.82rem;">
                         <i class="fas fa-expand"></i> شاشەیا تەواو
                     </button>
-                    <button id="doc-modal-gdrive-save-btn" class="btn-action-secondary" style="padding: 6px 14px; font-size: 0.85rem; border-color:#4285F4; color:#4285F4;" title="پاشەکەوتکردن لە Google Drive ی خۆت">
-                        <i class="fab fa-google-drive"></i> پاشەکەوت لە Drive
+                    <button type="button" id="doc-modal-gdrive-save-btn" class="btn-action-secondary" style="min-height:36px; padding: 6px 12px; font-size: 0.82rem; border-color:#4285F4; color:#4285F4;">
+                        <i class="fab fa-google-drive"></i> Drive
                     </button>
-                    <a id="doc-modal-download-btn" href="#" target="_blank" download class="btn-action-primary" style="padding: 6px 14px; font-size: 0.85rem;">
+                    <a id="doc-modal-download-btn" href="#" target="_blank" download class="btn-action-primary" style="min-height:36px; padding: 6px 12px; font-size: 0.82rem;">
                         <i class="fas fa-download"></i> داگرتن
                     </a>
-                    <button id="close-doc-btn" class="close-doc-btn" title="داخستن">
+                    <button type="button" id="close-doc-btn" class="close-doc-btn" title="داخستن">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>
-
-            <!-- Modal Content Viewport -->
-            <div id="doc-viewer-viewport" style="flex:1; min-height: 480px; max-height: 80vh; overflow:auto; background: #2b2b2b; display:flex; align-items:center; justify-content:center;">
-                <!-- Embedded content injected dynamically -->
-            </div>
+            <div id="doc-viewer-viewport" style="flex:1; min-height: 480px; max-height: 80vh; overflow:auto; background: #1e293b; display:flex; align-items:center; justify-content:center;"></div>
         </div>
     </div>
 
@@ -870,9 +932,9 @@
             <div style="display:flex; justify-content:space-between; align-items:center; padding: 12px 18px; border-bottom: 1px solid var(--border-color); background:var(--surface-color);">
                 <div>
                     <h4 id="modal-video-title" style="margin: 0; font-size: 1.05rem; color:var(--primary-text);">ناڤونیشانێ وانێ</h4>
-                    <span id="modal-video-chapter" style="font-size:0.8rem; color:var(--secondary-text);">بەندی ١</span>
+                    <span id="modal-video-chapter" style="font-size:0.8rem; color:var(--secondary-text);"></span>
                 </div>
-                <button id="close-player-btn" class="close-player-btn" title="داخستن">
+                <button type="button" id="close-player-btn" class="close-player-btn" title="داخستن">
                     <i class="fas fa-times"></i>
                 </button>
             </div>

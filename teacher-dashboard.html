@@ -368,6 +368,9 @@
             <button class="d-tab" data-tab="tab-add-quiz">
                 <i class="fas fa-question-circle" style="color:#007bff;"></i> چێکرنا پرسیارێن هەڵبژارتن
             </button>
+            <button class="d-tab" data-tab="tab-flashcards" style="border-color:rgba(14,165,233,0.45);">
+                <i class="fas fa-clone" style="color:#0ea5e9;"></i> فلاش کارت (AI / کۆد / دەستی)
+            </button>
             <button class="d-tab" data-tab="tab-my-items">
                 <i class="fas fa-folder-open" style="color:#fd7e14;"></i> بابەتێن من (<span id="total-my-items">0</span>)
             </button>
@@ -873,9 +876,58 @@
 
         <!-- TAB 3: ADD QUIZ QUESTION -->
         <div id="tab-add-quiz" class="tab-pane">
-            <h3 style="margin-top:0; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
-                <i class="fas fa-question-circle" style="color:#007bff;"></i> چێکرنا پرسیارەکا نوو یا هەڵبژارتن (MCQ)
+            <h3 style="margin-top:0; margin-bottom: 14px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-question-circle" style="color:#007bff;"></i> چێکرنا پرسیارێن هەڵبژارتن (ب AI / فایلێ کۆدێ / دەستی)
             </h3>
+
+            <!-- Smart AI & Code Converter for Quizzes -->
+            <details open style="margin-bottom:20px; border:1px solid rgba(124,58,237,0.35); border-radius:14px; padding:14px; background:rgba(124,58,237,0.05);">
+                <summary style="cursor:pointer; font-weight:800; color:#8b5cf6; font-size:0.96rem; display:flex; align-items:center; gap:8px;">
+                    <i class="fas fa-magic"></i> چێکرنا کۆمەکا پرسیاران ب AI یان ئەپلودا فایلێ کۆدێ (HTML / JS / JSON / TXT)
+                </summary>
+                <div style="margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+                    <div style="border:1px solid var(--border-color); border-radius:12px; padding:12px; background:var(--surface-color); display:flex; flex-direction:column; gap:8px;">
+                        <strong style="font-size:0.88rem; color:#0ea5e9;"><i class="fas fa-robot"></i> ب ڕێکا AI</strong>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <label style="font-size:0.8rem;">ژمارە:</label>
+                            <select id="td-quiz-ai-count" style="padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:inherit;">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                            </select>
+                        </div>
+                        <textarea id="td-quiz-ai-notes" rows="3" placeholder="ناڤەرۆکا وانێ یان بابەتی بنڤیسە دا AI پرسیاران چێکەت..." style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box;"></textarea>
+                        <button type="button" id="td-quiz-ai-gen-btn" class="btn-save" style="padding:8px 14px; background:#0ea5e9; border-color:#0ea5e9;">
+                            <i class="fas fa-sparkles"></i> چێکرن ب AI
+                        </button>
+                    </div>
+                    <div style="border:1px solid var(--border-color); border-radius:12px; padding:12px; background:var(--surface-color); display:flex; flex-direction:column; gap:8px;">
+                        <strong style="font-size:0.88rem; color:#8b5cf6;"><i class="fas fa-file-code"></i> ئەپلودا فایلێ کۆدێ</strong>
+                        <input type="file" id="td-quiz-code-file" accept=".html,.htm,.js,.json,.txt,.csv" style="font-size:0.8rem;">
+                        <textarea id="td-quiz-code-input" rows="3" dir="ltr" placeholder="Paste JSON / JS quiz array / HTML quiz code / Q&A text..." style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:monospace; font-size:0.8rem; box-sizing:border-box;"></textarea>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button type="button" id="td-quiz-code-parse-btn" class="btn-save" style="flex:1; padding:7px 10px; font-size:0.82rem; background:#7c3aed; border-color:#7c3aed;">
+                                <i class="fas fa-bolt"></i> گۆڕینا ڕاستەوخۆ
+                            </button>
+                            <button type="button" id="td-quiz-code-ai-btn" class="btn-cancel" style="flex:1; padding:7px 10px; font-size:0.82rem; border-color:#7c3aed; color:#8b5cf6;">
+                                <i class="fas fa-robot"></i> گۆڕین ب AI
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="td-quiz-studio-status" style="display:none; margin-top:10px; padding:9px 12px; border-radius:8px; font-size:0.86rem; font-weight:700;"></div>
+                <div id="td-quiz-studio-preview-wrap" style="display:none; margin-top:12px; border-top:1px solid var(--border-color); padding-top:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <strong id="td-quiz-studio-count" style="font-size:0.9rem;">0 پرسیار ئامادە نە</strong>
+                        <button type="button" id="td-quiz-studio-submit-btn" class="btn-save" style="padding:7px 16px; background:#10b981; border-color:#10b981;">
+                            <i class="fas fa-check-double"></i> هنارتن و بەلاڤکرنا هەمییان
+                        </button>
+                    </div>
+                    <div id="td-quiz-studio-preview" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;"></div>
+                </div>
+            </details>
+
             <form id="add-quiz-form">
                 <div class="form-row">
                     <div class="form-group" style="text-align:right;">
@@ -958,6 +1010,117 @@
                         <i class="fas fa-check"></i> تۆمارکرن و ناردن بۆ پەسەندکرنێ
                     </button>
                 </div>
+            </form>
+        </div>
+
+        <!-- TAB 3B: FLASHCARDS CREATOR (AI + CODE CONVERTER + MANUAL) -->
+        <div id="tab-flashcards" class="tab-pane">
+            <h3 style="margin-top:0; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-clone" style="color:#0ea5e9;"></i> چێکرنا فلاش کارتان (ب AI / فایلێ کۆدێ / دەستی)
+            </h3>
+
+            <div class="form-row" style="margin-bottom:14px;">
+                <div class="form-group" style="text-align:right;">
+                    <label>قۆناغ و پۆل</label>
+                    <select id="fc-grade" required style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;"></select>
+                </div>
+                <div class="form-group" style="text-align:right;">
+                    <label>بابەت (Subject)</label>
+                    <select id="fc-subject" required style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;">
+                        <option value="کیمیا" selected>کیمیا (Chemistry)</option>
+                        <option value="فیزیا">فیزیا (Physics)</option>
+                        <option value="زیندەوەر">زیندەوەر (Biology)</option>
+                        <option value="بیرکاری">بیرکاری (Mathematics)</option>
+                        <option value="عەرەبی">عەرەبی (Arabic)</option>
+                        <option value="کوردی">کوردی (Kurdish)</option>
+                        <option value="ئاین">ئاین (Islamic Education)</option>
+                        <option value="ئینگلێزی">ئینگلێزی (English)</option>
+                        <option value="کۆمپیوتەر">کۆمپیوتەر (Computer)</option>
+                        <option value="زانست">زانست (Science)</option>
+                        <option value="کۆمەڵایەتی">کۆمەڵایەتی (Social)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="text-align:right;">
+                    <label>زمان</label>
+                    <select id="fc-lang" required style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;">
+                        <option value="ku_ba" selected>باهدینی</option>
+                        <option value="ku_so">سۆرانی</option>
+                        <option value="ar">عەرەبی</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="form-group" style="text-align:right;">
+                    <label>بەند / بەش (Chapter)</label>
+                    <input type="text" id="fc-chapter" placeholder="بۆ نموونە: بەشی ١">
+                </div>
+            </div>
+
+            <!-- AI & Code Upload Boxes -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; margin-bottom:16px;">
+                <div style="border:1px solid rgba(14,165,233,0.35); border-radius:12px; padding:12px; background:rgba(14,165,233,0.05); display:flex; flex-direction:column; gap:8px;">
+                    <strong style="font-size:0.9rem; color:#0ea5e9;"><i class="fas fa-magic"></i> ١. چێکرنا فلاش کارتان ب AI</strong>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <label style="font-size:0.8rem;">ژمارە:</label>
+                        <select id="fc-ai-count" style="padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit;">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                        </select>
+                    </div>
+                    <textarea id="fc-ai-notes" rows="3" placeholder="بابەت یان دەقێ وانێ ل ڤێرە بنڤیسە دا AI فلاش کارتان چێکەت..." style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box;"></textarea>
+                    <button type="button" id="fc-ai-generate-btn" class="btn-save" style="background:#0ea5e9; border-color:#0ea5e9; padding:8px 14px;">
+                        <i class="fas fa-sparkles"></i> چێکرنا فلاش کارتان ب AI
+                    </button>
+                </div>
+
+                <div style="border:1px solid rgba(124,58,237,0.35); border-radius:12px; padding:12px; background:rgba(124,58,237,0.05); display:flex; flex-direction:column; gap:8px;">
+                    <strong style="font-size:0.9rem; color:#8b5cf6;"><i class="fas fa-file-code"></i> ٢. ئەپلودا فایلێ کۆدێ -> فلاش کارت</strong>
+                    <input type="file" id="fc-code-file" accept=".html,.htm,.js,.json,.txt,.csv" style="font-size:0.8rem;">
+                    <textarea id="fc-code-input" rows="3" dir="ltr" placeholder="Paste JSON / JS / HTML / CSV / Q&A text..." style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:monospace; font-size:0.8rem; box-sizing:border-box;"></textarea>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button type="button" id="fc-code-parse-btn" class="btn-save" style="flex:1; padding:7px 10px; font-size:0.82rem; background:#7c3aed; border-color:#7c3aed;">
+                            <i class="fas fa-bolt"></i> گۆڕینا ڕاستەوخۆ
+                        </button>
+                        <button type="button" id="fc-code-ai-btn" class="btn-cancel" style="flex:1; padding:7px 10px; font-size:0.82rem; border-color:#7c3aed; color:#8b5cf6;">
+                            <i class="fas fa-robot"></i> گۆڕین ب AI
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fc-studio-status" style="display:none; margin-bottom:12px; padding:10px 12px; border-radius:9px; font-size:0.86rem; font-weight:700;"></div>
+
+            <div id="fc-studio-preview-wrap" style="display:none; margin-bottom:18px; border:1px solid var(--border-color); border-radius:12px; padding:12px; background:var(--surface-color);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                    <strong id="fc-studio-count" style="font-size:0.92rem;">0 فلاش کارت ئامادە نە</strong>
+                    <button type="button" id="fc-studio-submit-btn" class="btn-save" style="padding:7px 16px; background:#10b981; border-color:#10b981;">
+                        <i class="fas fa-check-double"></i> هنارتن و بەلاڤکرنا هەمییان
+                    </button>
+                </div>
+                <div id="fc-studio-preview" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;"></div>
+            </div>
+
+            <!-- Manual Single Flashcard Form -->
+            <form id="add-flashcard-form" style="border-top:1px solid var(--border-color); padding-top:14px;">
+                <h4 style="margin:0 0 10px; font-size:0.95rem;"><i class="fas fa-pen"></i> یان فلاش کارتەکێ ب دەستی زێدە بکە:</h4>
+                <div class="form-row">
+                    <div class="form-group" style="text-align:right;">
+                        <label>ڕووێ پێشێ (پرسیار / زاراوە)</label>
+                        <textarea id="fc-front" rows="2" placeholder="پرسیار یان زاراوە..." required style="width:100%; padding:9px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box;"></textarea>
+                    </div>
+                    <div class="form-group" style="text-align:right;">
+                        <label>ڕووێ پشتێ (بەرسڤ / شیکار)</label>
+                        <textarea id="fc-back" rows="2" placeholder="بەرسڤ یان پێناسە..." required style="width:100%; padding:9px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box;"></textarea>
+                    </div>
+                </div>
+                <div class="form-group" style="text-align:right;">
+                    <label>تێبینی / Hint (ئیختیاری)</label>
+                    <input type="text" id="fc-hint" placeholder="کلیلە وشەیەک بۆ بیرئینانێ...">
+                </div>
+                <button type="submit" class="btn-save" style="width:100%; padding:11px; margin-top:8px;">
+                    <i class="fas fa-plus-circle"></i> زێدەکرنا فلاش کارتا تاک
+                </button>
             </form>
         </div>
 

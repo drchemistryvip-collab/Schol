@@ -81,6 +81,43 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLevelFilter = 'all';
     let isShowingAllTemporarily = false;
 
+    const homeMenuToggleBtn = document.getElementById('home-menu-toggle-btn');
+    const homeActionsDrawer = document.getElementById('home-actions-drawer');
+    const roleStatusBarEl = document.getElementById('role-status-bar');
+
+    function setHomeDrawerOpen(isOpen) {
+        if (!homeActionsDrawer || !homeMenuToggleBtn) return;
+        homeActionsDrawer.style.display = isOpen ? 'flex' : 'none';
+        homeMenuToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        homeMenuToggleBtn.innerHTML = isOpen
+            ? '<i class="fas fa-times"></i>'
+            : '<i class="fas fa-bars"></i>';
+    }
+
+    if (homeMenuToggleBtn && homeActionsDrawer) {
+        homeMenuToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = homeActionsDrawer.style.display === 'flex';
+            setHomeDrawerOpen(!isOpen);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (homeActionsDrawer.style.display === 'flex' && roleStatusBarEl && !roleStatusBarEl.contains(e.target)) {
+                setHomeDrawerOpen(false);
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && homeActionsDrawer.style.display === 'flex') {
+                setHomeDrawerOpen(false);
+            }
+        });
+
+        [editMyProfileBtn, openSettingsBtn, editFollowedBtn, btnTopSignout].forEach(btn => {
+            if (btn) btn.addEventListener('click', () => setHomeDrawerOpen(false));
+        });
+    }
+
     // ==========================================
     // 1. POPULATE ONBOARDING & SETTINGS CHECKBOXES
     // ==========================================
@@ -101,20 +138,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. RENDER HOMEPAGE GRADES GRID
     // (Followed Grades Filter + Level Filter)
     // ==========================================
+    const gradeLevelFilters = document.getElementById('grade-level-filters');
+    const gradesSectionTitle = document.getElementById('grades-section-title');
+    const gradesSectionSubtitle = document.getElementById('grades-section-subtitle');
+
     function renderGrades() {
         const studentFollowed = dataStore.getStudentGrades();
         const currentLang = dataStore.getActiveLanguage();
+        const isFilteredToFollowed = Boolean(studentFollowed && studentFollowed.length > 0 && !isShowingAllTemporarily);
 
-        // Update banner
-        if (studentFollowed && studentFollowed.length > 0 && !isShowingAllTemporarily) {
+        // Update banner & section headers
+        if (isFilteredToFollowed) {
             followedBanner.style.display = 'flex';
             const namesList = studentFollowed.map(id => {
                 const g = gradesConfig.find(item => item.id === String(id));
                 return g ? g.shortName : id;
             }).join('، ');
             followedGradesNames.textContent = namesList;
-            showAllGradesToggle.textContent = 'نیشاندانی هەموو پۆلەکان (١٣ پۆل)';
+            showAllGradesToggle.textContent = 'نیشاندانی هەموو پۆلەکان';
+            if (gradeLevelFilters) gradeLevelFilters.style.display = 'none';
+            if (gradesSectionTitle) gradesSectionTitle.innerHTML = '<i class="fas fa-layer-group" style="color:var(--blue-accent);"></i> پۆلێن من یێن هەلبژارتی';
+            if (gradesSectionSubtitle) gradesSectionSubtitle.textContent = 'پۆلا خۆ ڤەکە داکو بابەت و مامۆستا و وانەیێن وێ ببینی';
         } else {
+            if (gradeLevelFilters) gradeLevelFilters.style.display = 'flex';
+            if (gradesSectionTitle) gradesSectionTitle.innerHTML = '<i class="fas fa-layer-group" style="color:var(--blue-accent);"></i> هەلبژارتنا قۆناغا خواندنێ';
+            if (gradesSectionSubtitle) gradesSectionSubtitle.textContent = 'ژ باخچەی ساوایان هەتا پۆلا دوازدێ و زانکۆ و پەیمانگەکان';
             if (studentFollowed && studentFollowed.length > 0 && isShowingAllTemporarily) {
                 followedBanner.style.display = 'flex';
                 followedGradesNames.textContent = 'هەموو پۆلەکان پیشان دەدرێن';
@@ -124,19 +172,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Filter by student preference unless showing all
+        // Filter strictly by student preference unless showing all temporarily
         let activeGrades = gradesConfig;
-        if (studentFollowed && studentFollowed.length > 0 && !isShowingAllTemporarily) {
+        if (isFilteredToFollowed) {
             activeGrades = gradesConfig.filter(g => studentFollowed.includes(g.id));
         }
 
-        // Filter by educational level (kindergarten, primary, middle, high)
+        // Filter by educational level when browsing all
         let filtered = activeGrades;
-        if (currentLevelFilter !== 'all') {
+        if (!isFilteredToFollowed && currentLevelFilter !== 'all') {
             filtered = activeGrades.filter(g => g.level === currentLevelFilter);
         }
 
-        totalVisibleGradesCount.textContent = `${filtered.length} لە ${gradesConfig.length} پۆل`;
+        if (totalVisibleGradesCount) {
+            totalVisibleGradesCount.textContent = isFilteredToFollowed
+                ? `${filtered.length} پۆل هاتینە هەلبژارتن`
+                : `${filtered.length} لە ${gradesConfig.length} پۆل`;
+        }
 
         if (filtered.length === 0) {
             gradesContainer.innerHTML = `
@@ -161,53 +213,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         gradesContainer.innerHTML = filtered.map(g => {
-            // Count teachers available for this grade in the CURRENT language
             const teachersInGrade = dataStore.getTeachersForGrade(g.id, currentLang);
             const teacherCount = teachersInGrade.length;
             const subjects = dataStore.getSubjectsForGrade ? dataStore.getSubjectsForGrade(g.id) : [];
-            const subjectsPills = subjects.slice(0, 6).map(s => `
-                <a href="grade.html?pola=${g.id}&subject=${s.id}" class="grade-sub-pill" onclick="event.stopPropagation();" style="display:inline-block; font-size:0.72rem; padding:2px 8px; border-radius:10px; background:${s.color || '#007bff'}18; color:${s.color || 'var(--blue-accent)'}; border:1px solid ${s.color || '#007bff'}30; text-decoration:none; margin:2px 2px 2px 0; font-weight:600; transition:all 0.15s;">
-                    ${s.name}
-                </a>
-            `).join('');
-
             const targetUrl = g.customUrl || `grade.html?pola=${g.id}`;
             const isUniv = g.id === 'univ';
 
             return `
-                <div onclick="window.location.href='${targetUrl}'" class="grade-card-item" style="border-right-color: ${g.color || '#007bff'}; cursor:pointer; ${isUniv ? 'background: linear-gradient(135deg, var(--surface-color), rgba(114, 9, 183, 0.05));' : ''}">
-                    <div class="grade-card-icon" style="background: ${g.color}18; color: ${g.color || '#007bff'};">
+                <a href="${targetUrl}" class="grade-card-item" style="border-right-color: ${g.color || '#2563eb'};">
+                    <div class="grade-card-icon" style="background: ${g.color}18; color: ${g.color || '#2563eb'};">
                         <i class="fas ${g.icon || 'fa-school'}"></i>
                     </div>
                     <div class="grade-card-body">
-                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <h3 style="margin: 0 0 2px; font-size: 1.02rem;">${g.name}</h3>
-                            ${isUniv ? '<span style="font-size:0.7rem; background:#7209b7; color:#fff; padding:1px 6px; border-radius:8px; font-weight:700;">بەش و معەدل</span>' : ''}
-                        </div>
-                        <p style="margin: 0 0 4px; color: var(--secondary-text); font-size: 0.78rem;">
-                            ${isUniv 
-                                ? '<i class="fas fa-graduation-cap" style="color:#7209b7;"></i> ٢٥+ بەش و کۆنمرەکان | مەلزەمەی زانکۆ' 
-                                : `<i class="fas fa-users" style="color:var(--blue-accent);"></i> ${teacherCount} مامۆستا (${dataStore.getLanguageLabel(currentLang)})`}
+                        <h3 style="margin: 0 0 4px; font-size: 1.05rem; color: var(--primary-text);">${g.name}</h3>
+                        <p style="margin: 0; color: var(--secondary-text); font-size: 0.8rem;">
+                            ${isUniv
+                                ? 'بەش، کۆنمرە و مەلزەمێن زانکۆ'
+                                : `${subjects.length} بابەت • ${teacherCount} مامۆستا (${dataStore.getLanguageLabel(currentLang)})`}
                         </p>
-                        ${subjectsPills ? `
-                        <div style="margin-top: 4px; display:flex; flex-wrap:wrap; gap:3px; align-items:center;">
-                            <span style="font-size:0.7rem; color:var(--secondary-text); margin-left:3px;"><i class="fas fa-layer-group"></i> بابەتەکان:</span>
-                            ${subjectsPills}
-                        </div>
-                        ` : ''}
-                        ${isUniv ? `
-                        <div style="margin-top: 6px; display:flex; gap:6px; flex-wrap:wrap;" onclick="event.stopPropagation();">
-                            <a href="university.html" style="font-size:0.73rem; color:#7209b7; text-decoration:none; font-weight:700; background:rgba(114,9,183,0.1); padding:2px 8px; border-radius:6px;">
-                                <i class="fas fa-calculator"></i> پشکنینا معەدلی
-                            </a>
-                            <a href="grade.html?pola=univ" style="font-size:0.73rem; color:var(--blue-accent); text-decoration:none; font-weight:600; background:rgba(0,123,255,0.1); padding:2px 8px; border-radius:6px;">
-                                <i class="fas fa-book"></i> مەلزەمەکان
-                            </a>
-                        </div>
-                        ` : ''}
                     </div>
-                    <i class="fas fa-chevron-left grade-card-chevron" style="color: var(--secondary-text); font-size: 0.85rem; margin-right:8px;"></i>
-                </div>
+                    <i class="fas fa-chevron-left grade-card-chevron" style="color: var(--secondary-text); font-size: 0.9rem; margin-right:6px;"></i>
+                </a>
             `;
         }).join('');
     }
@@ -425,10 +451,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 4. STUDENT ONBOARDING MODAL
     // ==========================================
+    const onboardOpenAuthBtn = document.getElementById('onboard-open-auth-btn');
+
     function openStudentOnboardingModal() {
-        // Default check High School grades (10, 11, 12)
-        createGradeCheckboxes(onboardGradesGrid, ['10', '11', '12']);
-        studentGradesModal.style.display = 'flex';
+        const existingFollowed = dataStore.getStudentGrades() || [];
+        createGradeCheckboxes(onboardGradesGrid, existingFollowed);
+        if (studentGradesModal) studentGradesModal.style.display = 'flex';
+    }
+
+    if (onboardOpenAuthBtn) {
+        onboardOpenAuthBtn.addEventListener('click', () => {
+            if (studentGradesModal) studentGradesModal.style.display = 'none';
+            if (mainAppContainer) mainAppContainer.style.display = 'none';
+            if (authGateScreen) authGateScreen.style.display = 'flex';
+        });
     }
 
     presetGradesBtns.forEach(btn => {
@@ -453,13 +489,38 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Ensure a local student session exists if user jumped straight into onboarding
+        if (!getStoredUser() && !(window.CloudflareLessons && window.CloudflareLessons.getCurrentUser())) {
+            const localStudent = {
+                uid: 'student_' + Date.now(),
+                displayName: 'قوتابی',
+                email: '',
+                photoURL: RANDOM_AVATARS[0],
+                isGuest: true
+            };
+            saveUserSession(localStudent);
+            saveUserProfile({
+                name: 'قوتابی',
+                role: 'student',
+                avatar: RANDOM_AVATARS[0],
+                bio: 'پۆلێن هەلبژارتی',
+                isProfileComplete: true,
+                isGuest: true,
+                updatedAt: Date.now()
+            });
+            dataStore.setUserRole('student');
+        }
+
         dataStore.setStudentGrades(selected);
-        if (window.CloudflareLessons) {
+        if (window.CloudflareLessons && window.CloudflareLessons.getCurrentUser()) {
             window.CloudflareLessons.saveUserSettingsToServer({ grades: selected });
         }
         studentGradesModal.style.display = 'none';
+        if (authGateScreen) authGateScreen.style.display = 'none';
+        if (mainAppContainer) mainAppContainer.style.display = 'block';
         isShowingAllTemporarily = false;
         updateRoleUI();
+        showAppToast('پۆلێن تە هاتنە پاراستن! هەرگاڤ دشێی د زەبتێ دا پۆلێن دی زێدە بکەی.', 'success');
     });
 
     // ==========================================
@@ -1099,10 +1160,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // STUDENT FLOW: Save and enter homepage IMMEDIATELY with zero blocking!
+            // STUDENT FLOW: Save and open grade picker if student hasn't chosen grades yet!
             saveUserProfile(profileData);
             if (!dataStore.hasStudentChosenGrades()) {
-                dataStore.setStudentGrades(['10', '11', '12', 'univ']);
+                if (profileSetupModal) profileSetupModal.style.display = 'none';
+                openStudentOnboardingModal();
+                showAppToast(`بەخێربێیت ${name}! نوکە پۆلێن خۆ هەلبژێرە.`, 'success');
+                return;
             }
             isShowingAllTemporarily = false;
             enterMainHomePageImmediately();
@@ -1222,16 +1286,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function enterAsGuest() {
         const guestUser = {
             uid: 'guest_' + Date.now(),
-            displayName: 'مێڤان (Guest)',
+            displayName: 'قوتابی',
             email: '',
             photoURL: RANDOM_AVATARS[0],
             isGuest: true
         };
         const guestProfile = {
-            name: 'مێڤان (Guest)',
+            name: 'قوتابی',
             role: 'guest',
             avatar: RANDOM_AVATARS[0],
-            bio: 'گەڕان وەک مێڤان',
+            bio: 'پۆلێن هەلبژارتی',
             isProfileComplete: true,
             isGuest: true,
             updatedAt: Date.now()
@@ -1244,10 +1308,15 @@ document.addEventListener('DOMContentLoaded', () => {
         saveUserSession(guestUser);
         saveUserProfile(guestProfile);
         dataStore.setUserRole('guest');
-        isShowingAllTemporarily = true;
 
+        if (!dataStore.hasStudentChosenGrades()) {
+            if (authGateScreen) authGateScreen.style.display = 'none';
+            openStudentOnboardingModal();
+            return;
+        }
+
+        isShowingAllTemporarily = false;
         enterMainHomePageImmediately();
-        showAppToast('بەخێربێیت وەک مێڤان! دەتوانیت گشت قۆناغ و وانان ببینی.', 'info');
     }
 
     if (gateGuestLoginBtn) {
@@ -1266,8 +1335,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cfUser) {
             if (authGateScreen) authGateScreen.style.display = 'none';
             if (profileSetupModal) profileSetupModal.style.display = 'none';
+            if (!dataStore.hasStudentChosenGrades() && cfUser.role !== 'teacher' && cfUser.role !== 'admin') {
+                if (mainAppContainer) mainAppContainer.style.display = 'block';
+                updateRoleUI();
+                openStudentOnboardingModal();
+                return;
+            }
             if (mainAppContainer) mainAppContainer.style.display = 'block';
+            isShowingAllTemporarily = false;
             updateRoleUI();
+            return;
+        }
+
+        // Brand-new visitor: immediately show grade selection modal instead of forcing a login wall
+        if (!storedUser && !dataStore.hasStudentChosenGrades()) {
+            if (authGateScreen) authGateScreen.style.display = 'none';
+            if (profileSetupModal) profileSetupModal.style.display = 'none';
+            if (mainAppContainer) mainAppContainer.style.display = 'none';
+            openStudentOnboardingModal();
             return;
         }
 
@@ -1283,10 +1368,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if ((!profile || !profile.isProfileComplete || urlNeedsSetup) && !storedUser.isGuest) {
             if (mainAppContainer) mainAppContainer.style.display = 'none';
             openProfileSetupModal(storedUser);
+        } else if (!dataStore.hasStudentChosenGrades()) {
+            if (mainAppContainer) mainAppContainer.style.display = 'block';
+            updateRoleUI();
+            openStudentOnboardingModal();
         } else {
-            if (profile && profile.role === 'guest') {
-                isShowingAllTemporarily = true;
-            }
+            isShowingAllTemporarily = false;
             if (profileSetupModal) profileSetupModal.style.display = 'none';
             if (mainAppContainer) mainAppContainer.style.display = 'block';
             updateRoleUI();

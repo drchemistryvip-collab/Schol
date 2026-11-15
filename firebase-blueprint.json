@@ -57,7 +57,7 @@
         },
         "type": {
           "type": "string",
-          "enum": ["video", "quiz", "malzama"],
+          "enum": ["video", "quiz", "malzama", "flashcard"],
           "description": "Type of educational item"
         },
         "grade": {
@@ -134,7 +134,7 @@
         },
         "itemType": {
           "type": "string",
-          "enum": ["video", "quiz", "malzama", "post", "file"]
+          "enum": ["video", "quiz", "malzama", "flashcard", "post", "file"]
         },
         "title": {
           "type": "string",

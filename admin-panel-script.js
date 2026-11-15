@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderUserAccounts();
         loadAiTemplateConfig();
         loadAdminCommunityPosts();
+        initStudyStudio();
     }
 
     if (loginForm) {
@@ -208,7 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const vids = dataStore.getAllVideos(false, null, true).map(v => ({ ...v, type: 'video' }));
             const qzs = dataStore.getAllQuizzes(false, null, true).map(q => ({ ...q, type: 'quiz' }));
             const mlzs = dataStore.getAllMalzamas(false, null, true).map(m => ({ ...m, type: 'malzama' }));
-            items = [...vids, ...qzs, ...mlzs].sort((a, b) => b.createdAt - a.createdAt);
+            const fcs = (typeof dataStore.getAllFlashcards === 'function' ? dataStore.getAllFlashcards(false, null, true) : []).map(c => ({ ...c, type: 'flashcard' }));
+            items = [...vids, ...qzs, ...mlzs, ...fcs].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         }
 
         const pendingTeachersCount = dataStore.getPendingTeachers ? dataStore.getPendingTeachers().length : 0;
@@ -271,6 +273,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h3 style="margin: 0 0 10px; font-size: 1.15rem; line-height: 1.6;">${item.question}</h3>
                     <div style="margin-bottom: 10px;">${optionsHtml}</div>
                     ${item.explanation ? `<div style="font-size:0.85rem; color:var(--secondary-text); background:rgba(0,123,255,0.05); padding:8px 12px; border-radius:6px;"><strong>تێبینی شیکار:</strong> ${item.explanation}</div>` : ''}
+                `;
+            } else if (item.type === 'flashcard') {
+                typeBadge = '<span style="color:#0ea5e9; font-weight:bold;"><i class="fas fa-clone"></i> فلاش کارت</span>';
+                contentDetailHtml = `
+                    <div style="font-size:0.85rem; color:#0ea5e9; font-weight:bold; margin-bottom:6px;">
+                        <i class="fas fa-bookmark"></i> ${item.chapter || 'فلاش کارت'}
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+                        <div style="padding:10px 12px; border-radius:10px; background:rgba(14,165,233,0.08); border:1px solid rgba(14,165,233,0.25);">
+                            <div style="font-size:0.75rem; color:#0ea5e9; font-weight:700; margin-bottom:4px;">ڕووێ پێشێ (پرسیار):</div>
+                            <div style="font-weight:700; line-height:1.5;">${item.front || ''}</div>
+                        </div>
+                        <div style="padding:10px 12px; border-radius:10px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25);">
+                            <div style="font-size:0.75rem; color:#10b981; font-weight:700; margin-bottom:4px;">ڕووێ پشتێ (بەرسڤ):</div>
+                            <div style="line-height:1.5;">${item.back || ''}</div>
+                        </div>
+                    </div>
+                    ${item.hint ? `<div style="margin-top:8px; font-size:0.82rem; color:var(--secondary-text);"><strong>تێبینی:</strong> ${item.hint}</div>` : ''}
                 `;
             } else {
                 // Multi-format malzama (PowerPoint, HTML, Image, PDF)
@@ -1462,6 +1482,440 @@ document.addEventListener('DOMContentLoaded', () => {
     const communityPostsTab = document.querySelector('.admin-tab[data-view="community-posts-view"]');
     if (communityPostsTab) {
         communityPostsTab.addEventListener('click', loadAdminCommunityPosts);
+    }
+
+    // ==========================================
+    // 8. ADMIN STUDY STUDIO (FLASHCARDS & MCQS - AI + CODE CONVERTER)
+    // ==========================================
+    let isStudyStudioInitialized = false;
+    function initStudyStudio() {
+        if (isStudyStudioInitialized) return;
+        const gradeSel = document.getElementById('ap-studio-grade');
+        const subjectSel = document.getElementById('ap-studio-subject');
+        if (!gradeSel || !subjectSel) return;
+        isStudyStudioInitialized = true;
+
+        let studioMode = 'flashcards'; // 'flashcards' | 'quizzes'
+        let studioDraftItems = [];
+        let uploadedAiFileBase64 = '';
+        let uploadedAiFileType = '';
+        let uploadedCodeFileName = '';
+
+        const modeFcBtn = document.getElementById('ap-studio-mode-fc');
+        const modeQuizBtn = document.getElementById('ap-studio-mode-quiz');
+        const langSel = document.getElementById('ap-studio-lang');
+        const chapterInput = document.getElementById('ap-studio-chapter');
+        const countSel = document.getElementById('ap-studio-count');
+        const aiFileInput = document.getElementById('ap-studio-ai-file');
+        const notesInput = document.getElementById('ap-studio-notes');
+        const aiGenBtn = document.getElementById('ap-studio-ai-generate-btn');
+        const codeFileInput = document.getElementById('ap-studio-code-file');
+        const codeFilenameEl = document.getElementById('ap-studio-code-filename');
+        const codeInput = document.getElementById('ap-studio-code-input');
+        const codeParseBtn = document.getElementById('ap-studio-code-parse-btn');
+        const codeAiBtn = document.getElementById('ap-studio-code-ai-btn');
+        const statusEl = document.getElementById('ap-studio-status');
+        const previewTitleEl = document.getElementById('ap-studio-preview-title');
+        const previewListEl = document.getElementById('ap-studio-preview-list');
+        const addManualBtn = document.getElementById('ap-studio-add-manual-btn');
+        const clearBtn = document.getElementById('ap-studio-clear-btn');
+        const publishBtn = document.getElementById('ap-studio-publish-btn');
+
+        function showStudioStatus(msg, type = 'info') {
+            if (!statusEl) return;
+            statusEl.style.display = 'block';
+            statusEl.textContent = msg;
+            if (type === 'error') {
+                statusEl.style.background = 'rgba(239,68,68,0.14)';
+                statusEl.style.color = '#ef4444';
+                statusEl.style.border = '1px solid rgba(239,68,68,0.35)';
+            } else if (type === 'success') {
+                statusEl.style.background = 'rgba(16,185,129,0.14)';
+                statusEl.style.color = '#10b981';
+                statusEl.style.border = '1px solid rgba(16,185,129,0.35)';
+            } else {
+                statusEl.style.background = 'rgba(14,165,233,0.12)';
+                statusEl.style.color = '#0ea5e9';
+                statusEl.style.border = '1px solid rgba(14,165,233,0.3)';
+            }
+        }
+
+        function esc(s) {
+            return String(s ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        // Populate Grades & Subjects
+        const usableGrades = (gradesConfig || []).filter(g => g.id !== 'univ');
+        gradeSel.innerHTML = usableGrades.map(g => `<option value="${esc(g.id)}" ${g.id === '12' ? 'selected' : ''}>${esc(g.name)}</option>`).join('');
+        const allSubjects = (dataStore.getAllSubjects ? dataStore.getAllSubjects() : []) || [];
+        subjectSel.innerHTML = allSubjects.map(s => `<option value="${esc(s.name)}">${esc(s.name)} (${esc(s.nameEn || '')})</option>`).join('');
+
+        function updateModeButtons() {
+            if (modeFcBtn && modeQuizBtn) {
+                if (studioMode === 'flashcards') {
+                    modeFcBtn.className = 'btn-save';
+                    modeFcBtn.style.cssText = 'padding:8px 16px; background:#0ea5e9; border-color:#0ea5e9;';
+                    modeQuizBtn.className = 'btn-cancel';
+                    modeQuizBtn.style.cssText = 'padding:8px 16px;';
+                } else {
+                    modeQuizBtn.className = 'btn-save';
+                    modeQuizBtn.style.cssText = 'padding:8px 16px; background:#7c3aed; border-color:#7c3aed;';
+                    modeFcBtn.className = 'btn-cancel';
+                    modeFcBtn.style.cssText = 'padding:8px 16px;';
+                }
+            }
+            renderStudioPreview();
+        }
+
+        if (modeFcBtn) {
+            modeFcBtn.addEventListener('click', () => {
+                if (studioMode === 'flashcards') return;
+                studioMode = 'flashcards';
+                studioDraftItems = [];
+                updateModeButtons();
+            });
+        }
+        if (modeQuizBtn) {
+            modeQuizBtn.addEventListener('click', () => {
+                if (studioMode === 'quizzes') return;
+                studioMode = 'quizzes';
+                studioDraftItems = [];
+                updateModeButtons();
+            });
+        }
+
+        if (aiFileInput) {
+            aiFileInput.addEventListener('change', () => {
+                const file = aiFileInput.files && aiFileInput.files[0];
+                uploadedAiFileBase64 = '';
+                uploadedAiFileType = '';
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    uploadedAiFileBase64 = String(reader.result || '');
+                    uploadedAiFileType = file.type || '';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (codeFileInput) {
+            codeFileInput.addEventListener('change', () => {
+                const file = codeFileInput.files && codeFileInput.files[0];
+                if (!file) return;
+                uploadedCodeFileName = file.name;
+                if (codeFilenameEl) codeFilenameEl.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    if (codeInput) codeInput.value = String(reader.result || '');
+                    showStudioStatus(`فایلێ (${file.name}) هاتە خوێندن. نوکە کلیک لسەر "گۆڕینا ڕاستەوخۆ" یان "گۆڕین ب AI" بکە.`, 'info');
+                };
+                reader.readAsText(file, 'utf-8');
+            });
+        }
+
+        function renderStudioPreview() {
+            if (!previewListEl || !previewTitleEl) return;
+            const modeLabel = studioMode === 'flashcards' ? 'فلاش کارت' : 'پرسیارێن هەلبژارتن';
+            previewTitleEl.textContent = `پێشبینین و دەستکاریکرن — ${modeLabel} (${studioDraftItems.length} دانە)`;
+
+            if (studioDraftItems.length === 0) {
+                previewListEl.innerHTML = `
+                    <div style="text-align:center; padding:26px; color:var(--secondary-text); font-size:0.9rem;">
+                        چ ${modeLabel} نەهاتینە ئامادەکرن. ب AI چێبکە، فایلێ کۆدێ ئەپلود بکە، یان ب دەستی زێدە بکە.
+                    </div>
+                `;
+                return;
+            }
+
+            if (studioMode === 'flashcards') {
+                previewListEl.innerHTML = studioDraftItems.map((item, idx) => `
+                    <div style="padding:12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-color); display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            <strong style="font-size:0.86rem; color:#0ea5e9;">فلاش کارت #${idx + 1}</strong>
+                            <button type="button" class="btn-delete-action ap-studio-del-btn" data-idx="${idx}" style="padding:4px 10px; font-size:0.78rem;">
+                                <i class="fas fa-trash"></i> ژێبرن
+                            </button>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:8px;">
+                            <div>
+                                <label style="font-size:0.75rem; color:var(--secondary-text);">ڕووێ پێشێ (پرسیار / زاراوە):</label>
+                                <textarea class="ap-fc-edit-front" data-idx="${idx}" rows="2" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box;">${esc(item.front)}</textarea>
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem; color:var(--secondary-text);">ڕووێ پشتێ (بەرسڤ / پێناسە):</label>
+                                <textarea class="ap-fc-edit-back" data-idx="${idx}" rows="2" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box;">${esc(item.back)}</textarea>
+                            </div>
+                        </div>
+                        <input type="text" class="ap-fc-edit-hint" data-idx="${idx}" value="${esc(item.hint || '')}" placeholder="تێبینی / Hint (ئیختیاری)" style="width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; font-size:0.83rem; box-sizing:border-box;">
+                    </div>
+                `).join('');
+
+                previewListEl.querySelectorAll('.ap-fc-edit-front').forEach(el => {
+                    el.addEventListener('input', () => {
+                        const i = Number(el.getAttribute('data-idx'));
+                        if (studioDraftItems[i]) studioDraftItems[i].front = el.value;
+                    });
+                });
+                previewListEl.querySelectorAll('.ap-fc-edit-back').forEach(el => {
+                    el.addEventListener('input', () => {
+                        const i = Number(el.getAttribute('data-idx'));
+                        if (studioDraftItems[i]) studioDraftItems[i].back = el.value;
+                    });
+                });
+                previewListEl.querySelectorAll('.ap-fc-edit-hint').forEach(el => {
+                    el.addEventListener('input', () => {
+                        const i = Number(el.getAttribute('data-idx'));
+                        if (studioDraftItems[i]) studioDraftItems[i].hint = el.value;
+                    });
+                });
+            } else {
+                previewListEl.innerHTML = studioDraftItems.map((item, idx) => `
+                    <div style="padding:12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-color); display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                            <strong style="font-size:0.86rem; color:#7c3aed;">پرسیار #${idx + 1}</strong>
+                            <button type="button" class="btn-delete-action ap-studio-del-btn" data-idx="${idx}" style="padding:4px 10px; font-size:0.78rem;">
+                                <i class="fas fa-trash"></i> ژێبرن
+                            </button>
+                        </div>
+                        <textarea class="ap-qz-edit-q" data-idx="${idx}" rows="2" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; box-sizing:border-box;">${esc(item.question)}</textarea>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:6px;">
+                            ${(item.options || ['', '', '', '']).map((opt, oIdx) => `
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <input type="radio" name="ap-qz-correct-${idx}" class="ap-qz-edit-correct" data-idx="${idx}" value="${oIdx}" ${Number(item.correctIndex) === oIdx ? 'checked' : ''} title="بەرسڤا درست">
+                                    <input type="text" class="ap-qz-edit-opt" data-idx="${idx}" data-opt="${oIdx}" value="${esc(opt)}" style="flex:1; padding:6px 8px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; font-size:0.84rem;">
+                                </div>
+                            `).join('')}
+                        </div>
+                        <input type="text" class="ap-qz-edit-exp" data-idx="${idx}" value="${esc(item.explanation || '')}" placeholder="شیکار و ڕوونکردنەوە (ئیختیاری)" style="width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-color); color:var(--primary-text); font-family:inherit; font-size:0.83rem; box-sizing:border-box;">
+                    </div>
+                `).join('');
+
+                previewListEl.querySelectorAll('.ap-qz-edit-q').forEach(el => {
+                    el.addEventListener('input', () => {
+                        const i = Number(el.getAttribute('data-idx'));
+                        if (studioDraftItems[i]) studioDraftItems[i].question = el.value;
+                    });
+                });
+                previewListEl.querySelectorAll('.ap-qz-edit-opt').forEach(el => {
+                    el.addEventListener('input', () => {
+                        const i = Number(el.getAttribute('data-idx'));
+                        const o = Number(el.getAttribute('data-opt'));
+                        if (studioDraftItems[i] && Array.isArray(studioDraftItems[i].options)) {
+                            studioDraftItems[i].options[o] = el.value;
+                        }
+                    });
+                });
+                previewListEl.querySelectorAll('.ap-qz-edit-correct').forEach(el => {
+                    el.addEventListener('change', () => {
+                        const i = Number(el.getAttribute('data-idx'));
+                        if (studioDraftItems[i]) studioDraftItems[i].correctIndex = Number(el.value) || 0;
+                    });
+                });
+                previewListEl.querySelectorAll('.ap-qz-edit-exp').forEach(el => {
+                    el.addEventListener('input', () => {
+                        const i = Number(el.getAttribute('data-idx'));
+                        if (studioDraftItems[i]) studioDraftItems[i].explanation = el.value;
+                    });
+                });
+            }
+
+            previewListEl.querySelectorAll('.ap-studio-del-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const i = Number(btn.getAttribute('data-idx'));
+                    studioDraftItems.splice(i, 1);
+                    renderStudioPreview();
+                });
+            });
+        }
+
+        async function runStudioAiRequest(actionType) {
+            const btn = actionType === 'convert_code' ? codeAiBtn : aiGenBtn;
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> چاڤەڕێ بە...';
+            }
+            try {
+                showStudioStatus('AI دکاردا یە بۆ ئامادەکرنا ناڤەرۆکێ...', 'info');
+                const resp = await fetch('/api/gemini/generate-study-items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: studioMode,
+                        action: actionType,
+                        grade: gradeSel.value || '12',
+                        subject: subjectSel.value || 'کیمیا',
+                        chapter: chapterInput ? chapterInput.value.trim() : '',
+                        lang: langSel ? langSel.value : 'ku_ba',
+                        count: countSel ? Number(countSel.value) : 10,
+                        topicNotes: notesInput ? notesInput.value.trim() : '',
+                        sourceCode: actionType === 'convert_code' && codeInput ? codeInput.value : '',
+                        fileData: actionType === 'generate' ? uploadedAiFileBase64 : '',
+                        fileType: actionType === 'generate' ? uploadedAiFileType : '',
+                        fileName: uploadedCodeFileName
+                    })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success) {
+                    throw new Error(data.error || 'سەرنەکەفت د چێکرنێ دا');
+                }
+                const newItems = Array.isArray(data.items) ? data.items : [];
+                if (newItems.length === 0) {
+                    throw new Error('چ کارت یان پرسیار ژ ڤی کۆد/دەقی نەهاتنە دەرهێنان.');
+                }
+                studioDraftItems = [...studioDraftItems, ...newItems];
+                renderStudioPreview();
+                showStudioStatus(`${newItems.length} دانە ب سەرکەفتوویی هاتنە ئامادەکرن! دەستکاریێ بکە یان بەلاڤ بکە. ✅`, 'success');
+            } catch (err) {
+                showStudioStatus(err.message || 'هەڵەیەک چێبوو د پەیوەندیا AI دا.', 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            }
+        }
+
+        if (aiGenBtn) {
+            aiGenBtn.addEventListener('click', () => runStudioAiRequest('generate'));
+        }
+
+        if (codeParseBtn) {
+            codeParseBtn.addEventListener('click', () => {
+                const raw = codeInput ? codeInput.value.trim() : '';
+                if (!raw) {
+                    showStudioStatus('تکایە بەراهیێ کۆدەکێ بنڤیسە یان فایلەکێ ئەپلود بکە.', 'error');
+                    return;
+                }
+                if (!window.StudyCodeParser) {
+                    showStudioStatus('سیستەمێ شیکارکرنا کۆدێ نەهاتیە بارکرن.', 'error');
+                    return;
+                }
+                const ch = chapterInput ? chapterInput.value.trim() : '';
+                const parsed = studioMode === 'flashcards'
+                    ? window.StudyCodeParser.parseCodeToFlashcards(raw, ch)
+                    : window.StudyCodeParser.parseCodeToQuizzes(raw, ch);
+
+                if (!parsed || parsed.length === 0) {
+                    showStudioStatus('کۆد ب شێوازێ ڕاستەوخۆ نەهاتە ناسین. کلیک لسەر "گۆڕین ب AI" بکە دا ژیریا دەستکرد بخو بگۆڕیت!', 'error');
+                    return;
+                }
+                studioDraftItems = [...studioDraftItems, ...parsed];
+                renderStudioPreview();
+                showStudioStatus(`${parsed.length} دانە ڕاستەوخۆ ژ کۆدێ هاتنە گۆڕین! ✅`, 'success');
+            });
+        }
+
+        if (codeAiBtn) {
+            codeAiBtn.addEventListener('click', () => {
+                if (!codeInput || !codeInput.value.trim()) {
+                    showStudioStatus('تکایە بەراهیێ فایلێ کۆدێ ئەپلود بکە یان کۆدێ بنڤیسە.', 'error');
+                    return;
+                }
+                runStudioAiRequest('convert_code');
+            });
+        }
+
+        if (addManualBtn) {
+            addManualBtn.addEventListener('click', () => {
+                const ch = chapterInput ? chapterInput.value.trim() : '';
+                if (studioMode === 'flashcards') {
+                    studioDraftItems.push({ front: '', back: '', hint: '', chapter: ch });
+                } else {
+                    studioDraftItems.push({
+                        question: '',
+                        options: ['بژاردە A', 'بژاردە B', 'بژاردە C', 'بژاردە D'],
+                        correctIndex: 0,
+                        explanation: '',
+                        chapter: ch,
+                        difficulty: 'ناوەند'
+                    });
+                }
+                renderStudioPreview();
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                studioDraftItems = [];
+                renderStudioPreview();
+                if (statusEl) statusEl.style.display = 'none';
+            });
+        }
+
+        if (publishBtn) {
+            publishBtn.addEventListener('click', () => {
+                if (studioDraftItems.length === 0) {
+                    showStudioStatus('چ دانە د لیستا پێشبینینێ دا نینن بۆ بەلاڤکرنێ.', 'error');
+                    return;
+                }
+                const grade = gradeSel.value || '12';
+                const subject = subjectSel.value || 'کیمیا';
+                const lang = langSel ? langSel.value : 'ku_ba';
+                const defaultChapter = chapterInput ? chapterInput.value.trim() : '';
+
+                const teachers = dataStore.getAllTeachers ? dataStore.getAllTeachers() : [];
+                const matchedTeacher = teachers.find(t => (t.lang || 'ku_ba') === lang && dataStore.matchesSubject(t.subject, subject)) ||
+                    teachers.find(t => t.id === 't_hussein') || { id: 't_hussein', name: 'م. حسێن ئەکرەم زێباری' };
+
+                if (studioMode === 'flashcards') {
+                    const validCards = studioDraftItems
+                        .filter(c => String(c.front || '').trim() && String(c.back || '').trim())
+                        .map(c => ({
+                            teacherId: matchedTeacher.id,
+                            teacherName: matchedTeacher.name,
+                            grade,
+                            subject,
+                            chapter: c.chapter || defaultChapter,
+                            front: String(c.front).trim(),
+                            back: String(c.back).trim(),
+                            hint: String(c.hint || '').trim(),
+                            lang,
+                            status: 'approved'
+                        }));
+                    if (validCards.length === 0) {
+                        showStudioStatus('تکایە ڕووێ پێشێ و پشتێ یێ فلاش کارتان تژی بکە.', 'error');
+                        return;
+                    }
+                    const saved = dataStore.saveFlashcardsBatch(validCards);
+                    showStudioStatus(`${saved.length} فلاش کارت ب سەرکەفتوویی ل بابەتێ (${subject}) هاتنە بەلاڤکرن! ✅`, 'success');
+                    studioDraftItems = [];
+                    renderStudioPreview();
+                    renderApprovals();
+                } else {
+                    const validQuizzes = studioDraftItems
+                        .filter(q => String(q.question || '').trim() && Array.isArray(q.options) && q.options.length >= 2)
+                        .map(q => ({
+                            teacherId: matchedTeacher.id,
+                            teacherName: matchedTeacher.name,
+                            grade,
+                            subject,
+                            chapter: q.chapter || defaultChapter,
+                            question: String(q.question).trim(),
+                            options: q.options.map(o => String(o).trim()),
+                            correctIndex: Number(q.correctIndex) || 0,
+                            explanation: String(q.explanation || '').trim(),
+                            difficulty: q.difficulty || 'ناوەند',
+                            lang,
+                            status: 'approved'
+                        }));
+                    if (validQuizzes.length === 0) {
+                        showStudioStatus('تکایە دەقێ پرسیار و بژاردان تژی بکە.', 'error');
+                        return;
+                    }
+                    const saved = dataStore.saveQuizzesBatch(validQuizzes);
+                    showStudioStatus(`${saved.length} پرسیارێن هەلبژارتن ب سەرکەفتوویی ل بابەتێ (${subject}) هاتنە بەلاڤکرن! ✅`, 'success');
+                    studioDraftItems = [];
+                    renderStudioPreview();
+                    renderApprovals();
+                }
+            });
+        }
     }
 
     // Listen for live teacher requests from Firestore

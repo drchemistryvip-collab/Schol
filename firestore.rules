@@ -44,7 +44,7 @@ service cloud.firestore {
     function isValidContent(data) {
       return data.keys().hasAll(['title', 'type', 'grade', 'teacherId']) &&
              data.title is string && data.title.size() > 0 && data.title.size() <= 300 &&
-             data.type in ['video', 'quiz', 'malzama'] &&
+             data.type in ['video', 'quiz', 'malzama', 'flashcard'] &&
              data.grade is string && data.grade.size() <= 20 &&
              data.teacherId is string && data.teacherId.size() <= 128;
     }

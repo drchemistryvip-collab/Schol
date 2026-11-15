@@ -206,6 +206,9 @@
             <i class="fas fa-newspaper" style="color:#ea580c;"></i> پێداچوونا پۆستان (وەرگرتن / ڕەتکرن)
             <span class="count-pill" id="community-pending-badge" style="background:#f59e0b; color:#fff;">0</span>
         </button>
+        <button class="admin-tab" data-view="study-studio-view" style="color:#0ea5e9; border-color:rgba(14,165,233,0.45);">
+            <i class="fas fa-clone"></i> فلاش کارت و پرسیار (AI & کۆد)
+        </button>
     </div>
 
     <div class="admin-container" style="padding: 20px 15px; max-width: 1100px; margin: 0 auto; display:block;">
@@ -477,6 +480,124 @@
 
             <div id="ap-community-status-msg" style="display:none; padding:11px 14px; border-radius:10px; margin-bottom:14px; font-size:0.9rem; text-align:right;"></div>
             <div id="ap-community-posts-list"></div>
+        </div>
+
+        <!-- VIEW 8: FLASHCARDS & QUIZZES STUDIO (AI + CODE CONVERTER) -->
+        <div id="study-studio-view" class="content-view" style="display: none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+                <div>
+                    <h2 style="margin:0 0 4px; font-size:1.38rem;">
+                        <i class="fas fa-clone" style="color:#0ea5e9;"></i> ستۆدیۆیا فلاش کارتان و پرسیارێن هەلبژارتن
+                    </h2>
+                    <p style="margin:0; color:var(--secondary-text); font-size:0.88rem;">
+                        بۆ هەموو بابەتان فلاش کارت یان پرسیارێن هەلبژارتن ب ڕێکا AI چێبکە یان فایلێ کۆدێ (HTML / JS / JSON / TXT / CSV) ئەپلود بکە دا بەرنامە بکەتە فلاش کارت یان پرسیار.
+                    </p>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button type="button" id="ap-studio-mode-fc" class="btn-save" style="padding:8px 16px; background:#0ea5e9; border-color:#0ea5e9;">
+                        <i class="fas fa-clone"></i> فلاش کارت
+                    </button>
+                    <button type="button" id="ap-studio-mode-quiz" class="btn-cancel" style="padding:8px 16px;">
+                        <i class="fas fa-check-double"></i> پرسیارێن هەلبژارتن
+                    </button>
+                </div>
+            </div>
+
+            <!-- Context Selectors -->
+            <div style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:14px; padding:16px; margin-bottom:16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+                <div>
+                    <label style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">پۆل (Grade)</label>
+                    <select id="ap-studio-grade" style="width:100%; padding:9px 11px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-alt, var(--bg-color)); color:var(--primary-text); font-family:inherit;"></select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">بابەت (Subject)</label>
+                    <select id="ap-studio-subject" style="width:100%; padding:9px 11px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-alt, var(--bg-color)); color:var(--primary-text); font-family:inherit;"></select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">شێوەزار / زمان</label>
+                    <select id="ap-studio-lang" style="width:100%; padding:9px 11px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-alt, var(--bg-color)); color:var(--primary-text); font-family:inherit;">
+                        <option value="ku_ba">کوردی بادینی</option>
+                        <option value="ku_so">کوردی سۆرانی</option>
+                        <option value="ar">العربية</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.82rem; font-weight:700; margin-bottom:6px;">بەند / بەش (Chapter)</label>
+                    <input type="text" id="ap-studio-chapter" placeholder="بۆ نموونە: بەشی ١" style="width:100%; padding:9px 11px; border-radius:10px; border:1px solid var(--border-color); background:var(--surface-alt, var(--bg-color)); color:var(--primary-text); font-family:inherit; box-sizing:border-box;">
+                </div>
+            </div>
+
+            <!-- Dual Creation Panels: AI vs Code Upload -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:16px; margin-bottom:18px;">
+                <!-- Panel A: AI Generator -->
+                <div style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+                    <h3 style="margin:0; font-size:1.05rem; color:#0ea5e9;">
+                        <i class="fas fa-magic"></i> شێوازێ ١: چێکرن ب AI
+                    </h3>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <label style="font-size:0.83rem; font-weight:700;">ژمارە:</label>
+                        <select id="ap-studio-count" style="padding:7px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:inherit;">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+                        <label style="font-size:0.82rem; color:var(--secondary-text);">PDF یان وێنە (ئیختیاری):</label>
+                        <input type="file" id="ap-studio-ai-file" accept=".pdf,image/*" style="font-size:0.8rem; max-width:220px;">
+                    </div>
+                    <textarea id="ap-studio-notes" rows="4" placeholder="ناڤەرۆکا وانێ، یاسایان، یان داخوازیێن خۆ ل ڤێرە بنڤیسە دا AI بکەتە فلاش کارت یان پرسیار..." style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
+                    <button type="button" id="ap-studio-ai-generate-btn" class="btn-save" style="background:linear-gradient(135deg,#0ea5e9,#2563eb); border:none; padding:10px 16px;">
+                        <i class="fas fa-sparkles"></i> چێکرن ب AI
+                    </button>
+                </div>
+
+                <!-- Panel B: Upload or Paste Code File -->
+                <div style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px;">
+                    <h3 style="margin:0; font-size:1.05rem; color:#8b5cf6;">
+                        <i class="fas fa-file-code"></i> شێوازێ ٢: ئەپلودا فایلێ کۆدێ (Code -> کارت/پرسیار)
+                    </h3>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <input type="file" id="ap-studio-code-file" accept=".html,.htm,.js,.json,.txt,.csv" style="font-size:0.82rem;">
+                        <span id="ap-studio-code-filename" style="font-size:0.78rem; color:var(--secondary-text);">HTML, JS, JSON, CSV, TXT</span>
+                    </div>
+                    <textarea id="ap-studio-code-input" rows="4" dir="ltr" placeholder="Paste JSON / JS array / HTML flashcard or quiz code / CSV / Q&A text here..." style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border-color); background:var(--bg-color); color:var(--primary-text); font-family:monospace; font-size:0.82rem; resize:vertical; box-sizing:border-box;"></textarea>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" id="ap-studio-code-parse-btn" class="btn-save" style="flex:1; min-width:145px; background:#7c3aed; border-color:#7c3aed;">
+                            <i class="fas fa-bolt"></i> گۆڕینا ڕاستەوخۆ (خێرا)
+                        </button>
+                        <button type="button" id="ap-studio-code-ai-btn" class="btn-cancel" style="flex:1; min-width:145px; border-color:#7c3aed; color:#8b5cf6; font-weight:700;">
+                            <i class="fas fa-robot"></i> گۆڕین ب AI (HTML/کۆد)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ap-studio-status" style="display:none; padding:11px 14px; border-radius:10px; margin-bottom:14px; font-size:0.9rem; font-weight:700;"></div>
+
+            <!-- Preview & Batch Publish Bar -->
+            <div style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:14px; padding:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                    <strong id="ap-studio-preview-title" style="font-size:1rem;">پێشبینین و دەستکاریکرن (0 دانە)</strong>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" id="ap-studio-add-manual-btn" class="btn-cancel" style="padding:7px 13px; font-size:0.84rem;">
+                            <i class="fas fa-plus"></i> زێدەکرنا دەستی
+                        </button>
+                        <button type="button" id="ap-studio-clear-btn" class="btn-cancel" style="padding:7px 13px; font-size:0.84rem;">
+                            <i class="fas fa-trash"></i> پاقژکرن
+                        </button>
+                        <button type="button" id="ap-studio-publish-btn" class="btn-save" style="padding:8px 18px; background:#10b981; border-color:#10b981;">
+                            <i class="fas fa-check-double"></i> بەلاڤکرنا هەمییان د بابەتی دا
+                        </button>
+                    </div>
+                </div>
+                <div id="ap-studio-preview-list" style="display:flex; flex-direction:column; gap:10px;">
+                    <div style="text-align:center; padding:26px; color:var(--secondary-text); font-size:0.9rem;">
+                        چ کارت یان پرسیار نەهاتینە ئامادەکرن. ب AI چێبکە یان فایلێ کۆدێ ئەپلود بکە.
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
