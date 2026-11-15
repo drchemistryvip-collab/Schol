@@ -57,11 +57,6 @@
   status = 200
 
 [[redirects]]
-  from = "/ai-studio"
-  to = "/ai-studio.html"
-  status = 200
-
-[[redirects]]
   from = "/board"
   to = "/board.html"
   status = 200
