@@ -19,6 +19,8 @@ const COMMUNITY_POSTS_FILE = path.join(__dirname, 'community-posts.json');
 const COMMUNITY_UPLOADS_DIR = path.join(__dirname, 'community-uploads');
 const FLASHCARDS_FILE = path.join(__dirname, 'flashcards.json');
 const QUIZZES_FILE = path.join(__dirname, 'quizzes.json');
+const MALZAMAS_FILE = path.join(__dirname, 'malzamas.json');
+const VIDEOS_FILE = path.join(__dirname, 'videos.json');
 
 function readJsonStore(filePath: string): any[] {
   try {
@@ -1038,6 +1040,32 @@ Return STRICT JSON matching the schema. Do not include markdown fences.
     }
     writeJsonStore(QUIZZES_FILE, quizzes);
     res.json({ success: true, quiz });
+  });
+
+  app.get('/api/malzamas', (req, res) => {
+    res.json(readJsonStore(MALZAMAS_FILE));
+  });
+
+  app.post('/api/malzamas', express.json({ limit: '10mb' }), (req, res) => {
+    const item = req.body;
+    const items = readJsonStore(MALZAMAS_FILE);
+    const idx = items.findIndex((i: any) => i.id === item.id);
+    if (idx >= 0) items[idx] = item; else items.unshift(item);
+    writeJsonStore(MALZAMAS_FILE, items);
+    res.json({ success: true, item });
+  });
+
+  app.get('/api/videos', (req, res) => {
+    res.json(readJsonStore(VIDEOS_FILE));
+  });
+
+  app.post('/api/videos', express.json({ limit: '5mb' }), (req, res) => {
+    const item = req.body;
+    const items = readJsonStore(VIDEOS_FILE);
+    const idx = items.findIndex((i: any) => i.id === item.id);
+    if (idx >= 0) items[idx] = item; else items.unshift(item);
+    writeJsonStore(VIDEOS_FILE, items);
+    res.json({ success: true, item });
   });
 
   // =========================================================================
