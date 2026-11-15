@@ -33,21 +33,6 @@ window.fetch = async function(resource, config = {}) {
 
 document.addEventListener('DOMContentLoaded', () => {
   if (window.getUserApiKey()) syncKeyToStorage(window.getUserApiKey());
-
-  const btn = document.createElement('button');
-  btn.innerHTML = window.getUserApiKey() ? '🔑 API چالاکە' : '🔑 دانانا API Key';
-  btn.style.cssText = 'position:fixed;bottom:16px;left:16px;z-index:99999;background:#0f172a;color:#5eead4;border:2px solid #5eead4;padding:10px 18px;border-radius:99px;font-family:inherit;font-weight:bold;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.5);';
-
-  btn.onclick = () => {
-    const current = window.getUserApiKey();
-    const input = prompt('کلیلێ Gemini API یێ خۆ یێ تایبەت ل ڤێرە بنڤیسە (ژ Google AI Studio بینە):', current);
-    if (input !== null) {
-      syncKeyToStorage(input.trim());
-      btn.innerHTML = input.trim() ? '🔑 API چالاکە' : '🔑 دانانا API Key';
-      location.reload();
-    }
-  };
-  document.body.appendChild(btn);
 });
 
 setInterval(() => {
