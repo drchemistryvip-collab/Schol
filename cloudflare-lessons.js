@@ -1,18 +1,6 @@
 // =========================================================================
 // Cloudflare Worker Unified API Client
 // Endpoint: https://parwarda-api.hussein-zebary-chemistry96.workers.dev
-// Features:
-// 1. Account System: POST /register, POST /login, localStorage session & settings sync
-// 2. Settings & Bookmarks Sync: POST /settings ({ user_id, settings })
-// 3. Lessons & Posts CRUD:
-//    - GET / (JSON array of lessons & student/teacher posts)
-//    - POST / (FormData with optional `file` + JSON `meta`)
-//    - PUT / (JSON { id, user_id, title, content, grade })
-//    - DELETE / (JSON { id, user_id })
-// 4. Universal Kurdish Badini UI Components:
-//    - Login / Register Modal (with conditional `teacher_code`)
-//    - Lesson/Post Card Renderer (Author badge, Bookmark toggle, Edit/Delete for owner)
-//    - In-App Document Preview, Edit Modal, Delete Confirm Modal (No window.alert/confirm)
 // =========================================================================
 
 (function (global) {
@@ -1030,9 +1018,14 @@
         return serverProxyStatusPromise;
     }
 
+    function getActiveUserOrProxyToken() {
+      return localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gk') || 'server-proxy';
+    }
+
     function emitProxyTokenPostMessage(targetWin) {
       if (!targetWin || typeof targetWin.postMessage !== 'function') return;
-      var payload = { type: 'SET_API_KEY', apiKey: 'server-proxy' };
+      var activeToken = getActiveUserOrProxyToken();
+      var payload = { type: 'SET_API_KEY', apiKey: activeToken };
       try {
         targetWin.postMessage(payload, window.location.origin);
       } catch (e) {
@@ -1046,7 +1039,8 @@
       if (!iframeEl || iframeEl.dataset.parwardaProxyLoadBound === '1') return;
       iframeEl.dataset.parwardaProxyLoadBound = '1';
       iframeEl.addEventListener('load', async function () {
-        const proxyOk = serverProxyReady || await checkServerGeminiProxy();
+        const hasUserKey = Boolean(localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gk'));
+        const proxyOk = hasUserKey || serverProxyReady || await checkServerGeminiProxy();
         if (!proxyOk) return;
         emitProxyTokenPostMessage(iframeEl.contentWindow);
       });
@@ -1055,12 +1049,16 @@
     function buildHtmlProxyBridgeScript(originUrl) {
         const safeOrigin = JSON.stringify(String(originUrl || window.location.origin));
         const wsOrigin = JSON.stringify(String(originUrl || window.location.origin).replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:'));
+        const userKeyVal = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gk') || '';
+        const safeToken = JSON.stringify(userKeyVal || 'server-proxy');
+        const useDirectUserKey = Boolean(userKeyVal && !serverProxyReady);
         return `<script data-parwarda-gemini-bridge="1">
 (function(){
   try {
     var ORIGIN = ${safeOrigin};
     var WS_ORIGIN = ${wsOrigin};
-    var PROXY_TOKEN = 'server-proxy';
+    var PROXY_TOKEN = ${safeToken};
+    var USE_DIRECT = ${useDirectUserKey ? 'true' : 'false'};
     function dispatchProxyToken() {
       try {
         var targetOrigin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : '*';
@@ -1074,11 +1072,11 @@
     var origGetItem = Storage.prototype.getItem;
     Storage.prototype.getItem = function(key) {
       var val = origGetItem.call(this, key);
-      if (!val && (key === 'gk' || key === 'gk2')) return PROXY_TOKEN;
+      if (!val && (key === 'gk' || key === 'gk2' || key === 'user_gemini_api_key')) return PROXY_TOKEN;
       return val;
     };
     var origFetch = window.fetch;
-    if (typeof origFetch === 'function') {
+    if (typeof origFetch === 'function' && !USE_DIRECT) {
       window.fetch = function(input, init) {
         var urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
         if (/^https:\\/\\/generativelanguage\\.googleapis\\.com\\/v1beta\\/models\\//i.test(urlStr)) {
@@ -1100,7 +1098,7 @@
       };
     }
     var OrigWS = window.WebSocket;
-    if (typeof OrigWS === 'function') {
+    if (typeof OrigWS === 'function' && !USE_DIRECT) {
       var WrappedWS = function(url, protocols) {
         var urlStr = String(url || '');
         if (/^wss:\\/\\/generativelanguage\\.googleapis\\.com\\/ws\\//i.test(urlStr)) {
@@ -1131,7 +1129,8 @@
 
     function prepareHtmlForPreview(rawHtml, sourceUrl) {
         if (!rawHtml || typeof rawHtml !== 'string') return rawHtml;
-        if (!serverProxyReady) return rawHtml;
+        const hasUserKey = Boolean(localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gk'));
+        if (!serverProxyReady && !hasUserKey) return rawHtml;
         if (rawHtml.indexOf('data-parwarda-gemini-bridge') !== -1) return rawHtml;
 
         const baseTag = (sourceUrl && /^https?:\/\//i.test(sourceUrl) && !/<base\b/i.test(rawHtml))
@@ -1222,7 +1221,8 @@
                     const initialFrame = viewportEl.querySelector('#cf-html-preview-iframe');
                     if (initialFrame) attachProxyLoadBridge(initialFrame);
                     (async function () {
-                        const proxyOk = await checkServerGeminiProxy();
+                        const hasUserKey = Boolean(localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gk'));
+                        const proxyOk = hasUserKey || await checkServerGeminiProxy();
                         if (!proxyOk || !/^https?:\/\//i.test(safeUrl)) return;
                         try {
                             const htmlResp = await fetch(safeUrl, { mode: 'cors' });
@@ -1820,7 +1820,6 @@
         });
     }
 
-    // Apply saved user settings automatically on initial load if logged in
     const bootUser = getCurrentUser();
     if (bootUser) {
         syncUserToAppMirrors(bootUser);
@@ -1833,7 +1832,6 @@
     global.CloudflareLessons = {
         API_URL: CLOUDFLARE_WORKER_URL,
         API_BASE_URL: API_BASE_URL,
-        // Auth & Settings
         getCurrentUser: getCurrentUser,
         setCurrentUser: setCurrentUser,
         logoutUser: logoutUser,
@@ -1848,7 +1846,6 @@
         isBookmarked: isBookmarked,
         toggleBookmark: toggleBookmark,
         openAuthModal: openAuthModal,
-        // Lessons & Posts CRUD
         fetchLessons: fetchLessons,
         uploadLesson: uploadLesson,
         createPost: uploadLesson,
@@ -1857,7 +1854,6 @@
         getCachedLessons: function () { return cachedLessons.slice(); },
         isLoading: function () { return isLoadingLessons; },
         getLastError: function () { return lastFetchError; },
-        // UI Helpers & Gemini Server Proxy Bridge
         checkServerGeminiProxy: checkServerGeminiProxy,
         prepareHtmlForPreview: prepareHtmlForPreview,
         attachProxyLoadBridge: attachProxyLoadBridge,
