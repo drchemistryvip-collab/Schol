@@ -2047,6 +2047,36 @@ class EducationalDataStore {
 
         this.initLocalData();
         this.initFirestoreSync();
+        this.syncServerData();
+    }
+
+    async syncServerData() {
+        try {
+            const [fcRes, qzRes] = await Promise.all([
+                fetch('/api/flashcards').then(r => r.json()).catch(() => []),
+                fetch('/api/quizzes').then(r => r.json()).catch(() => [])
+            ]);
+            if (Array.isArray(fcRes) && fcRes.length > 0) {
+                const localCards = JSON.parse(localStorage.getItem(this.STORAGE_KEY_FLASHCARDS) || '[]');
+                const merged = [...fcRes];
+                localCards.forEach(lc => {
+                    if (!merged.some(mc => mc.id === lc.id)) {
+                        merged.push(lc);
+                    }
+                });
+                localStorage.setItem(this.STORAGE_KEY_FLASHCARDS, JSON.stringify(merged));
+            }
+            if (Array.isArray(qzRes) && qzRes.length > 0) {
+                const localQzs = JSON.parse(localStorage.getItem(this.STORAGE_KEY_QUIZZES) || '[]');
+                const mergedQ = [...qzRes];
+                localQzs.forEach(lq => {
+                    if (!mergedQ.some(mq => mq.id === lq.id)) {
+                        mergedQ.push(lq);
+                    }
+                });
+                localStorage.setItem(this.STORAGE_KEY_QUIZZES, JSON.stringify(mergedQ));
+            }
+        } catch (e) {}
     }
 
     initLocalData() {
@@ -2669,6 +2699,13 @@ class EducationalDataStore {
 
         localStorage.setItem(this.STORAGE_KEY_QUIZZES, JSON.stringify(quizzes));
 
+        // Sync to server backend API (/api/quizzes)
+        fetch('/api/quizzes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newQuiz)
+        }).catch(err => console.warn('Server quiz sync error:', err));
+
         // 1. Sync to Firebase Firestore
         if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
             try {
@@ -2765,6 +2802,13 @@ class EducationalDataStore {
         }
 
         localStorage.setItem(this.STORAGE_KEY_FLASHCARDS, JSON.stringify(cards));
+
+        // Sync to server backend API (/api/flashcards)
+        fetch('/api/flashcards', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newCard)
+        }).catch(err => console.warn('Server flashcard sync error:', err));
 
         if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
             try {

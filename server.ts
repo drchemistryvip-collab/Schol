@@ -17,6 +17,22 @@ const __dirname = path.dirname(__filename);
 const TEMPLATE_FILE = path.join(__dirname, 'ai-template.json');
 const COMMUNITY_POSTS_FILE = path.join(__dirname, 'community-posts.json');
 const COMMUNITY_UPLOADS_DIR = path.join(__dirname, 'community-uploads');
+const FLASHCARDS_FILE = path.join(__dirname, 'flashcards.json');
+const QUIZZES_FILE = path.join(__dirname, 'quizzes.json');
+
+function readJsonStore(filePath: string): any[] {
+  try {
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      if (Array.isArray(data)) return data;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function writeJsonStore(filePath: string, data: any[]) {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
 
 interface CommunityComment {
   id: string;
@@ -981,6 +997,47 @@ Return STRICT JSON matching the schema. Do not include markdown fences.
     }
     writeCommunityStore(store);
     res.json({ success: true, authorizedImageUsers: store.authorizedImageUsers });
+  });
+
+  // Flashcards & Quizzes API Endpoints
+  app.get('/api/flashcards', (req, res) => {
+    res.json(readJsonStore(FLASHCARDS_FILE));
+  });
+
+  app.post('/api/flashcards', express.json({ limit: '5mb' }), (req, res) => {
+    const card = req.body;
+    if (!card || !card.front || !card.back) {
+      return res.status(400).json({ error: 'Invalid flashcard data' });
+    }
+    const cards = readJsonStore(FLASHCARDS_FILE);
+    const idx = cards.findIndex((c: any) => c.id === card.id);
+    if (idx >= 0) {
+      cards[idx] = card;
+    } else {
+      cards.unshift(card);
+    }
+    writeJsonStore(FLASHCARDS_FILE, cards);
+    res.json({ success: true, card });
+  });
+
+  app.get('/api/quizzes', (req, res) => {
+    res.json(readJsonStore(QUIZZES_FILE));
+  });
+
+  app.post('/api/quizzes', express.json({ limit: '5mb' }), (req, res) => {
+    const quiz = req.body;
+    if (!quiz || !quiz.question) {
+      return res.status(400).json({ error: 'Invalid quiz data' });
+    }
+    const quizzes = readJsonStore(QUIZZES_FILE);
+    const idx = quizzes.findIndex((q: any) => q.id === quiz.id);
+    if (idx >= 0) {
+      quizzes[idx] = quiz;
+    } else {
+      quizzes.unshift(quiz);
+    }
+    writeJsonStore(QUIZZES_FILE, quizzes);
+    res.json({ success: true, quiz });
   });
 
   // =========================================================================
