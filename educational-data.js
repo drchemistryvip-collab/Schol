@@ -8,7 +8,7 @@
 // 5. Teachers Registry sorted by Views & Admin Approval Workflow
 // =========================================================================
 
-const SUPER_ADMIN_EMAIL = "hussein.zebary.chemistry96@gmail.com";
+var SUPER_ADMIN_EMAIL = window.SUPER_ADMIN_EMAIL || "hussein.zebary.chemistry96@gmail.com";
 
 const GRADES_CONFIG = [
     { id: 'kg', name: 'باخچەی ساوایان', shortName: 'باخچە', level: 'kindergarten', icon: 'fa-shapes', color: '#ff7b54' },

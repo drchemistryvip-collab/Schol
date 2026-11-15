@@ -1,114 +1,119 @@
 // --- START OF FILE: auth-guard.js (UPDATED & SECURED) ---
-const SUPER_ADMIN_EMAILS = [
-    "hussein.zebary.chemistry96@gmail.com",
-    "drlo96chemistry@gmail.com",
-    "dr.chemistry.vip@gmail.com"
-];
-const SUPER_ADMIN_EMAIL = "hussein.zebary.chemistry96@gmail.com";
-
-function isSuperAdminEmail(email) {
-    if (!email) return false;
-    const lower = email.trim().toLowerCase();
-    return SUPER_ADMIN_EMAILS.some(e => lower === e.toLowerCase());
-}
-
-function isAdminSessionUnlocked() {
-    try {
-        if (localStorage.getItem('parwarda_admin_unlocked') === 'true') return true;
-        const cfUser = JSON.parse(localStorage.getItem('parwarda_cf_user') || 'null');
-        if (cfUser && cfUser.role === 'admin') return true;
-        const stored = JSON.parse(localStorage.getItem('app_logged_in_user') || 'null');
-        if (stored && stored.isAdmin === true) return true;
-    } catch (e) {}
-    return false;
-}
-
-function isSuperAdmin(user) {
-    if (isAdminSessionUnlocked()) return true;
-    if (!user) {
-        if (typeof window !== 'undefined' && window.EducationalData && window.EducationalData.isCurrentUserSuperAdmin()) {
-            return true;
-        }
-        return false;
-    }
-    return isSuperAdminEmail(user.email);
-}
-
-async function checkIsAdmin(user) {
-    if (isAdminSessionUnlocked()) return true;
-    if (!user) {
-        return isSuperAdmin(null);
-    }
-    if (isSuperAdmin(user)) return true;
-    try {
-        if (typeof firebase !== 'undefined' && firebase.firestore) {
-            const db = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            return userDoc.exists && userDoc.data().isAdmin === true;
-        }
-        return false;
-    } catch (error) {
-        console.error("Error checking admin role:", error);
-        return false;
-    }
-}
-
-// Make globally accessible
-window.SUPER_ADMIN_EMAIL = SUPER_ADMIN_EMAIL;
-window.isSuperAdminEmail = isSuperAdminEmail;
-window.isAdminSessionUnlocked = isAdminSessionUnlocked;
-window.isSuperAdmin = isSuperAdmin;
-window.checkIsAdmin = checkIsAdmin;
-
-// Check user status in Firebase
-async function checkUserStatus(user) {
-    if (!user) {
-        return;
-    }
-
-    // Super Admin gets immediate, unconditional access and syncs Firestore
-    if (isSuperAdmin(user)) {
-        try {
-            if (typeof firebase !== 'undefined' && firebase.firestore) {
-                const db = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
-                const userDocRef = db.collection('users').doc(user.uid);
-                await userDocRef.set({
-                    email: user.email,
-                    isAdmin: true,
-                    isSubscribed: true,
-                    fullName: user.displayName || 'م. حسين اكرم (ئەدمینێ گشتی)'
-                }, { merge: true });
-            }
-        } catch (e) {
-            console.warn("Could not sync super admin status in Firestore:", e);
-        }
-        localStorage.setItem('is_admin_mode_active', 'true');
-        return { status: 'granted', isAdmin: true };
-    }
-
-    try {
-        if (typeof firebase !== 'undefined' && firebase.firestore) {
-            const db = (typeof window !== 'undefined' && window.db) ? window.db : firebase.firestore();
-            const userDocRef = db.collection('users').doc(user.uid);
-            const doc = await userDocRef.get();
-
-            if (!doc.exists) {
-                return { status: 'granted', isAdmin: false };
-            }
-
-            const userData = doc.data();
-            return { status: 'granted', isAdmin: userData.isAdmin === true };
-        }
-    } catch (error) {
-        console.error("Error checking user status:", error);
-    }
-    return { status: 'granted', isAdmin: false };
-}
-
-window.checkUserStatus = checkUserStatus;
-
-// Autonomous Route Guard
 (function() {
+    const SUPER_ADMIN_EMAILS = [
+        "hussein.zebary.chemistry96@gmail.com",
+        "drlo96chemistry@gmail.com",
+        "dr.chemistry.vip@gmail.com"
+    ];
+    const SUPER_ADMIN_EMAIL = "hussein.zebary.chemistry96@gmail.com";
+
+    function isSuperAdminEmail(email) {
+        if (!email) return false;
+        const lower = email.trim().toLowerCase();
+        return SUPER_ADMIN_EMAILS.some(e => lower === e.toLowerCase());
+    }
+
+    function isAdminSessionUnlocked() {
+        try {
+            if (localStorage.getItem('parwarda_admin_unlocked') === 'true') return true;
+            const cfUser = JSON.parse(localStorage.getItem('parwarda_cf_user') || 'null');
+            if (cfUser && cfUser.role === 'admin') return true;
+            const stored = JSON.parse(localStorage.getItem('app_logged_in_user') || 'null');
+            if (stored && stored.isAdmin === true) return true;
+        } catch (e) {}
+        return false;
+    }
+
+    function isSuperAdmin(user) {
+        if (isAdminSessionUnlocked()) return true;
+        if (!user) {
+            if (typeof window !== 'undefined' && window.EducationalData && window.EducationalData.isCurrentUserSuperAdmin()) {
+                return true;
+            }
+            return false;
+        }
+        return isSuperAdminEmail(user.email);
+    }
+
+    async function checkIsAdmin(user) {
+        if (isAdminSessionUnlocked()) return true;
+        if (!user) {
+            return isSuperAdmin(null);
+        }
+        if (isSuperAdmin(user)) return true;
+        try {
+            const firestoreDb = (typeof window !== 'undefined' && window.db)
+                ? window.db
+                : (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+            if (firestoreDb) {
+                const userDoc = await firestoreDb.collection('users').doc(user.uid).get();
+                return userDoc.exists && userDoc.data().isAdmin === true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error checking admin role:", error);
+            return false;
+        }
+    }
+
+    // Make globally accessible
+    window.SUPER_ADMIN_EMAILS = SUPER_ADMIN_EMAILS;
+    window.SUPER_ADMIN_EMAIL = SUPER_ADMIN_EMAIL;
+    window.isSuperAdminEmail = isSuperAdminEmail;
+    window.isAdminSessionUnlocked = isAdminSessionUnlocked;
+    window.isSuperAdmin = isSuperAdmin;
+    window.checkIsAdmin = checkIsAdmin;
+
+    // Check user status in Firebase
+    async function checkUserStatus(user) {
+        if (!user) {
+            return;
+        }
+
+        const firestoreDb = (typeof window !== 'undefined' && window.db)
+            ? window.db
+            : (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+
+        // Super Admin gets immediate, unconditional access and syncs Firestore
+        if (isSuperAdmin(user)) {
+            try {
+                if (firestoreDb) {
+                    const userDocRef = firestoreDb.collection('users').doc(user.uid);
+                    await userDocRef.set({
+                        email: user.email,
+                        isAdmin: true,
+                        isSubscribed: true,
+                        fullName: user.displayName || 'م. حسين اكرم (ئەدمینێ گشتی)'
+                    }, { merge: true });
+                }
+            } catch (e) {
+                console.warn("Could not sync super admin status in Firestore:", e);
+            }
+            localStorage.setItem('is_admin_mode_active', 'true');
+            return { status: 'granted', isAdmin: true };
+        }
+
+        try {
+            if (firestoreDb) {
+                const userDocRef = firestoreDb.collection('users').doc(user.uid);
+                const doc = await userDocRef.get();
+
+                if (!doc.exists) {
+                    return { status: 'granted', isAdmin: false };
+                }
+
+                const userData = doc.data();
+                return { status: 'granted', isAdmin: userData.isAdmin === true };
+            }
+        } catch (error) {
+            console.error("Error checking user status:", error);
+        }
+        return { status: 'granted', isAdmin: false };
+    }
+
+    window.checkUserStatus = checkUserStatus;
+
+    // Autonomous Route Guard
     const protectedAdminPages = ['admin-panel.html', 'wena.html'];
     const protectedTeacherPages = ['teacher-dashboard.html'];
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';

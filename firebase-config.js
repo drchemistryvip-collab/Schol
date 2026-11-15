@@ -1,5 +1,5 @@
 // Use provisioned Firebase project configuration
-const firebaseConfig = {
+var firebaseConfig = {
     apiKey: "AIzaSyCwIlFc0S_ta7rHMDMcc1HV6v-8rUG13Tc",
     authDomain: "euphoric-reporter-4wrl4.firebaseapp.com",
     projectId: "euphoric-reporter-4wrl4",
@@ -13,15 +13,43 @@ if (typeof firebase !== 'undefined' && !firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-const auth = typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null;
-let db = null;
+var auth = typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null;
+var db = null;
+
 if (typeof firebase !== 'undefined' && firebase.firestore) {
     try {
-        if (firebaseConfig.firestoreDatabaseId) {
+        var defaultApp = firebase.app();
+        if (firebaseConfig.firestoreDatabaseId && typeof window !== 'undefined' && typeof window.__getNamedFirestore === 'function') {
+            db = window.__getNamedFirestore(defaultApp, firebaseConfig.firestoreDatabaseId);
+            var originalFirestoreFn = firebase.firestore;
+            var patchedFirestoreFn = function (appArg) {
+                if (!appArg || appArg === defaultApp) {
+                    return db;
+                }
+                return originalFirestoreFn.call(firebase, appArg);
+            };
+            Object.getOwnPropertyNames(originalFirestoreFn).forEach(function (key) {
+                if (!(key in patchedFirestoreFn)) {
+                    try {
+                        Object.defineProperty(
+                            patchedFirestoreFn,
+                            key,
+                            Object.getOwnPropertyDescriptor(originalFirestoreFn, key)
+                        );
+                    } catch (propErr) {}
+                }
+            });
             try {
-                db = firebase.app().firestore(firebaseConfig.firestoreDatabaseId);
-            } catch (eDb) {
-                db = firebase.firestore();
+                Object.setPrototypeOf(patchedFirestoreFn, Object.getPrototypeOf(originalFirestoreFn));
+            } catch (protoErr) {}
+            firebase.firestore = patchedFirestoreFn;
+            if (defaultApp) {
+                defaultApp.firestore = function (dbIdArg) {
+                    if (!dbIdArg || dbIdArg === firebaseConfig.firestoreDatabaseId) {
+                        return db;
+                    }
+                    return window.__getNamedFirestore(defaultApp, dbIdArg);
+                };
             }
         } else {
             db = firebase.firestore();
@@ -30,7 +58,8 @@ if (typeof firebase !== 'undefined' && firebase.firestore) {
         console.warn('Firestore initialization notice:', e);
     }
 }
-const storage = typeof firebase !== 'undefined' && firebase.storage ? firebase.storage() : null;
+
+var storage = typeof firebase !== 'undefined' && firebase.storage ? firebase.storage() : null;
 
 // Expose globally for browser scripts
 if (typeof window !== 'undefined') {
