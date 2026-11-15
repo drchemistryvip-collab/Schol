@@ -127,24 +127,48 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-  // Shared server-side Gemini AI client (uses process.env.GEMINI_API_KEY only)
+  // Shared server-side Gemini AI client (checks optional x-custom-key header, falling back to process.env.GEMINI_API_KEY)
   let cachedAiClient: GoogleGenAI | null = null;
-  function getServerAiClient(): GoogleGenAI {
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
+  let cachedServerKey = '';
+
+  function resolveRequestGeminiApiKey(headers?: Record<string, string | string[] | undefined>): string {
+    const rawHeader = headers ? headers['x-custom-key'] : undefined;
+    const headerVal = Array.isArray(rawHeader) ? rawHeader[0] : rawHeader;
+    const customKey = typeof headerVal === 'string' ? headerVal.trim() : '';
+    if (customKey && customKey !== 'server-proxy') {
+      return customKey;
+    }
+    return process.env.GEMINI_API_KEY?.trim() || '';
+  }
+
+  function getServerAiClient(headers?: Record<string, string | string[] | undefined>): GoogleGenAI {
+    const serverKey = process.env.GEMINI_API_KEY?.trim() || '';
+    const apiKey = resolveRequestGeminiApiKey(headers);
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY is not configured on the server.');
     }
-    if (!cachedAiClient) {
-      cachedAiClient = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build',
+    if (apiKey === serverKey) {
+      if (!cachedAiClient || cachedServerKey !== serverKey) {
+        cachedServerKey = serverKey;
+        cachedAiClient = new GoogleGenAI({
+          apiKey: serverKey,
+          httpOptions: {
+            headers: {
+              'User-Agent': 'aistudio-build',
+            }
           }
-        }
-      });
+        });
+      }
+      return cachedAiClient;
     }
-    return cachedAiClient;
+    return new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
   }
 
   // Health check endpoint
@@ -174,7 +198,7 @@ async function startServer() {
   // SERVER-SIDE GEMINI STATUS CHECK & PROXY ENDPOINTS
   // =========================================================================
   app.get('/api/gemini/status', async (req, res) => {
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    const apiKey = resolveRequestGeminiApiKey(req.headers);
     if (!apiKey) {
       return res.json({
         success: false,
@@ -185,7 +209,7 @@ async function startServer() {
 
     if (req.query.probe === '1') {
       try {
-        const client = getServerAiClient();
+        const client = getServerAiClient(req.headers);
         const testRes = await client.models.generateContent({
           model: 'gemini-4-hydrogen',
           contents: 'Reply with OK'
@@ -226,7 +250,7 @@ async function startServer() {
 
   app.post('/api/gemini/v1beta/models/:modelAction', async (req, res) => {
     try {
-      const ai = getServerAiClient();
+      const ai = getServerAiClient(req.headers);
       const rawParam = String(req.params.modelAction || '');
       const colonIdx = rawParam.indexOf(':');
       const requestedModel = colonIdx >= 0 ? rawParam.slice(0, colonIdx) : rawParam;
@@ -322,7 +346,7 @@ async function startServer() {
   // =========================================================================
   app.post('/api/gemini/generate-teacher-content', async (req, res) => {
     try {
-      const ai = getServerAiClient();
+      const ai = getServerAiClient(req.headers);
       const {
         subject = 'کیمیا',
         grade = '12',
@@ -771,8 +795,8 @@ Return STRICT JSON complying with the requested schema. No markdown formatting o
   const server = http.createServer(app);
   const wss = new WebSocketServer({ server, path: '/api/gemini/live' });
 
-  wss.on('connection', (clientWs) => {
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
+  wss.on('connection', (clientWs, req) => {
+    const apiKey = resolveRequestGeminiApiKey(req?.headers);
     if (!apiKey) {
       clientWs.send(JSON.stringify({ error: { message: 'GEMINI_API_KEY is not configured on the server.' } }));
       clientWs.close(1011, 'Server key missing');

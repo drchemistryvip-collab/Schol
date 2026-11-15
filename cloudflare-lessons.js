@@ -1030,6 +1030,28 @@
         return serverProxyStatusPromise;
     }
 
+    function emitProxyTokenPostMessage(targetWin) {
+      if (!targetWin || typeof targetWin.postMessage !== 'function') return;
+      var payload = { type: 'SET_API_KEY', apiKey: 'server-proxy' };
+      try {
+        targetWin.postMessage(payload, window.location.origin);
+      } catch (e) {
+        try {
+          targetWin.postMessage(payload, '*');
+        } catch (err) {}
+      }
+    }
+
+    function attachProxyLoadBridge(iframeEl) {
+      if (!iframeEl || iframeEl.dataset.parwardaProxyLoadBound === '1') return;
+      iframeEl.dataset.parwardaProxyLoadBound = '1';
+      iframeEl.addEventListener('load', async function () {
+        const proxyOk = serverProxyReady || await checkServerGeminiProxy();
+        if (!proxyOk) return;
+        emitProxyTokenPostMessage(iframeEl.contentWindow);
+      });
+    }
+
     function buildHtmlProxyBridgeScript(originUrl) {
         const safeOrigin = JSON.stringify(String(originUrl || window.location.origin));
         const wsOrigin = JSON.stringify(String(originUrl || window.location.origin).replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:'));
@@ -1039,6 +1061,16 @@
     var ORIGIN = ${safeOrigin};
     var WS_ORIGIN = ${wsOrigin};
     var PROXY_TOKEN = 'server-proxy';
+    function dispatchProxyToken() {
+      try {
+        var targetOrigin = (window.location.origin && window.location.origin !== 'null') ? window.location.origin : '*';
+        window.postMessage({ type: 'SET_API_KEY', apiKey: PROXY_TOKEN }, targetOrigin);
+      } catch (e) {
+        try {
+          window.postMessage({ type: 'SET_API_KEY', apiKey: PROXY_TOKEN }, '*');
+        } catch (err) {}
+      }
+    }
     var origGetItem = Storage.prototype.getItem;
     Storage.prototype.getItem = function(key) {
       var val = origGetItem.call(this, key);
@@ -1089,7 +1121,9 @@
         var el = document.getElementById(id);
         if (el && !el.value) el.value = PROXY_TOKEN;
       });
+      dispatchProxyToken();
     });
+    window.addEventListener('load', dispatchProxyToken);
   } catch (e) {}
 })();
 </script>`;
@@ -1185,6 +1219,8 @@
                     viewportEl.innerHTML = `<img src="${escapeHtml(safeUrl)}" alt="${escapeHtml(lesson.title)}" ${!canDownload ? 'draggable="false" oncontextmenu="return false;"' : ''} style="max-width:100%; max-height:74vh; object-fit:contain; border-radius:10px; box-shadow:0 8px 30px rgba(0,0,0,0.45); ${!canDownload ? 'pointer-events:none; user-select:none;' : ''}">`;
                 } else if (lesson.fileType === 'html') {
                     viewportEl.innerHTML = `<iframe id="cf-html-preview-iframe" src="${escapeHtml(safeUrl)}" ${!canDownload ? 'sandbox="allow-scripts allow-same-origin allow-forms"' : ''} style="width:100%; height:74vh; min-height:420px; border:none; background:#ffffff; display:block;" allowfullscreen allow="fullscreen; autoplay; microphone; clipboard-write; encrypted-media"></iframe>`;
+                    const initialFrame = viewportEl.querySelector('#cf-html-preview-iframe');
+                    if (initialFrame) attachProxyLoadBridge(initialFrame);
                     (async function () {
                         const proxyOk = await checkServerGeminiProxy();
                         if (!proxyOk || !/^https?:\/\//i.test(safeUrl)) return;
@@ -1195,6 +1231,7 @@
                             if (!rawHtml || modal.style.display === 'none') return;
                             const frame = viewportEl.querySelector('#cf-html-preview-iframe');
                             if (frame) {
+                                attachProxyLoadBridge(frame);
                                 frame.removeAttribute('src');
                                 frame.srcdoc = prepareHtmlForPreview(rawHtml, safeUrl);
                             }
@@ -1823,6 +1860,7 @@
         // UI Helpers & Gemini Server Proxy Bridge
         checkServerGeminiProxy: checkServerGeminiProxy,
         prepareHtmlForPreview: prepareHtmlForPreview,
+        attachProxyLoadBridge: attachProxyLoadBridge,
         renderLessonsGrid: renderLessonsGrid,
         openPreviewModal: openLessonPreview,
         openEditModal: openEditModal,

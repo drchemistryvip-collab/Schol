@@ -446,6 +446,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 iframe.style.background = '#ffffff';
                 iframe.setAttribute('allowfullscreen', 'true');
                 iframe.setAttribute('allow', 'fullscreen; autoplay; microphone; clipboard-write; encrypted-media');
+                if (window.CloudflareLessons && typeof window.CloudflareLessons.attachProxyLoadBridge === 'function') {
+                    window.CloudflareLessons.attachProxyLoadBridge(iframe);
+                }
                 iframe.srcdoc = (window.CloudflareLessons && typeof window.CloudflareLessons.prepareHtmlForPreview === 'function')
                     ? window.CloudflareLessons.prepareHtmlForPreview(rawHtml, item.fileUrl)
                     : rawHtml;
@@ -463,6 +466,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 iframe.style.background = '#ffffff';
                 iframe.setAttribute('allowfullscreen', 'true');
                 iframe.setAttribute('allow', 'fullscreen; autoplay; microphone; clipboard-write; encrypted-media');
+                if (window.CloudflareLessons && typeof window.CloudflareLessons.attachProxyLoadBridge === 'function') {
+                    window.CloudflareLessons.attachProxyLoadBridge(iframe);
+                }
                 docViewport.appendChild(iframe);
                 if (window.CloudflareLessons && typeof window.CloudflareLessons.checkServerGeminiProxy === 'function') {
                     window.CloudflareLessons.checkServerGeminiProxy().then(async (proxyOk) => {

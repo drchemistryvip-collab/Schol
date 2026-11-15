@@ -1002,6 +1002,22 @@ document.addEventListener('DOMContentLoaded', function () {
             const imgSrc = item.fileData || item.fileUrl || 'https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?auto=format&fit=crop&w=1200&q=80';
             docViewport.innerHTML = `<img src="${imgSrc}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;">`;
         } else if (formatType === 'html') {
+            const bindProxyOnLoad = (frameEl) => {
+                if (!frameEl) return;
+                if (window.CloudflareLessons && typeof window.CloudflareLessons.attachProxyLoadBridge === 'function') {
+                    window.CloudflareLessons.attachProxyLoadBridge(frameEl);
+                    return;
+                }
+                if (frameEl.dataset.parwardaProxyLoadBound === '1') return;
+                frameEl.dataset.parwardaProxyLoadBound = '1';
+                frameEl.addEventListener('load', () => {
+                    try {
+                        if (frameEl.contentWindow) {
+                            frameEl.contentWindow.postMessage({ type: 'SET_API_KEY', apiKey: 'server-proxy' }, window.location.origin);
+                        }
+                    } catch (e) {}
+                });
+            };
             const rawHtml = dataStore.getHtmlContentFromItem(item);
             if (rawHtml) {
                 const iframe = document.createElement('iframe');
@@ -1012,6 +1028,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 iframe.style.borderRadius = '8px';
                 iframe.setAttribute('allowfullscreen', 'true');
                 iframe.setAttribute('allow', 'fullscreen; autoplay; microphone; clipboard-write; encrypted-media');
+                bindProxyOnLoad(iframe);
                 iframe.srcdoc = (window.CloudflareLessons && typeof window.CloudflareLessons.prepareHtmlForPreview === 'function')
                     ? window.CloudflareLessons.prepareHtmlForPreview(rawHtml, item.fileUrl)
                     : rawHtml;
@@ -1026,6 +1043,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 iframe.style.background = '#ffffff';
                 iframe.setAttribute('allowfullscreen', 'true');
                 iframe.setAttribute('allow', 'fullscreen; autoplay; microphone; clipboard-write; encrypted-media');
+                bindProxyOnLoad(iframe);
                 docViewport.appendChild(iframe);
                 if (window.CloudflareLessons && typeof window.CloudflareLessons.checkServerGeminiProxy === 'function') {
                     window.CloudflareLessons.checkServerGeminiProxy().then(async (proxyOk) => {
@@ -1393,6 +1411,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Render presentation in iframe
                 if (aiPresentationIframe && result.htmlContent) {
+                    if (window.CloudflareLessons && typeof window.CloudflareLessons.attachProxyLoadBridge === 'function') {
+                        window.CloudflareLessons.attachProxyLoadBridge(aiPresentationIframe);
+                    }
                     aiPresentationIframe.srcdoc = (window.CloudflareLessons && typeof window.CloudflareLessons.prepareHtmlForPreview === 'function')
                         ? window.CloudflareLessons.prepareHtmlForPreview(result.htmlContent)
                         : result.htmlContent;

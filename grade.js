@@ -883,6 +883,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!canDownload) {
                 iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms');
             }
+            if (window.CloudflareLessons && typeof window.CloudflareLessons.attachProxyLoadBridge === 'function') {
+                window.CloudflareLessons.attachProxyLoadBridge(iframe);
+            }
             if (rawHtml) {
                 const preparedHtml = (window.CloudflareLessons && typeof window.CloudflareLessons.prepareHtmlForPreview === 'function')
                     ? window.CloudflareLessons.prepareHtmlForPreview(rawHtml, item.fileUrl)
