@@ -9,6 +9,7 @@
     "start": "node server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
+    "cleanup": "node scripts/cleanup-extra-files.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

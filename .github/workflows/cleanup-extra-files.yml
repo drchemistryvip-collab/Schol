@@ -1,0 +1,43 @@
+name: Auto Cleanup Extra Files
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-extra-files:
+    if: "!contains(github.event.head_commit.message, '[skip cleanup]')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Untrack ignored build/cache files if committed
+        run: |
+          git rm -rf --cached --ignore-unmatch dist build node_modules coverage .DS_Store Thumbs.db public/assets/aistudio || true
+
+      - name: Scan and delete extra files
+        run: node scripts/cleanup-extra-files.mjs
+
+      - name: Commit and push cleanup changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: remove extra/unused files [skip cleanup] [skip ci]"
+            git push
+          else
+            echo "No extra files found."
+          fi
