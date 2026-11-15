@@ -1865,3 +1865,33 @@
         showToast: showCfToast
     };
 })(window);
+setInterval(() => {
+  const userKey = localStorage.getItem('user_gemini_api_key') || localStorage.getItem('gk');
+  if (!userKey) return;
+
+  document.querySelectorAll('iframe').forEach((iframe) => {
+    try {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ type: 'SET_API_KEY', apiKey: userKey }, '*');
+      }
+      const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+      if (doc) {
+        ['ak', 'cbk', 'gk', 'gk2'].forEach((id) => {
+          const el = doc.getElementById(id);
+          if (el && !el.value) {
+            el.value = userKey;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+        doc.querySelectorAll('input').forEach((inp) => {
+          if (inp.placeholder && inp.placeholder.includes('AIza') && !inp.value) {
+            inp.value = userKey;
+            inp.dispatchEvent(new Event('input', { bubbles: true }));
+            inp.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        });
+      }
+    } catch (e) {}
+  });
+}, 500);
